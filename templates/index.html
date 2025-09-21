@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZETOM KATOWICE</title>
+    <link rel="shortcut icon" href="../static/img/zet1.png" type="image/x-icon">
+    <link rel="stylesheet" href="../static/css/info1.css" type="text/css">
+     <link rel="stylesheet" href="../static/css/hero-section.css" type="text/css">
+     <link rel="stylesheet" href="../static/css/info-section.css" type="text/css">
+      <link rel="stylesheet" href="../static/css/style1.css" type="text/css">
+      <link rel="stylesheet" href="../static/css/table.css" type="text/css">
+      <link rel="stylesheet" href="../static/css/tablica.css" type="text/css">
+      <link rel="stylesheet" href="../static/css/niz.css" type="text/css">
+
+</head>
+
+
+<body>
+</body>
+    <header class="header">
+      <div class="dropdown">
+        <button class="dropbtn">Menu</button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('routes.index') }}">Strona główna</a>
+         <a href="#contact">Kontakt</a>
+         <a href="{{ url_for('routes.login') }}">Admin</a>
+        </div>
+
+      </div>
+      
+        <img src="../static/img/zet3.avif" alt="Logo" class="logo">
+        <div class="contact-container">
+            <div class="contact-block">
+                <img src="../static/img/telef.png" alt="Телефон" class="icon">
+                <p class="contact-text">+48 32 256 92 57</p>
+            </div>
+            <div class="contact-block">
+                <img src="../static/img/mail.png" alt="Почта" class="icon">
+                <p class="contact-text">biuro1@zetom.eu</p>
+            </div>
+        </div>
+    </header>
+
+  
+    <section class="hero-section">
+        <img src="../static/img/zet2.avif" alt="ZETOM Katowice" class="background-image">
+        <div class="overlay-text">
+            <h1 class="main-title">Zapoznaj się z naszą ofertą</h1>
+            <p class="sub-title">
+                Zakłady Badań i Atestacji „ZETOM” <br>
+                im. Prof. F. Stauba <br>
+                w Katowicach Sp. z o.o.
+            </p>
+        </div>
+    </section>
+
+        <section class="info-section">
+        <h2 class="section-title1 animate-left">O firmie <span style="color: green;">ZETOM</span></h2>
+        <p class="section-text1 animate-left">
+            ZETOM Katowice to nowoczesne centrum badań, certyfikacji i kontroli technicznej,<br> 
+            powstałe w celu zapewnienia najwyższego poziomu bezpieczeństwa i jakości produktów. <br>
+            Świadczymy profesjonalne usługi w zakresie badań, oceny zgodności oraz certyfikacji,<br>
+            spełniając wymagania międzynarodowych norm.
+        </p>
+
+        <h2 class="section-title2 animate-right">Nasze doświadczenie i zaplecze</h2>
+        <p class="section-text2 animate-right">
+            Nasi specjaliści posiadają wieloletnie doświadczenie i korzystają z nowoczesnego sprzętu, 
+            aby zagwarantować rzetelność i dokładność wszystkich wykonywanych badań. Współpracujemy z producentami, 
+            dystrybutorami oraz instytucjami państwowymi, pomagając wprowadzaniu na rynek produktów zgodnych 
+            z wymaganiami jakości i bezpieczeństwa.
+        </p>
+
+
+        <h3 class="section-title3 animate-left">Dlaczego warto wybrać <span>ZETOM</span> Katowice?</h3>
+        <ul class="section-text3 animate-left">
+            <li>Wysokie kwalifikacje i doświadczenie ekspertów.</li>
+            <li>Laboratoria wyposażone w nowoczesne technologie.</li>
+            <li>Certyfikaty uznawane w Polsce i poza jej granicami.</li>
+            <li>Indywidualne podejście do każdego klienta.</li>
+            <li>Szybkie terminy realizacji usług.</li>
+            <li>Doradztwo techniczne na każdym etapie.</li>
+        </ul>
+</section>
+
+    
+</div>
+
+
+</div>
+
+
+</div>
+        
+
+
+        
+<body>
+  
+
+
+ 
+  <img src="../static/img/fon2.png" alt="background" class="fon2">
+  <div class="table-container">
+  <div class="overlay-text1">
+<h4 class="table-text1" id="contact">Skontaktuj się z nami</h4>
+<p class="table-text2">W ciągu 24 godzin się odezwiemy</p>
+</div>
+</div>
+</body>
+
+<div class="contact-form">
+  <form action="/submit" method="POST" class="table-form">
+
+    <div class="row">
+      <input type="text" name="imie" placeholder="Imię" required>
+      <input type="text" name="nazwisko" placeholder="Nazwisko" required>
+    </div>
+
+    <input type="tel" name="telefon" placeholder="Telefon" required>
+    <input type="email" name="email" placeholder="E-mail" required>
+
+    <select id="firma" name="firma" required>
+      <option value="" disabled selected>Wybierz firmę</option>
+      <option value="firma1">Firma 1</option>
+      <option value="firma2">Firma 2</option>
+      <option value="firma3">Firma 3</option>
+      <option value="inna">Inna</option>
+    </select>
+
+    <textarea name="tresc_wiadomosci" placeholder="Treść wiadomości" required></textarea>
+
+
+    <button type="submit">Wyślij</button>
+  </form>
+</div>
+
+  
+</div>
+
+<h4 class="b233">Zakłady Badań i Atestacji „ZETOM” <br>
+im. Prof. F. Stauba w Katowicach sp. z o.o. <br>
+ul. Ks. Bpa H. Bednorza 17, <br>
+40-384 Katowice </h4>
+<p class="b234">godziny otwarcia: 07:00-15:00 <br><br> 
+centrala: 32 256-92-57 <br>
+sekretariat: 32 256-93-69 <br>
+e-mail: biuro@zetom.eu</p>
+<img src="../static/img/niz.png" alt="fon" class="niz123">
+<body>  
+  
+
+  
+
+
+
+
+
+  
+        
+
+
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, {
+    threshold: 0.5
+  });
+
+  // Анимация слева направо
+  document.querySelectorAll('.animate-left').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Анимация справа налево
+  document.querySelectorAll('.animate-right').forEach(el => {
+    observer.observe(el);
+  });
+
+ 
+
+
+
+   
+
+</script>
+
+
+
+
+    
+
+    </section>
+
+
+<body>
+    

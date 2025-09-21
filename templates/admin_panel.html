@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if lang == 'pl' %}Panel Admina{% else %}Admin Panel{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #212529;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-theme {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .table {
+            color: #e0e0e0;
+        }
+
+        .dark-theme .card {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .top-bar button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+
+    <!-- Верхняя панель -->
+    <div class="top-bar">
+        <button class="btn btn-sm btn-dark" onclick="toggleTheme()">Theme</button>
+        <button class="btn btn-sm btn-secondary" onclick="toggleLang()">Language</button>
+        <a href="{{ url_for('routes.logout') }}" class="btn btn-danger">Logout</a>
+    </div>
+
+    <h2 class="text-center mb-4">{% if lang == 'pl' %}Panel Admina{% else %}Admin Panel{% endif %}</h2>
+
+    <form method="POST">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>ID</th>
+                    <th>{% if lang == 'pl' %}Data zgłoszenia{% else %}Submission Date{% endif %}</th>
+                    <th>{% if lang == 'pl' %}Klient{% else %}Client{% endif %}</th>
+                    <th>{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</th>
+                    <th>E-mail</th>
+                    <th>{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</th>
+                    <th>{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</th>
+                    <th>{% if lang == 'pl' %}Akcje{% else %}Actions{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inquiry in inquiries %}
+                <tr>
+                    <td><input type="checkbox" name="selected" value="{{ inquiry.id }}"></td>
+                    <td>{{ inquiry.id }}</td>
+                    <td>{{ inquiry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ inquiry.imie }} {{ inquiry.nazwisko }}</td>
+                    <td>{{ inquiry.telefon }}</td>
+                    <td>{{ inquiry.email }}</td>
+                    <td>{{ inquiry.firma }}</td>
+                    <td>{{ inquiry.tresc_wiadomosci[:50] }}{% if inquiry.tresc_wiadomosci|length > 50 %}...{% endif %}</td>
+                    <td>
+                        <!-- Кнопка открыть модалку -->
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sendEmailModal">
+                          {% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <select name="action" class="form-select mb-3" style="width: 200px;">
+            <option value="mark_read">{% if lang == 'pl' %}Oznacz jako przeczytane{% else %}Mark as Read{% endif %}</option>
+            <option value="delete">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</option>
+        </select>
+        <button type="submit" class="btn btn-primary">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+    </form>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ url_for('routes.sent_email') }}" method="POST" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendEmailLabel">{% if lang == 'pl' %}Nowy e-mail{% else %}New email{% endif %}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
+            <textarea class="form-control" name="body" rows="4" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{% if lang == 'pl' %}Załącznik (PDF){% else %}Attachment (PDF){% endif %}</label>
+            <input class="form-control" type="file" name="attachment" accept="application/pdf">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="to_email" placeholder="example@mail.com" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Переключение темы
+    function toggleTheme() {
+        document.body.classList.toggle("dark-theme");
+        if (document.body.classList.contains("dark-theme")) {
+            localStorage.setItem("theme", "dark");
+        } else {
+            localStorage.setItem("theme", "light");
+        }
+    }
+
+    // Загрузка темы при старте
+    window.onload = () => {
+        if (localStorage.getItem("theme") === "dark") {
+            document.body.classList.add("dark-theme");
+        }
+    };
+
+    // Переключение языка
+    function toggleLang() {
+        let currentLang = "{{ lang }}";
+        let newLang = currentLang === "pl" ? "eng" : "pl";
+        window.location.href = "?lang=" + newLang;
+    }
+
+    // Выделение всех чекбоксов
+    document.getElementById('select-all').addEventListener('click', function() {
+        var checkboxes = document.getElementsByName('selected');
+        for (var checkbox of checkboxes) {
+            checkbox.checked = this.checked;
+        }
+    });
+</script>
+
+</body>
+</html>

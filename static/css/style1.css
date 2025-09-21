@@ -1,0 +1,24 @@
+/* Начальное состояние */
+.animate-left {
+  opacity: 0;
+  transform: translateX(-100px);
+  transition: all 0.8s ease-out;
+}
+
+/* Активное состояние при появлении */
+.animate-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+
+.animate-right {
+  opacity: 0;
+  transform: translateX(100px);
+  transition: all 0.8s ease-out;
+}
+
+.animate-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}

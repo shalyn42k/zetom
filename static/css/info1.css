@@ -1,0 +1,193 @@
+body {
+    opacity: 1; 
+    position: relative;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+
+/* ХЕДЕР */
+.header {
+    display: flex;
+    justify-content: space-between; /* равномерно распределяем */
+    align-items: center;
+    padding: 15px 5%;
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap; /* чтобы на маленьких экранах переносилось */
+}
+
+.logo {
+    width: 120px;
+   
+}
+
+.contact-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+      transform: translateX(-7vw); /* ← сдвигает влево */
+}
+
+.contact-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon {
+    width: 30px;
+    height: auto;
+}
+
+.contact-text {
+    font-size: 1.2rem;
+    color: #333;
+}
+
+/* HERO СЕКЦИЯ */
+.hero-section {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden; /* картинка не выйдет за пределы */
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.overlay-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+    text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+    width: 90%;
+}
+
+.main-title {
+    font-size: clamp(24px, 4vw, 64px); /* адаптивный размер */
+    margin-bottom: 20px;
+}
+
+.sub-title {
+    font-size: clamp(16px, 2vw, 36px);
+}
+
+/* INFO СЕКЦИЯ */
+.info-section {
+    padding: 50px 10%;
+    background: #f9f9f9;
+    text-align: center;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin: 20px 0;
+}
+
+.section-title span {
+    color: green;
+}
+
+.section-text {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.advantages-list {
+    list-style: none;
+    font-size: 1.2rem;
+    line-height: 1.8;
+    text-align: left;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* FOOTER */
+.footer {
+    background-color: #222;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+/* АДАПТИВ */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .main-title {
+        font-size: 6vw;
+    }
+
+    .sub-title {
+        font-size: 3vw;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .section-text, 
+    .advantages-list {
+        font-size: 1rem;
+    }
+}
+
+.dropdown {
+  position: absolute; /* или fixed, если нужно закрепить */
+  right: 0;            /* прижать к правому краю */
+  top: 0;              /* прижать к верхнему краю (можно изменить) */
+  margin: 10px;        /* отступ от краёв */
+  z-index: 1000;       /* убедиться, что она поверх других элементов */
+}
+
+.dropbtn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;            /* прижать к правому краю */
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {background-color: #f1f1f1}
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+.dropdown:hover .dropbtn {
+  background-color: #3e8e41;
+}
+
