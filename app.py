@@ -1,8 +1,8 @@
 from flask import Flask
-from waitress import serve
 from extensions import db
 from config import Config
 from infrastructure.routes import bp as routes_bp
+from waitress import serve
 import os
 
 def create_app():
@@ -19,7 +19,13 @@ def create_app():
 
 app = create_app()
 
-if __name__ == "__main__":
+def run_local():
+    serve(app, host="0.0.0.0", port=3531)
+
+def run_production():
     port = int(os.environ.get("PORT", 3531))
     serve(app, host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    run_local()
 
