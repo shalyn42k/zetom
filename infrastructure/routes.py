@@ -78,4 +78,8 @@ def sent_email():
     to_email = request.form.get("to_email")
     body = request.form.get("body")
     file = request.files.get("attachment")
+
+    send_email_with_attachment(to_email, "Custom message", body, file)
+
     return redirect(url_for("routes.panel"))
+
