@@ -78,15 +78,4 @@ def sent_email():
     to_email = request.form.get("to_email")
     body = request.form.get("body")
     file = request.files.get("attachment")
-
-    if not to_email or not body:
-        flash("❌ Brak treści lub adresu e-mail!" if get_language() == "pl" else "❌ Missing message or email!")
-        return redirect(url_for("routes.panel"))
-
-    try:
-        send_email_with_attachment(to_email, "Custom message", body, file)
-        flash("✅ E-mail wysłany!" if get_language() == "pl" else "✅ Email sent!")
-    except Exception as e:
-        flash(f"❌ Błąd: {e}" if get_language() == "pl" else f"❌ Error: {e}")
-
     return redirect(url_for("routes.panel"))
