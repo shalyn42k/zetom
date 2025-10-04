@@ -3,74 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <title>{% if lang == 'pl' %}Panel Admina - Logowanie{% else %}Admin Login{% endif %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        :root {
+            --green:#2fa84f;
+            --green-dark:#23863d;
+            --white:#ffffff;
+            --text:#000000;
+        }
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-            transition: background-color 0.3s, color 0.3s;
-            position: relative;
+            background: linear-gradient(180deg, #f6fff6 0%, #ffffff 100%);
+            color: var(--text);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
         }
 
-        .dark-theme {
-            background-color: #121212;
-            color: #e0e0e0;
+        .card {
+            width: 360px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(15, 90, 50, 0.08);
+            background: var(--white);
         }
 
-        .dark-theme .card {
-            background-color: #1e1e1e;
-            color: #e0e0e0;
+        .card-header {
+            background: linear-gradient(90deg,var(--green),var(--green-dark));
+            color: #fff;
+            text-align: center;
+            padding: 18px;
         }
 
-        .top-bar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
+        .form-control:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 0.15rem rgba(47,168,79,0.25);
         }
 
-        /* кнопка Back в правом нижнем углу */
-        .back-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
+        .btn-login {
+            background: var(--green);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-login:hover {
+            background: var(--green-dark);
         }
     </style>
 </head>
 <body>
 
-    <!-- верхняя панель с кнопками темы и языка -->
-    <div class="top-bar">
-        <button class="btn btn-sm btn-dark" onclick="toggleTheme()">Theme</button>
-        <button class="btn btn-sm btn-secondary" onclick="toggleLang()">Language</button>
+<div class="card">
+    <div class="card-header">
+        <h5>{% if lang == 'pl' %}Logowanie admina{% else %}Admin Login{% endif %}</h5>
     </div>
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('routes.login') }}">
+            <div class="mb-3">
+                <label class="form-label">{% if lang == 'pl' %}Login{% else %}Username{% endif %}</label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
 
-    <!-- карточка логина -->
-    <div class="card" style="width: 300px;">
-        <div class="card-body">
-            <h5 class="card-title text-center">
-                {% if lang == 'pl' %}Logowanie Admina{% else %}Admin Login{% endif %}
-            </h5>
+            <div class="mb-3">
+                <label class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
 
-            <form method="POST" action="{{ url_for('routes.login') }}">
-                <div class="mb-3">
-                    <label class="form-label">
-                        {% if lang == 'pl' %}Hasło{% else %}Password{% endif %}
-                    </label>
-                    <input type="password" class="form-control" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">
-                    {% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}
-                </button>
-            </form>
+            <button type="submit" class="btn btn-login w-100">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -79,37 +83,9 @@
                     </div>
                 {% endif %}
             {% endwith %}
-        </div>
+        </form>
     </div>
-
-    <!-- кнопка Back -->
-    <a href="/" class="btn btn-secondary back-button">
-        {% if lang == 'pl' %}Powrót{% else %}Back{% endif %}
-    </a>
-
-    <script>
-        function toggleTheme() {
-            const body = document.body;
-            body.classList.toggle("dark-theme");
-            if (body.classList.contains("dark-theme")) {
-                localStorage.setItem("theme", "dark");
-            } else {
-                localStorage.setItem("theme", "light");
-            }
-        }
-
-        window.onload = () => {
-            if (localStorage.getItem("theme") === "dark") {
-                document.body.classList.add("dark-theme");
-            }
-        };
-
-        function toggleLang() {
-            let currentLang = "{{ lang }}";
-            let newLang = currentLang === "pl" ? "eng" : "pl";
-            window.location.href = "/login?lang=" + newLang;
-        }
-    </script>
+</div>
 
 </body>
 </html>
