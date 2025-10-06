@@ -30,6 +30,7 @@ This project provides a simple contact form and admin panel implemented with Dja
    Copy `.env.example` to `.env` and adjust values as needed. The important ones are:
    - `DJANGO_SECRET_KEY`: any random string for cryptographic signing.
    - `SQLITE_DB_PATH`: optional path to the SQLite database file (defaults to `<project>/db.sqlite3`).
+     If you provide a custom path, the parent folder will be created automatically when Django starts.
    - `ADMIN_PASSWORD`: password used to access the admin panel at `/login/`.
    - `SMTP_*`: mail server settings if you want to send emails.
 

@@ -47,10 +47,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'zetom_project.wsgi.application'
 
+sqlite_path = Path(os.environ.get('SQLITE_DB_PATH', BASE_DIR / 'db.sqlite3'))
+sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('SQLITE_DB_PATH', str(BASE_DIR / 'db.sqlite3')),
+        'NAME': str(sqlite_path),
     }
 }
 
