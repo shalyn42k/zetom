@@ -1,0 +1,40 @@
+from django import forms
+
+from .models import ContactMessage
+
+
+class ContactForm(forms.ModelForm):
+    class Meta:
+        model = ContactMessage
+        fields = ['first_name', 'last_name', 'phone', 'email', 'company', 'message']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
+class LoginForm(forms.Form):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+
+class MessageBulkActionForm(forms.Form):
+    ACTION_MARK_READ = 'mark_read'
+    ACTION_DELETE = 'delete'
+    ACTION_CHOICES = (
+        (ACTION_MARK_READ, 'Mark as read'),
+        (ACTION_DELETE, 'Delete'),
+    )
+
+    action = forms.ChoiceField(choices=ACTION_CHOICES)
+    selected = forms.MultipleChoiceField(choices=(), required=True, widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, message_choices: list[tuple[str, str]] | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['selected'].choices = message_choices or []
+        self.fields['action'].widget.attrs['class'] = 'form-select'
+
+
+class EmailForm(forms.Form):
+    to_email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    subject = forms.CharField(max_length=255, initial='Custom message', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    body = forms.CharField(widget=forms.Textarea(attrs={'rows': 6, 'class': 'form-control'}))
+    attachment = forms.FileField(required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))

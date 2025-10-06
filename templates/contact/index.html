@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZETOM Katowice</title>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'css/info1.css' %}">
+    <link rel="stylesheet" href="{% static 'css/hero-section.css' %}">
+    <link rel="stylesheet" href="{% static 'css/info-section.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style1.css' %}">
+    <link rel="stylesheet" href="{% static 'css/table.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tablica.css' %}">
+    <link rel="stylesheet" href="{% static 'css/niz.css' %}">
+</head>
+<body>
+<header class="header">
+    <div class="dropdown">
+        <button class="dropbtn">Menu</button>
+        <div class="dropdown-content">
+            <a href="{% url 'contact:index' %}?lang={{ lang }}">Strona główna</a>
+            <a href="#contact">Kontakt</a>
+            <a href="{% url 'contact:login' %}?lang={{ lang }}">Admin</a>
+        </div>
+    </div>
+    <img src="{% static 'img/zet3.avif' %}" alt="Logo" class="logo">
+    <div class="contact-container">
+        <div class="contact-block">
+            <img src="{% static 'img/telef.png' %}" alt="Telefon" class="icon">
+            <p class="contact-text">+48 32 256 92 57</p>
+        </div>
+        <div class="contact-block">
+            <img src="{% static 'img/mail.png' %}" alt="Poczta" class="icon">
+            <p class="contact-text">biuro1@zetom.eu</p>
+        </div>
+    </div>
+</header>
+
+{% if messages %}
+<div class="message-container">
+    {% for message in messages %}
+        <div class="flash-message">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<section class="hero-section">
+    <img src="{% static 'img/zet2.avif' %}" alt="ZETOM Katowice" class="background-image">
+    <div class="overlay-text">
+        <h1 class="main-title">Zapoznaj się z naszą ofertą</h1>
+        <p class="sub-title">
+            Zakłady Badań i Atestacji „ZETOM”<br>
+            im. Prof. F. Stauba<br>
+            w Katowicach Sp. z o.o.
+        </p>
+    </div>
+</section>
+
+<section class="info-section" id="about">
+    <h2 class="section-title1 animate-left">O firmie <span style="color: green;">ZETOM</span></h2>
+    <p class="section-text1 animate-left">
+        ZETOM Katowice to nowoczesne centrum badań, certyfikacji i kontroli technicznej,
+        powstałe w celu zapewnienia najwyższego poziomu bezpieczeństwa i jakości produktów.
+        Świadczymy profesjonalne usługi w zakresie badań, oceny zgodności oraz certyfikacji,
+        spełniając wymagania międzynarodowych norm.
+    </p>
+
+    <h2 class="section-title2 animate-right">Nasze doświadczenie i zaplecze</h2>
+    <p class="section-text2 animate-right">
+        Nasi specjaliści posiadają wieloletnie doświadczenie i korzystają z nowoczesnego sprzętu,
+        aby zagwarantować rzetelność i dokładność wszystkich wykonywanych badań.
+        Współpracujemy z producentami, dystrybutorami oraz instytucjami państwowymi.
+    </p>
+
+    <h3 class="section-title3 animate-left">Dlaczego warto wybrać <span>ZETOM</span> Katowice?</h3>
+    <ul class="section-text3 animate-left">
+        <li>Wysokie kwalifikacje i doświadczenie ekspertów.</li>
+        <li>Laboratoria wyposażone w nowoczesne technologie.</li>
+        <li>Certyfikaty uznawane w Polsce i za granicą.</li>
+        <li>Indywidualne podejście do każdego klienta.</li>
+        <li>Szybkie terminy realizacji usług.</li>
+        <li>Doradztwo techniczne na każdym etapie.</li>
+    </ul>
+</section>
+
+<img src="{% static 'img/fon2.png' %}" alt="background" class="fon2">
+<div class="table-container" id="contact">
+    <div class="overlay-text1">
+        <h4 class="table-text1">Skontaktuj się z nami</h4>
+        <p class="table-text2">W ciągu 24 godzin się odezwiemy</p>
+    </div>
+</div>
+
+<div class="contact-form">
+    <form method="post" class="table-form" action="{% url 'contact:index' %}?lang={{ lang }}">
+        {% csrf_token %}
+        <div class="row">
+            <input type="text" name="first_name" placeholder="Imię" value="{{ form.first_name.value|default:'' }}" required>
+            <input type="text" name="last_name" placeholder="Nazwisko" value="{{ form.last_name.value|default:'' }}" required>
+        </div>
+        <input type="tel" name="phone" placeholder="Telefon" value="{{ form.phone.value|default:'' }}" required>
+        <input type="email" name="email" placeholder="E-mail" value="{{ form.email.value|default:'' }}" required>
+        <select id="company" name="company" required>
+            <option value="" disabled {% if not form.company.value %}selected{% endif %}>Wybierz firmę</option>
+            {% for option in ['firma1', 'firma2', 'firma3', 'inna'] %}
+            <option value="{{ option }}" {% if form.company.value == option %}selected{% endif %}>{{ option|title }}</option>
+            {% endfor %}
+        </select>
+        <textarea name="message" placeholder="Treść wiadomości" required>{{ form.message.value|default:'' }}</textarea>
+        {% if form.errors %}
+            <div class="form-errors">
+                {% for field, errors in form.errors.items %}
+                    <div class="error-item">{{ errors.0 }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <button type="submit">Wyślij</button>
+    </form>
+</div>
+
+<footer class="footer">
+    <h4 class="b233">Zakłady Badań i Atestacji „ZETOM”<br>
+        im. Prof. F. Stauba w Katowicach sp. z o.o.<br>
+        ul. Ks. Bpa H. Bednorza 17,<br>
+        40-384 Katowice
+    </h4>
+    <p class="b234">godziny otwarcia: 07:00-15:00<br><br>
+        centrala: 32 256-92-57<br>
+        sekretariat: 32 256-93-69<br>
+        e-mail: biuro@zetom.eu
+    </p>
+    <img src="{% static 'img/niz.png' %}" alt="Stopka" class="niz123">
+</footer>
+
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.animate-left, .animate-right').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
