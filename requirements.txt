@@ -1,4 +1,2 @@
-Flask
-Flask-SQLAlchemy
-gunicorn
-waitress
+Django>=4.2,<5.0
+psycopg2-binary>=2.9
