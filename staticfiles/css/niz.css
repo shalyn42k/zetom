@@ -1,0 +1,59 @@
+body {
+    opacity: 1;
+    position: absolute;
+    min-height: 100vh; /* Достаточно 100vh */
+    margin: 0;
+    padding: 0;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.footer-title {
+    font-size: 10vw;
+    position: absolute;
+    top: 230w;
+    z-index: 5;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.b233 {
+    left: 5%;
+    font-size: 10vw;
+    position: absolute;
+    top: 152%;
+    z-index: 5;
+    font-size: 1vw;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.niz123 {
+    position: absolute; /* Картинка позиционируется относительно контейнера */
+    top: 150%;
+    left: 0;
+    width: 100%;
+    height: 20%;
+    z-index: -1; /* Картинка на заднем плане */
+    opacity: 1;
+    object-fit: cover;
+             mask-image: linear-gradient(to left,  rgba(0,0,0,1) 30%,  rgba(0,0,0,0) 100%);                             
+                          
+
+   
+}
+
+.b234 {
+    left: 5%;
+    font-size: 10vw;
+    position: absolute;
+    top: 160%;
+    z-index: 5;
+    font-size: 1vw;
+    font-weight: bold;
+    margin-bottom: 10px;
+}

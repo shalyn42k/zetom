@@ -1,0 +1,74 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+
+.section-title1,
+.section-text1 {
+    text-align: left; 
+    margin-left: -10%;
+}
+
+.section-title1 {
+    margin-top: 10%;
+    font-size: 2.5vw;
+    color: #000000;
+    margin-bottom: 10px;
+}
+
+.section-text1 {
+    
+    margin-top: 5%;
+    font-size: 1.5vw;
+    color: #000000;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+
+.section-title2 {
+   text-align: right; 
+    margin-right: -2.5%;
+    font-size: 2.5vw;
+    margin-top: 10%;
+}
+
+.section-text2 {
+    margin-top: 5%;
+   margin-left: auto;   /* прижимает к правому краю */
+    margin-right: -5%;
+    width: 50%;         
+    text-align: left;
+    font-size: 1.5vw;
+    line-height: 1.6;
+}
+
+
+.section-title3,
+.section-text3 {
+    text-align: left; 
+    margin-left: -10%;
+}
+
+.section-title3 {
+    margin-top: 10%;
+    font-size: 2.5vw;
+    color: #000000;
+    margin-bottom: 10px;
+}
+
+.section-text3 {
+    margin-left: -8%;
+    margin-top: 5%;
+    font-size: 1.5vw;
+    color: #000000;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}

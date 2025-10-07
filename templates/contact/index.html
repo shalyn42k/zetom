@@ -103,9 +103,9 @@
         <input type="email" name="email" placeholder="E-mail" value="{{ form.email.value|default:'' }}" required>
         <select id="company" name="company" required>
             <option value="" disabled {% if not form.company.value %}selected{% endif %}>Wybierz firmę</option>
-            {% for option in ['firma1', 'firma2', 'firma3', 'inna'] %}
-            <option value="{{ option }}" {% if form.company.value == option %}selected{% endif %}>{{ option|title }}</option>
-            {% endfor %}
+           {% for value, label in form.company.field.choices %}
+           <option value="{{ value }}" {% if form.company.value == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
         </select>
         <textarea name="message" placeholder="Treść wiadomości" required>{{ form.message.value|default:'' }}</textarea>
         {% if form.errors %}

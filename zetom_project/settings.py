@@ -3,9 +3,14 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'change-me')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-ALLOWED_HOSTS: list[str] = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '0m-v^++5c(oy9)$fwgbn8-h7)(iw0deztbgb64p-2ux)j*0%l9')
+DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "false").strip().lower()
+DEBUG = DJANGO_DEBUG in ("1", "false", "yes", "on")
+
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -52,7 +57,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('POSTGRES_DB', 'zetom'),
         'USER': os.environ.get('POSTGRES_USER', 'zetom'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'zetom'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'admin'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
@@ -86,8 +91,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-SMTP_USER = os.environ.get('SMTP_USER', '')
-SMTP_PASS = os.environ.get('SMTP_PASS', '')
+SMTP_USER = os.environ.get('SMTP_USER', 'zetomtest@gmail.com')
+SMTP_PASS = os.environ.get('SMTP_PASS', 'tljc gfka qjba cgma')
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
