@@ -4,6 +4,7 @@ This project provides a simple contact form and admin panel implemented with Dja
 
 ## Prerequisites
 
+- виндовс тоже скачайте
 - Python 3.11+
 - PostgreSQL 13+
 - (Optional) A SMTP account if you want outbound email notifications
