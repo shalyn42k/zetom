@@ -1,0 +1,180 @@
+:root {
+    --green: #007f3d;
+    --white: #ffffff;
+    --black: #000000;
+}
+
+/* ===== Общие ===== */
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--black);
+    background: url('../img/zet2.avif') no-repeat center center fixed;
+    background-size: cover;
+}
+
+/* Белая прозрачная подложка */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: -1;
+}
+
+/* ===== Хедер ===== */
+.header {
+    display: flex;
+    align-items: center;
+    background-color: var(--green);
+    padding: 15px 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ✅ Логотип */
+.panel-logo {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 3px;
+}
+
+/* Контейнер заголовка и кнопок */
+.title-and-buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Заголовок */
+.site-title {
+    color: var(--black);
+    font-size: 30px;
+    font-weight: 800;
+    margin: 0;
+}
+
+/* Кнопки справа от Panel Admina */
+.navbar-inline {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    background-color: var(--white);
+    color: var(--black);
+    border: 2px solid var(--green);
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.nav-btn:hover {
+    background-color: var(--green);
+    color: var(--white);
+}
+
+/* ===== Контейнер ===== */
+.main-container {
+    width: 100%;
+    min-height: calc(100vh - 90px);
+    display: block;
+    padding: 30px;
+}
+
+/* ===== Таблица ===== */
+.panel {
+    background: rgba(255, 255, 255, 0.95);
+    width: 100%;
+    height: auto;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    color: var(--black);
+    vertical-align: middle;
+}
+
+.table th {
+    background-color: var(--green);
+    color: var(--white);
+    text-align: left;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ===== Кнопки в таблице ===== */
+.btn {
+    background-color: var(--green);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background-color: var(--white);
+    color: var(--black);
+    border: 2px solid var(--green);
+}
+
+/* ✅ Расстояние между кнопками */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+}
+
+/* ===== Темная тема ===== */
+body.dark {
+    background-color: #111;
+    color: var(--white);
+}
+
+body.dark .panel {
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+body.dark .table th {
+    background-color: #009f50;
+}
+
+body.dark .btn {
+    background-color: #009f50;
+}
