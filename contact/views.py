@@ -9,7 +9,13 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import ContactForm, EmailForm, LoginForm, MessageBulkActionForm
+from .forms import (
+    ContactForm,
+    EmailForm,
+    LoginForm,
+    MessageBulkActionForm,
+    TrashActionForm,
+)
 from .services import messages as message_service
 from .services.email_service import send_contact_email, send_email_with_attachment
 from .utils import get_language
@@ -68,19 +74,32 @@ def panel(request: HttpRequest) -> HttpResponse:
         return redirect(f"{reverse('contact:login')}?lang={lang}")
 
     queryset = message_service.get_messages()
+    deleted_queryset = message_service.get_deleted_messages()
+
     choices = [(str(message.id), f"#{message.id}") for message in queryset]
+    deleted_choices = [
+        (str(message.id), f"#{message.id} · {message.email}") for message in deleted_queryset
+    ]
 
     action_form = MessageBulkActionForm(request.POST or None, message_choices=choices)
     _localise_action_choices(action_form, lang)
     email_form = EmailForm()
+    trash_form = TrashActionForm(message_choices=deleted_choices, language=lang)
 
     if request.method == 'POST':
-        if 'action' in request.POST:
+        form_name = request.POST.get('form_name')
+        if form_name == 'bulk':
             action_form = MessageBulkActionForm(request.POST, message_choices=choices)
             _localise_action_choices(action_form, lang)
             if action_form.is_valid():
                 ids = [int(pk) for pk in action_form.cleaned_data['selected']]
                 _handle_action(action_form.cleaned_data['action'], ids, lang, request)
+                return redirect('contact:panel')
+        elif form_name == 'trash':
+            trash_form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
+            if trash_form.is_valid():
+                ids = [int(pk) for pk in trash_form.cleaned_data['selected']]
+                _handle_trash_action(trash_form.cleaned_data['action'], ids, lang, request)
                 return redirect('contact:panel')
         else:
             email_form = EmailForm(request.POST, request.FILES)
@@ -100,8 +119,10 @@ def panel(request: HttpRequest) -> HttpResponse:
     context = {
         'lang': lang,
         'messages_list': queryset,
+        'deleted_messages': deleted_queryset,
         'action_form': action_form,
         'email_form': email_form,
+        'trash_form': trash_form,
     }
     return render(request, 'contact/admin_panel.html', context)
 
@@ -130,7 +151,36 @@ def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequ
         )
     else:
         message_service.delete_messages(ids)
-        text = 'Zaznaczone wiadomości usunięto.' if lang == 'pl' else 'Selected messages deleted.'
+        text = (
+            'Zaznaczone wiadomości przeniesiono do kosza.'
+            if lang == 'pl'
+            else 'Selected messages moved to trash.'
+        )
+    messages.success(request, text)
+
+
+def _handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
+    if action == TrashActionForm.ACTION_RESTORE:
+        message_service.restore_messages(ids)
+        text = (
+            'Wybrane wiadomości przywrócono.'
+            if lang == 'pl'
+            else 'Selected messages restored.'
+        )
+    elif action == TrashActionForm.ACTION_DELETE:
+        message_service.purge_messages(ids)
+        text = (
+            'Wybrane wiadomości usunięto bezpowrotnie.'
+            if lang == 'pl'
+            else 'Selected messages permanently deleted.'
+        )
+    else:
+        message_service.purge_messages()
+        text = (
+            'Kosz opróżniono.'
+            if lang == 'pl'
+            else 'Trash emptied.'
+        )
     messages.success(request, text)
 
 

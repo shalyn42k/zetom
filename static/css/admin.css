@@ -107,6 +107,75 @@ body {
     gap: 32px;
 }
 
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(27, 109, 52, 0.2);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border 0.2s ease;
+}
+
+.button:hover,
+.button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.18);
+}
+
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+    transform: none;
+}
+
+.button--primary {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    border-color: transparent;
+}
+
+.button--ghost {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.button--outline {
+    background: transparent;
+}
+
+.button--success {
+    background: linear-gradient(135deg, rgba(47, 168, 79, 0.16), rgba(27, 109, 52, 0.32));
+    color: var(--green-dark);
+    border-color: rgba(27, 109, 52, 0.28);
+}
+
+.button--danger {
+    background: linear-gradient(135deg, rgba(215, 58, 52, 0.12), rgba(215, 58, 52, 0.28));
+    color: var(--danger);
+    border-color: rgba(215, 58, 52, 0.28);
+}
+
+.button--compact {
+    padding: 8px 20px;
+}
+
+.button--trash {
+    border-color: rgba(215, 58, 52, 0.28);
+    color: var(--danger);
+}
+
+.button--trash:hover,
+.button--trash:focus {
+    background: rgba(215, 58, 52, 0.12);
+}
+
 .alerts {
     display: grid;
     gap: 12px;
@@ -171,6 +240,7 @@ body {
     gap: 12px;
     flex: 0 0 auto;
 }
+
 
 .panel-form-actions .button {
     white-space: nowrap;
@@ -303,55 +373,7 @@ input[type="file"].form-input {
     height: 18px;
 }
 
-.actions {
-    display: flex;
-    gap: 10px;
-}
 
-.actions .button {
-    padding: 8px 18px;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.button--outline {
-    background: transparent;
-    border: 1px solid rgba(27, 109, 52, 0.24);
-    color: var(--text);
-}
-
-.button--primary {
-    background: linear-gradient(135deg, var(--green), var(--green-dark));
-    color: #fff;
-    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.22);
-}
-
-.button--compact {
-    padding: 8px 18px;
-}
-
-.button--trash {
-    border-color: rgba(215, 58, 52, 0.24);
-    color: var(--danger);
-}
-
-.button--trash:hover,
-.button--trash:focus {
-    border-color: rgba(215, 58, 52, 0.4);
-    color: var(--danger);
-}
-
-.button--danger {
-    background: rgba(215, 58, 52, 0.12);
-    color: var(--danger);
-    border: 1px solid rgba(215, 58, 52, 0.28);
-}
-
-.actions .button:hover,
-.actions .button:focus,
 .form-submit:hover,
 .form-submit:focus {
     transform: translateY(-2px);
@@ -368,6 +390,179 @@ input[type="file"].form-input {
     cursor: pointer;
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.22);
     transition: transform 0.2s ease;
+}
+
+.form-error--inline {
+    margin: 0;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(17, 41, 27, 0.45);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal.is-visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal__backdrop {
+    position: absolute;
+    inset: 0;
+}
+
+.modal__dialog {
+    position: relative;
+    width: min(720px, 100%);
+    max-height: calc(100vh - 64px);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 28px;
+    box-shadow: 0 24px 58px rgba(8, 35, 18, 0.2);
+    display: grid;
+    padding: clamp(18px, 4vw, 28px);
+    gap: 20px;
+}
+
+.modal__close {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    border: none;
+    background: rgba(47, 168, 79, 0.14);
+    color: var(--green-dark);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.modal__close:hover,
+.modal__close:focus {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+}
+
+.modal__title {
+    margin: 0;
+    font-size: clamp(22px, 2vw, 28px);
+    color: var(--green-dark);
+}
+
+.modal__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(47, 168, 79, 0.1);
+    color: var(--green-dark);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.checkbox-pill input {
+    width: 18px;
+    height: 18px;
+}
+
+.checkbox-pill:hover,
+.checkbox-pill:focus-within {
+    background: rgba(47, 168, 79, 0.18);
+}
+
+.trash-list {
+    display: grid;
+    gap: 12px;
+    max-height: clamp(240px, 40vh, 360px);
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.trash-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(27, 109, 52, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.trash-item:hover,
+.trash-item:focus-within {
+    border-color: rgba(27, 109, 52, 0.32);
+    box-shadow: 0 12px 28px rgba(18, 64, 30, 0.18);
+    transform: translateY(-2px);
+}
+
+.trash-item__checkbox {
+    width: 18px;
+    height: 18px;
+}
+
+.trash-item__content {
+    display: grid;
+    gap: 6px;
+}
+
+.trash-item__meta {
+    font-weight: 600;
+    color: var(--green-dark);
+}
+
+.trash-item__preview {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.trash-item__date {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.trash-empty {
+    margin: 0;
+    padding: 32px 0;
+    text-align: center;
+    color: var(--muted);
+}
+
+.modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.has-modal {
+    overflow: hidden;
 }
 
 @media (max-width: 900px) {
