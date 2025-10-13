@@ -19,12 +19,13 @@ class ContactMessage(models.Model):
     email = models.EmailField()
     company = models.CharField(max_length=50)
     message = models.TextField()
+
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_NEW, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.email})"
