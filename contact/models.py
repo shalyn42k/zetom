@@ -21,6 +21,7 @@ class ContactMessage(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_NEW, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         ordering = ['-created_at']

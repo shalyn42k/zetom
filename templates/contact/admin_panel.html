@@ -9,8 +9,73 @@
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body>
+<body{% if trash_form.errors %} class="has-modal"{% endif %}>
 <div class="overlay"></div>
+<div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
+    <div class="modal__backdrop" data-trash-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
+        <button type="button" class="modal__close" data-trash-close aria-label="{% if lang == 'pl' %}Zamknij kosz{% else %}Close trash{% endif %}">×</button>
+        <h2 class="modal__title" id="trash-title">{% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}</h2>
+        <form method="post" class="modal__form" data-trash-form>
+            {% csrf_token %}
+            {{ trash_form.form_name }}
+            {{ trash_form.action }}
+            <div class="modal__toolbar">
+                <label class="checkbox-pill">
+                    <input type="checkbox" data-trash-select-all {% if not deleted_messages %}disabled{% endif %}>
+                    <span>{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}</span>
+                </label>
+                {% if trash_form.non_field_errors %}
+                    <div class="form-error form-error--inline">{{ trash_form.non_field_errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="trash-list" data-trash-list>
+                {% for message_item in deleted_messages %}
+                    <label class="trash-item">
+                        <input type="checkbox"
+                               name="selected"
+                               value="{{ message_item.id }}"
+                               class="trash-item__checkbox"
+                               data-trash-row>
+                        <span class="trash-item__content">
+                            <span class="trash-item__meta">#{{ message_item.id }} · {{ message_item.email }}</span>
+                            <span class="trash-item__preview">{{ message_item.message|truncatechars:120 }}</span>
+                        </span>
+                        <span class="trash-item__date">{{ message_item.created_at|date:'Y-m-d H:i' }}</span>
+                    </label>
+                {% empty %}
+                    <p class="trash-empty">{% if lang == 'pl' %}Kosz jest pusty.{% else %}Trash is empty.{% endif %}</p>
+                {% endfor %}
+            </div>
+            <div class="modal__actions">
+                <button type="submit"
+                        class="button button--success"
+                        data-trash-action
+                        data-trash-action-value="restore"
+                        data-requires-selection="true"
+                        {% if not deleted_messages %}disabled{% endif %}>
+                    {% if lang == 'pl' %}Przywróć zaznaczone{% else %}Restore selected{% endif %}
+                </button>
+                <button type="submit"
+                        class="button button--danger"
+                        data-trash-action
+                        data-trash-action-value="delete"
+                        data-requires-selection="true"
+                        {% if not deleted_messages %}disabled{% endif %}>
+                    {% if lang == 'pl' %}Usuń zaznaczone{% else %}Delete selected{% endif %}
+                </button>
+                <button type="submit"
+                        class="button button--outline"
+                        data-trash-action
+                        data-trash-action-value="empty"
+                        data-requires-selection="false"
+                        {% if not deleted_messages %}disabled{% endif %}>
+                    {% if lang == 'pl' %}Opróżnij kosz{% else %}Empty trash{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <header class="topbar">
     <div class="topbar-left">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM" class="topbar-logo">
@@ -50,6 +115,7 @@
               data-bulk-form
               data-empty-selection="{% if lang == 'pl' %}Wybierz co najmniej jedną wiadomość.{% else %}Select at least one message.{% endif %}">
             {% csrf_token %}
+            <input type="hidden" name="form_name" value="bulk">
             <div class="panel-form-row">
                 <div class="panel-form-field">
                     <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if lang == 'pl' %}Akcja{% else %}Action{% endif %}</label>
@@ -60,7 +126,7 @@
                     <button type="submit" class="button button--primary button--compact" data-bulk-submit>
                         {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
                     </button>
-                    <button type="button" class="button button--outline button--compact button--trash">
+                    <button type="button" class="button button--ghost button--compact button--trash" data-trash-open>
                         {% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}
                     </button>
                 </div>
