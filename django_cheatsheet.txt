@@ -1,0 +1,177 @@
+
+Django & Project Commands — Quick Cheat Sheet (Windows PowerShell)
+=================================================================
+
+Virtual environment (Windows PowerShell)
+----------------------------------------
+# Create venv in current folder
+python -m venv .venv
+
+# Activate / Deactivate
+.\.venv\Scripts\Activate.ps1
+deactivate
+
+# Upgrade pip
+python -m pip install --upgrade pip
+
+# Install from requirements
+pip install -r requirements.txt
+
+Environment variables (session-only)
+------------------------------------
+$env:DJANGO_DEBUG="1"                 # enable DEBUG
+$env:DJANGO_ALLOWED_HOSTS="localhost,127.0.0.1"
+$env:DJANGO_SETTINGS_MODULE="zetom_project.settings"
+
+# SMTP / Email (example)
+$env:SMTP_SERVER="smtp.gmail.com"
+$env:SMTP_PORT="587"
+$env:SMTP_USER="user@example.com"
+$env:SMTP_PASS="app_password"
+
+Django management basics
+------------------------
+python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
+
+# Create app
+python manage.py startapp contact
+
+# Superuser
+python manage.py createsuperuser
+
+# Django shell
+python manage.py shell
+
+# Check project for issues
+python manage.py check
+python manage.py check --deploy
+
+Static files
+------------
+# Collect static for production
+python manage.py collectstatic
+
+Migrations & database (SQLite)
+------------------------------
+# Make and apply migrations
+python manage.py makemigrations
+python manage.py makemigrations contact
+python manage.py migrate
+
+# See migration plan/status
+python manage.py showmigrations
+python manage.py showmigrations contact
+
+# See SQL for a migration
+python manage.py sqlmigrate contact 0001
+
+# Open DB shell (SQLite)
+python manage.py dbshell
+
+# Dump/Load fixtures
+python manage.py dumpdata contact.ContactMessage --indent 2 > fixtures/contact_messages.json
+python manage.py loaddata fixtures/contact_messages.json
+
+# Reset local DB (DANGER: deletes all data)
+Remove-Item .\db.sqlite3
+python manage.py migrate
+
+# Reset app migrations from scratch (DEV ONLY)
+Remove-Item -Recurse -Force .\contact\migrations\*.py -ErrorAction SilentlyContinue
+# keep __init__.py or recreate it:
+New-Item .\contact\migrations\__init__.py -ItemType File -Force | Out-Null
+python manage.py makemigrations contact
+python manage.py migrate
+
+Performance/dev utilities
+-------------------------
+# Create fake data with Faker (if you added the command)
+python manage.py seed_contact_messages --count 5000 --chunk 1000 --locale pl_PL
+
+# Run tests
+python manage.py test
+
+# Start profiling runserver (3rd-party packages may be needed)
+# pip install django-silk or django-debug-toolbar (setup required)
+
+Internationalization (optional)
+-------------------------------
+python manage.py makemessages -l pl
+python manage.py compilemessages
+
+Admin & URLs
+------------
+# Open admin (after createsuperuser)
+# http://127.0.0.1:8000/admin/
+
+# App URLs example (contact/urls.py)
+# from django.urls import path
+# urlpatterns = [ path('', views.index, name='index') ]
+
+Static settings (dev vs prod) reminders
+---------------------------------------
+# DEV (DEBUG=True):
+#   STATIC_URL = '/static/'
+#   STATICFILES_DIRS = [BASE_DIR / 'static']
+# PROD (DEBUG=False):
+#   STATIC_ROOT = BASE_DIR / 'staticfiles'
+#   python manage.py collectstatic
+#   Use WhiteNoise or web server to serve STATIC_ROOT
+
+WhiteNoise (prod)
+-----------------
+pip install whitenoise
+# settings.py (only when DEBUG=False)
+# MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+Useful PowerShell/file ops
+--------------------------
+# Delete files/folders
+Remove-Item path\to\file.txt
+Remove-Item -Recurse -Force path\to\folder
+
+# Find files by name
+Get-ChildItem -Recurse -Filter "settings.py"
+
+# Show who is using a TCP port (e.g., 8000)
+netstat -ano | Select-String ":8000"
+# Kill a process by PID
+Stop-Process -Id <PID> -Force
+
+Git basics
+----------
+git init
+git status
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/user/repo.git
+git push -u origin main
+
+Common troubleshooting
+----------------------
+# Too many fields in POST
+# Increase in settings.py:
+# DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
+
+# Missing column after adding model field
+python manage.py makemigrations
+python manage.py migrate
+
+# Static not loading in DEV
+# Ensure STATICFILES_DIRS points to BASE_DIR/static and files exist
+# Check console for 404 on /static/css/public.css
+
+# Whitenoise import error in PROD
+pip install whitenoise
+# or run with DEBUG=1 locally
+
+# Clear Django cache (if using locmem)
+python manage.py shell -c "from django.core.cache import cache; cache.clear(); print('cache cleared')"
+
+Versions
+--------
+python --version
+python -m django --version
+pip freeze
