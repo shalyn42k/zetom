@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import ContactForm, EmailForm, LoginForm, MessageBulkActionForm
 from .services import messages as message_service
@@ -54,6 +54,7 @@ def login(request: HttpRequest) -> HttpResponse:
     return render(request, 'contact/admin_login.html', {'form': form, 'lang': lang})
 
 
+@require_POST
 def logout(request: HttpRequest) -> HttpResponse:
     lang = request.session.get('lang', settings.DEFAULT_LANGUAGE)
     request.session.flush()

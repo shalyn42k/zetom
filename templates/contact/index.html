@@ -1,197 +1,208 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZETOM KATOWICE</title>
-    <link rel="shortcut icon" href="./img/zet1.png" type="image/x-icon"> 
-    <link rel="stylesheet" href="info1.css" type="text/css">
-     <link rel="stylesheet" href="hero-section.css" type="text/css">
-     <link rel="stylesheet" href="info-section.css" type="text/css">
-      <link rel="stylesheet" href="style1.css" type="text/css">
-      <link rel="stylesheet" href="table.css" type="text/css">
-      <link rel="stylesheet" href="tablica.css" type="text/css">
-      <link rel="stylesheet" href="niz.css" type="text/css">
-
+    <title>{% if lang == 'pl' %}ZETOM Katowice – Badania i certyfikacja{% else %}ZETOM Katowice – Testing & Certification{% endif %}</title>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
 </head>
-
-
 <body>
-</div>
-    <!-- ЛОГО -->
-    <header class="header">
-      <div class="dropdown">
-        <button class="dropbtn">Menu</button>
-        <div class="dropdown-content">
-          <a href="index.html">Strona główna</a>
-         <a href="#contact">Kontakt</a>
-          <a href=>Admin</a>
+<header class="site-header">
+    <div class="site-branding">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+        <div>
+            <h1 class="site-title">ZETOM Katowice</h1>
+            <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
         </div>
-
-      </div>
-      
-        <img src="./img/zet3.avif" alt="Logo" class="logo">
-        <div class="contact-container">
-            <div class="contact-block">
-                <img src="./img/telef.png" alt="Телефон" class="icon">
-                <p class="contact-text">+48 111 111 111</p>
-            </div>
-            <div class="contact-block">
-                <img src="./img/mail.png" alt="Почта" class="icon">
-                <p class="contact-text">sigma123@gmail.com</p>
-            </div>
-        </div>
-    </header>
-
-    <section class="hero-section">
-        <img src="img/zet2.avif" alt="ZETOM Katowice" class="background-image">
-        <div class="overlay-text">
-          <h1 class="main-title">Zapoznaj się z naszą ofertą</h1>
-            
-<div class="contact-form" >
-
-  <form action="тут ссылка на то что должно обрабатывать запрос" class="table-form">
-
-    <div class="row">
-      <input type="text" placeholder="Imię" required>
-      <input type="text" placeholder="Nazwisko" required>
     </div>
+    <nav class="site-nav">
+        <a href="#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
+        <a href="#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
+        <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
+    </nav>
+    <div class="lang-switcher">
+        <a href="{% url 'contact:index' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+        <a href="{% url 'contact:index' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+    </div>
+</header>
 
-    <input type="tel" placeholder="Telefon" required>
-    <input type="email" placeholder="E-mail" required>
-
-    
-    <select id="firma" required>
-      <option value="" disabled selected>Wybierz firmę</option>
-      <option value="firma1">Firma 1</option>
-      <option value="firma2">Firma 2</option>
-      <option value="firma3">Firma 3</option>
-      <option value="inna">Inna</option>
-    </select>
-
-    
-   
-
-    <textarea placeholder="Treść wiadomości" required></textarea>
-  <input type="file" placeholder="Załącz plik">
-    <button type="submit">Wyślij</button>
-  </form>
-
-     
-
-</div>
-
-
+<section class="hero" id="hero">
+    <div class="hero-content">
+        <h2 class="hero-title">{% if lang == 'pl' %}Zapoznaj się z naszą ofertą{% else %}Discover our services{% endif %}</h2>
+        <p class="hero-text">
+            {% if lang == 'pl' %}
+                Zespół ekspertów ZETOM wspiera producentów i dystrybutorów w zapewnianiu jakości
+                oraz bezpieczeństwa produktów. Oferujemy kompleksowe badania laboratoryjne,
+                certyfikację i doradztwo techniczne.
+            {% else %}
+                The ZETOM team helps manufacturers and distributors deliver safe, compliant products.
+                We provide comprehensive laboratory testing, certification services and technical consultancy.
+            {% endif %}
+        </p>
+        <div class="hero-actions">
+            <a href="#contact" class="button button--primary">{% if lang == 'pl' %}Skontaktuj się z nami{% else %}Contact us{% endif %}</a>
+            <a href="#services" class="button button--ghost">{% if lang == 'pl' %}Poznaj nasze usługi{% else %}Explore services{% endif %}</a>
         </div>
-    </section>
-
-        <section class="info-section">
-        <h2 class="section-title1 animate-left">O firmie <span style="color: green;">ZETOM</span></h2>
-        <p class="section-text1 animate-left">
-            ZETOM Katowice to nowoczesne centrum badań, certyfikacji i kontroli technicznej,<br> 
-            powstałe w celu zapewnienia najwyższego poziomu bezpieczeństwa i jakości produktów. <br>
-            Świadczymy profesjonalne usługi w zakresie badań, oceny zgodności oraz certyfikacji,<br>
-            spełniając wymagania międzynarodowych norm.
-        </p>
-
-        <h2 class="section-title2 animate-right">Nasze doświadczenie i zaplecze</h2>
-        <p class="section-text2 animate-right">
-            Nasi specjaliści posiadają wieloletnie doświadczenie i korzystają z nowoczesnego sprzętu, 
-            aby zagwarantować rzetelność i dokładność wszystkich wykonywanych badań. Współpracujemy z producentami, 
-            dystrybutorami oraz instytucjami państwowymi, pomagając wprowadzaniu na rynek produktów zgodnych 
-            z wymaganiami jakości i bezpieczeństwa.
-        </p>
-
-
-        <h3 class="section-title3 animate-left">Dlaczego warto wybrać <span>ZETOM</span> Katowice?</h3>
-        <ul class="section-text3 animate-left">
-            <li>Wysokie kwalifikacje i doświadczenie ekspertów.</li>
-            <li>Laboratoria wyposażone w nowoczesne technologie.</li>
-            <li>Certyfikaty uznawane w Polsce i poza jej granicami.</li>
-            <li>Indywidualne podejście do każdego klienta.</li>
-            <li>Szybkie terminy realizacji usług.</li>
-            <li>Doradztwo techniczne na każdym etapie.</li>
-        </ul>
+    </div>
 </section>
 
-    
-</div>
+<main>
+    <section class="section" id="contact">
+        <div class="section-header">
+            <h2 class="section-title">{% if lang == 'pl' %}Napisz do nas{% else %}Send us a message{% endif %}</h2>
+            <p class="section-text">
+                {% if lang == 'pl' %}
+                    Wypełnij formularz, a nasz zespół skontaktuje się z Tobą w ciągu jednego dnia roboczego.
+                {% else %}
+                    Fill in the form and our team will get back to you within one business day.
+                {% endif %}
+            </p>
+        </div>
 
+        {% if messages %}
+            <div class="message-list">
+                {% for msg in messages %}
+                    {% with tags=msg.tags %}
+                        <div class="alert {% if 'success' in tags %}alert-success{% elif 'error' in tags or 'warning' in tags %}alert-error{% else %}alert-success{% endif %}">
+                            {{ msg }}
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        {% endif %}
 
-</div>
+        <div class="contact-section">
+            <aside class="contact-card">
+                <h3>{% if lang == 'pl' %}Dane kontaktowe{% else %}Contact details{% endif %}</h3>
+                <div class="contact-details">
+                    <div>
+                        <strong>{% if lang == 'pl' %}Adres{% else %}Address{% endif %}</strong><br>
+                        Zakłady Badań i Atestacji „ZETOM”<br>
+                        ul. Ks. Bpa H. Bednorza 17,<br>
+                        40-384 Katowice
+                    </div>
+                    <div>
+                        <strong>{% if lang == 'pl' %}Godziny pracy{% else %}Opening hours{% endif %}</strong><br>
+                        07:00 – 15:00
+                    </div>
+                    <div>
+                        <strong>Tel.</strong><br>
+                        <a href="tel:+48322569257">32 256 92 57</a><br>
+                        <a href="tel:+48322569369">32 256 93 69</a>
+                    </div>
+                    <div>
+                        <strong>E-mail</strong><br>
+                        <a href="mailto:biuro@zetom.eu">biuro@zetom.eu</a>
+                    </div>
+                </div>
+            </aside>
 
-
-</div>
-        
-
-
-        
-
-
-
-  
-</div>
-
-<h4 class="b233">Zakłady Badań i Atestacji „ZETOM” <br>
-im. Prof. F. Stauba w Katowicach sp. z o.o. <br>
-ul. Ks. Bpa H. Bednorza 17, <br>
-40-384 Katowice </h4>
-<p class="b234">godziny otwarcia: 07:00-15:00 <br><br> 
-centrala: 32 256-92-57 <br>
-sekretariat: 32 256-93-69 <br>
-e-mail: biuro@zetom.eu</p>
-<img src="./img/niz.png" alt="fon" class="niz123">
-<body>  
-  
-
-  
-
-
-
-
-
-  
-        
-
-
-
-<script>
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, {
-    threshold: 0.5
-  });
-
-  // Анимация слева направо
-  document.querySelectorAll('.animate-left').forEach(el => {
-    observer.observe(el);
-  });
-
-  // Анимация справа налево
-  document.querySelectorAll('.animate-right').forEach(el => {
-    observer.observe(el);
-  });
-
- 
-
-
-
-   
-
-</script>
-
-
-
-
-    
-
+            <form method="post" action="{% url 'contact:index' %}?lang={{ lang }}" class="contact-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="form-error">{{ form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="form-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div class="form-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.phone.id_for_label }}" class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<div class="form-error">{{ form.phone.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">E-mail</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</label>
+                        {{ form.company }}
+                        {% if form.company.errors %}<div class="form-error">{{ form.company.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field" style="grid-column: 1 / -1;">
+                        <label for="{{ form.message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</label>
+                        {{ form.message }}
+                        {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="button button--primary">{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
+                </div>
+            </form>
+        </div>
     </section>
 
+    <section class="section about-section" id="about">
+        <div class="section-header">
+            <h2 class="section-title">{% if lang == 'pl' %}Dlaczego ZETOM?{% else %}Why ZETOM?{% endif %}</h2>
+            <p class="section-text">
+                {% if lang == 'pl' %}
+                    Od ponad 75 lat wspieramy polski przemysł w zakresie badań jakościowych i certyfikacji.
+                    Łączymy doświadczenie ekspertów z nowoczesnym zapleczem laboratoryjnym.
+                {% else %}
+                    For over 75 years we have been supporting Polish industry with quality testing and certification.
+                    We combine expert knowledge with state-of-the-art laboratory facilities.
+                {% endif %}
+            </p>
+        </div>
+        <div class="info-grid" id="services">
+            <article class="info-card">
+                <h3>{% if lang == 'pl' %}Badania laboratoryjne{% else %}Laboratory testing{% endif %}</h3>
+                <p>{% if lang == 'pl' %}Nowoczesne laboratoria pomiarowe i środowiskowe dla szerokiej gamy produktów.{% else %}Modern measurement and environmental laboratories for a wide range of products.{% endif %}</p>
+            </article>
+            <article class="info-card">
+                <h3>{% if lang == 'pl' %}Certyfikacja{% else %}Certification{% endif %}</h3>
+                <p>{% if lang == 'pl' %}Wsparcie w ocenie zgodności, dokumentacji technicznej i znakowaniu CE.{% else %}Support with conformity assessment, technical documentation and CE marking.{% endif %}</p>
+            </article>
+            <article class="info-card">
+                <h3>{% if lang == 'pl' %}Doradztwo techniczne{% else %}Technical advisory{% endif %}</h3>
+                <p>{% if lang == 'pl' %}Indywidualne konsultacje, audyty i szkolenia dostosowane do potrzeb klienta.{% else %}Tailor-made consultations, audits and workshops for your organisation.{% endif %}</p>
+            </article>
+            <article class="info-card">
+                <h3>{% if lang == 'pl' %}Zespół ekspertów{% else %}Expert team{% endif %}</h3>
+                <ul>
+                    <li>{% if lang == 'pl' %}Ponad 40 specjalistów z wieloletnim doświadczeniem.{% else %}Over 40 specialists with long-standing experience.{% endif %}</li>
+                    <li>{% if lang == 'pl' %}Uznane certyfikaty i akredytacje.{% else %}Recognised certificates and accreditations.{% endif %}</li>
+                    <li>{% if lang == 'pl' %}Podejście partnerskie na każdym etapie projektu.{% else %}Partnership approach at every project stage.{% endif %}</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+</main>
 
-<body>
-    
+<footer class="footer">
+    <div class="footer-content">
+        <h2 class="footer-title">ZETOM Katowice</h2>
+        <p>{% if lang == 'pl' %}Razem zadbajmy o bezpieczeństwo i jakość Twoich produktów.{% else %}Let’s ensure the safety and quality of your products together.{% endif %}</p>
+        <div class="footer-columns">
+            <div>
+                <strong>{% if lang == 'pl' %}Adres{% else %}Address{% endif %}</strong><br>
+                ul. Ks. Bpa H. Bednorza 17<br>
+                40-384 Katowice
+            </div>
+            <div>
+                <strong>{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</strong><br>
+                <a href="tel:+48322569257">32 256 92 57</a><br>
+                <a href="mailto:biuro@zetom.eu">biuro@zetom.eu</a>
+            </div>
+            <div>
+                <strong>{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</strong><br>
+                <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Zaloguj się{% else %}Log in{% endif %}</a>
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
