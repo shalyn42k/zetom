@@ -1,12 +1,11 @@
 # Zetom Django Project
 
-This project provides a simple contact form and admin panel implemented with Django and PostgreSQL.
+This project provides a simple contact form and admin panel implemented with Django and SQLite.
 
 ## Prerequisites
 
 - виндовс тоже скачайте
 - Python 3.11+
-- PostgreSQL 13+
 - (Optional) A SMTP account if you want outbound email notifications
 
 ## Initial setup
@@ -31,30 +30,23 @@ This project provides a simple contact form and admin panel implemented with Dja
 4. **Configure environment variables**
    Copy `.env.example` to `.env` and adjust values as needed. The important ones are:
    - `DJANGO_SECRET_KEY`: any random string for cryptographic signing.
-   - `POSTGRES_*`: connection parameters for your PostgreSQL instance.
+   - `SQLITE_NAME` (optional): custom path/name for the SQLite database file. Defaults to `db.sqlite3` in the project root.
    - `ADMIN_PASSWORD`: password used to access the admin panel at `/login/`.
    - `SMTP_*`: mail server settings if you want to send emails.
 
    Django will read these variables from the environment. If you use a tool like [direnv](https://direnv.net/) or export them manually, ensure they are available before running management commands. You can also load the `.env` file with `export $(cat .env | xargs)` on Unix shells.
 
-5. **Prepare the PostgreSQL database**
-   ```bash
-   # create the database role and database (adjust names/passwords as needed)
-   createuser --interactive --pwprompt zetom
-   createdb -O zetom zetom
-   ```
-
-6. **Run migrations**
+5. **Run migrations**
    ```bash
    python manage.py migrate
    ```
 
-7. **Collect static files (optional for local development)**
+6. **Collect static files (optional for local development)**
    ```bash
    python manage.py collectstatic
    ```
 
-8. **Start the development server**
+7. **Start the development server**
    ```bash
    python manage.py runserver
    ```
