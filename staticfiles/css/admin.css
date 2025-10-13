@@ -344,6 +344,113 @@ body {
     color: var(--muted);
 }
 
+.pagination {
+    margin-top: 24px;
+    display: grid;
+    gap: 18px;
+    justify-items: center;
+}
+
+.pagination__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.pagination__button,
+.pagination__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(27, 109, 52, 0.22);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border 0.2s ease;
+}
+
+.pagination__button:hover,
+.pagination__button:focus,
+.pagination__page:hover,
+.pagination__page:focus {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(47, 168, 79, 0.2), rgba(27, 109, 52, 0.32));
+    color: var(--green-dark);
+    border-color: transparent;
+    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.16);
+}
+
+.pagination__button--disabled,
+.pagination__button--disabled:hover,
+.pagination__button--disabled:focus {
+    background: rgba(255, 255, 255, 0.6);
+    color: rgba(29, 35, 39, 0.4);
+    border-color: rgba(27, 109, 52, 0.12);
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.pagination__list {
+    list-style: none;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.pagination__ellipsis {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.pagination__page--active {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 14px 28px rgba(18, 64, 30, 0.2);
+    cursor: default;
+}
+
+.pagination__goto {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination__label {
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.pagination__input {
+    width: 92px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(27, 109, 52, 0.24);
+    background: rgba(255, 255, 255, 0.96);
+    font-weight: 600;
+    text-align: center;
+}
+
+.pagination__input:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.2);
+}
+
+.pagination__submit {
+    min-width: 80px;
+}
+
 .email-card {
     background: var(--surface);
     border-radius: 20px;

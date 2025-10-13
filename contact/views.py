@@ -4,6 +4,7 @@ from typing import Iterable
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -76,7 +77,11 @@ def panel(request: HttpRequest) -> HttpResponse:
     queryset = message_service.get_messages()
     deleted_queryset = message_service.get_deleted_messages()
 
-    choices = [(str(message.id), f"#{message.id}") for message in queryset]
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get('page') or request.POST.get('page') or 1
+    page_obj = paginator.get_page(page_number)
+
+    choices = [(str(message.id), f"#{message.id}") for message in page_obj.object_list]
     deleted_choices = [
         (str(message.id), f"#{message.id} · {message.email}") for message in deleted_queryset
     ]
@@ -94,13 +99,13 @@ def panel(request: HttpRequest) -> HttpResponse:
             if action_form.is_valid():
                 ids = [int(pk) for pk in action_form.cleaned_data['selected']]
                 _handle_action(action_form.cleaned_data['action'], ids, lang, request)
-                return redirect('contact:panel')
+                return redirect(_panel_redirect_url(lang, page_obj.number))
         elif form_name == 'trash':
             trash_form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
             if trash_form.is_valid():
                 ids = [int(pk) for pk in trash_form.cleaned_data['selected']]
                 _handle_trash_action(trash_form.cleaned_data['action'], ids, lang, request)
-                return redirect('contact:panel')
+                return redirect(_panel_redirect_url(lang, page_obj.number))
         else:
             email_form = EmailForm(request.POST, request.FILES)
             if email_form.is_valid():
@@ -114,17 +119,32 @@ def panel(request: HttpRequest) -> HttpResponse:
                 )
                 success_message = 'E-mail został wysłany.' if lang == 'pl' else 'Email sent.'
                 messages.success(request, success_message)
-                return redirect('contact:panel')
+                return redirect(_panel_redirect_url(lang, page_obj.number))
 
     context = {
         'lang': lang,
-        'messages_list': queryset,
+        'messages_page': page_obj,
+        'paginator': paginator,
+        'page_range': list(paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)),
         'deleted_messages': deleted_queryset,
         'action_form': action_form,
         'email_form': email_form,
         'trash_form': trash_form,
+        'current_page': page_obj.number,
     }
     return render(request, 'contact/admin_panel.html', context)
+
+
+def _panel_redirect_url(lang: str, page_number: int | str | None) -> str:
+    base_url = reverse('contact:panel')
+    params = []
+    if lang:
+        params.append(f"lang={lang}")
+    if page_number:
+        params.append(f"page={page_number}")
+    if not params:
+        return base_url
+    return f"{base_url}?{'&'.join(params)}"
 
 
 def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
