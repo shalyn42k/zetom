@@ -35,10 +35,14 @@ class LoginForm(forms.Form):
 
 
 class MessageBulkActionForm(forms.Form):
-    ACTION_MARK_READ = "mark_read"
+    ACTION_MARK_NEW = "mark_new"
+    ACTION_MARK_IN_PROGRESS = "mark_in_progress"
+    ACTION_MARK_READY = "mark_ready"
     ACTION_DELETE = "delete"
     ACTION_CHOICES = (
-        (ACTION_MARK_READ, "Mark as read"),
+        (ACTION_MARK_NEW, "Mark as new"),
+        (ACTION_MARK_IN_PROGRESS, "Mark as in progress"),
+        (ACTION_MARK_READY, "Mark as ready"),
         (ACTION_DELETE, "Delete"),
     )
 
