@@ -1,105 +1,154 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admina</title>
-    <link rel="stylesheet" href="templates/css/admin-style.css">
+    <title>{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</title>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
 <body>
-    <div class="overlay"></div>
+<div class="overlay"></div>
+<header class="topbar">
+    <div class="topbar-left">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM" class="topbar-logo">
+        <div>
+            <h1 class="topbar-title">{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</h1>
+            <p class="site-subtitle">{% if lang == 'pl' %}Zarządzaj wiadomościami od klientów{% else %}Manage customer enquiries{% endif %}</p>
+        </div>
+    </div>
+    <nav class="topbar-nav">
+        <a class="nav-link" href="{% url 'contact:index' %}?lang={{ lang }}">{% if lang == 'pl' %}Strona główna{% else %}Website{% endif %}</a>
+        <a class="nav-link" href="?lang=pl">PL</a>
+        <a class="nav-link" href="?lang=en">EN</a>
+        <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
+            {% csrf_token %}
+            <button type="submit" class="nav-button">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
+        </form>
+    </nav>
+</header>
 
-    <!-- Хедер -->
-    <header class="header">
-        <div class="header-left">
-            <!-- ✅ Логотип слева -->
-            <img src="static/img/zet3.avif" alt="Logo Zet3" class="panel-logo">
+<main class="main">
+    {% if messages %}
+        <div class="alerts">
+            {% for msg in messages %}
+                {% with tags=msg.tags %}
+                    <div class="alert {% if 'success' in tags %}alert-success{% elif 'error' in tags or 'warning' in tags %}alert-error{% else %}alert-success{% endif %}">
+                        {{ msg }}
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    {% endif %}
 
-            <!-- ✅ Заголовок и кнопки справа -->
-            <div class="title-and-buttons">
-                <h1 class="site-title">Panel Admina</h1>
-                <div class="navbar-inline">
-                    <button class="nav-btn">🌐 Motyw</button>
-                    <button class="nav-btn">Kosz</button>
-                    <button class="nav-btn">Wyloguj</button>
+    <section class="panel">
+        <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
+        <form method="post"
+              class="panel-form"
+              data-bulk-form
+              data-empty-selection="{% if lang == 'pl' %}Wybierz co najmniej jedną wiadomość.{% else %}Select at least one message.{% endif %}">
+            {% csrf_token %}
+            <div class="panel-form-row">
+                <div>
+                    <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if lang == 'pl' %}Akcja{% else %}Action{% endif %}</label>
+                    {{ action_form.action }}
+                    {% if action_form.action.errors %}<div class="form-error">{{ action_form.action.errors.0 }}</div>{% endif %}
+                </div>
+                <button type="submit" class="button button--primary" data-bulk-submit>
+                    {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
+                </button>
+            </div>
+            {% if action_form.selected.errors %}
+                <div class="form-error">{{ action_form.selected.errors.0 }}</div>
+            {% endif %}
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}"></th>
+                        <th>ID</th>
+                        <th>{% if lang == 'pl' %}Data{% else %}Date{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Klient{% else %}Customer{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</th>
+                        <th>E-mail</th>
+                        <th>{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Status{% else %}Status{% endif %}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for message_item in messages_list %}
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       name="selected"
+                                       value="{{ message_item.id }}"
+                                       class="table-checkbox"
+                                       data-row-checkbox
+                                       aria-label="{% if lang == 'pl' %}Zaznacz wiadomość o ID {{ message_item.id }}{% else %}Select message with ID {{ message_item.id }}{% endif %}">
+                            </td>
+                            <td>#{{ message_item.id }}</td>
+                            <td>{{ message_item.created_at|date:'Y-m-d H:i' }}</td>
+                            <td>{{ message_item.first_name }} {{ message_item.last_name }}</td>
+                            <td><a href="tel:{{ message_item.phone }}">{{ message_item.phone }}</a></td>
+                            <td><a href="mailto:{{ message_item.email }}">{{ message_item.email }}</a></td>
+                            <td>{{ message_item.company }}</td>
+                            <td>{{ message_item.message|linebreaksbr }}</td>
+                            <td>
+                                {% if message_item.is_read %}
+                                    <span class="badge badge--muted">{% if lang == 'pl' %}Przeczytane{% else %}Read{% endif %}</span>
+                                {% else %}
+                                    <span class="badge badge--success">{% if lang == 'pl' %}Nowe{% else %}New{% endif %}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="9" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </section>
+
+    <section class="email-card">
+        <h2>{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="send_email" value="1">
+            {% if email_form.non_field_errors %}
+                <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
+            {% endif %}
+            <div class="email-grid">
+                <div>
+                    <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
+                    {{ email_form.to_email }}
+                    {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
+                    {{ email_form.subject }}
+                    {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
+                    {{ email_form.body }}
+                    {% if email_form.body.errors %}<div class="form-error">{{ email_form.body.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
+                    {{ email_form.attachment }}
+                    {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
                 </div>
             </div>
-        </div>
-    </header>
-
-    <!-- Контент -->
-    <main class="main-container">
-        <section class="panel">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="select-all"></th>
-                        <th>ID</th>
-                        <th>Data</th>
-                        <th>Klient</th>
-                        <th>Telefon</th>
-                        <th>Email</th>
-                        <th>Firma</th>
-                        <th>Treść</th>
-                        <th>Status</th>
-                        <th>Pobierz PDF</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="checkbox" class="row-select"></td>
-                        <td>1</td>
-                        <td>2025-10-08</td>
-                        <td>Jan Kowalski</td>
-                        <td>+48 123 456 789</td>
-                        <td>jan@example.com</td>
-                        <td>Zetom Sp. z o.o.</td>
-                        <td>Proszę o ofertę współpracy...</td>
-                        <td>Nieprzeczytane</td>
-                        <td><button class="btn pdf-btn">📄 PDF</button></td>
-                        <td class="action-buttons">
-                            <button class="btn pokaz-btn">Pokaż</button>
-                            <button class="btn">Email</button>
-                            <button class="btn">Usuń</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </main>
-
-    <script>
-        // 🌙 Темная тема
-        document.getElementById('toggle-theme').addEventListener('click', () => {
-            document.body.classList.toggle('dark');
-            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-        });
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark');
-        }
-
-        // 🚫 Кнопка "Pokaż" — декоративная
-        document.querySelectorAll('.pokaz-btn').forEach(btn => {
-            btn.addEventListener('click', e => e.preventDefault());
-        });
-
-        // ✅ Выделение всех заявок
-        document.getElementById('select-all').addEventListener('change', e => {
-            document.querySelectorAll('.row-select').forEach(chk => {
-                chk.checked = e.target.checked;
-            });
-        });
-
-        // 📄 Кнопка PDF (демо)
-        document.querySelectorAll('.pdf-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                alert("Pobieranie PDF w przygotowaniu...");
-            });
-        });
-    </script>
+            <button type="submit" class="form-submit">{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+        </form>
+    </section>
+</main>
 </body>
 </html>
