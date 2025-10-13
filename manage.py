@@ -1,10 +1,15 @@
 import os
 import sys
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    load_dotenv = None
 
 
 def main() -> None:
-    load_dotenv()
+    if load_dotenv is not None:
+        load_dotenv()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "zetom_project.settings")
 
     try:
