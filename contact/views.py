@@ -107,9 +107,27 @@ def panel(request: HttpRequest) -> HttpResponse:
 
 
 def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
-    if action == MessageBulkActionForm.ACTION_MARK_READ:
-        message_service.mark_messages_read(ids)
-        text = 'Zaznaczone wiadomości oznaczono jako przeczytane.' if lang == 'pl' else 'Selected messages marked as read.'
+    if action == MessageBulkActionForm.ACTION_MARK_NEW:
+        message_service.mark_messages_new(ids)
+        text = (
+            'Zaznaczone wiadomości oznaczono jako nowe.'
+            if lang == 'pl'
+            else 'Selected messages marked as new.'
+        )
+    elif action == MessageBulkActionForm.ACTION_MARK_IN_PROGRESS:
+        message_service.mark_messages_in_progress(ids)
+        text = (
+            'Zaznaczone wiadomości oznaczono jako w trakcie.'
+            if lang == 'pl'
+            else 'Selected messages marked as in progress.'
+        )
+    elif action == MessageBulkActionForm.ACTION_MARK_READY:
+        message_service.mark_messages_ready(ids)
+        text = (
+            'Zaznaczone wiadomości oznaczono jako gotowe.'
+            if lang == 'pl'
+            else 'Selected messages marked as ready.'
+        )
     else:
         message_service.delete_messages(ids)
         text = 'Zaznaczone wiadomości usunięto.' if lang == 'pl' else 'Selected messages deleted.'
@@ -119,11 +137,15 @@ def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequ
 def _localise_action_choices(form: MessageBulkActionForm, lang: str) -> None:
     if lang == 'pl':
         form.fields['action'].choices = [
-            (MessageBulkActionForm.ACTION_MARK_READ, 'Oznacz jako przeczytane'),
+            (MessageBulkActionForm.ACTION_MARK_NEW, 'Oznacz jako nowe'),
+            (MessageBulkActionForm.ACTION_MARK_IN_PROGRESS, 'Oznacz jako w trakcie'),
+            (MessageBulkActionForm.ACTION_MARK_READY, 'Oznacz jako gotowe'),
             (MessageBulkActionForm.ACTION_DELETE, 'Usuń'),
         ]
     else:
         form.fields['action'].choices = [
-            (MessageBulkActionForm.ACTION_MARK_READ, 'Mark as read'),
+            (MessageBulkActionForm.ACTION_MARK_NEW, 'Mark as new'),
+            (MessageBulkActionForm.ACTION_MARK_IN_PROGRESS, 'Mark as in progress'),
+            (MessageBulkActionForm.ACTION_MARK_READY, 'Mark as ready'),
             (MessageBulkActionForm.ACTION_DELETE, 'Delete'),
         ]

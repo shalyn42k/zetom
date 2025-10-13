@@ -153,12 +153,27 @@ body {
 .panel-form-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
     align-items: flex-end;
 }
 
 .panel-form-row > * {
-    flex: 1 1 220px;
+    flex: 1 1 240px;
+}
+
+.panel-form-field {
+    min-width: 240px;
+}
+
+.panel-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+}
+
+.panel-form-actions .button {
+    white-space: nowrap;
 }
 
 .form-input {
@@ -243,6 +258,16 @@ body {
     color: var(--green-dark);
 }
 
+.badge--warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #b38300;
+}
+
+.badge--info {
+    background: rgba(53, 132, 228, 0.18);
+    color: #1c5fb8;
+}
+
 .empty-state {
     text-align: center;
     padding: 36px;
@@ -304,6 +329,21 @@ input[type="file"].form-input {
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.22);
 }
 
+.button--compact {
+    padding: 8px 18px;
+}
+
+.button--trash {
+    border-color: rgba(215, 58, 52, 0.24);
+    color: var(--danger);
+}
+
+.button--trash:hover,
+.button--trash:focus {
+    border-color: rgba(215, 58, 52, 0.4);
+    color: var(--danger);
+}
+
 .button--danger {
     background: rgba(215, 58, 52, 0.12);
     color: var(--danger);
@@ -337,6 +377,10 @@ input[type="file"].form-input {
 
     .panel-form-row > * {
         width: 100%;
+    }
+
+    .panel-form-actions {
+        justify-content: flex-start;
     }
 }
 
