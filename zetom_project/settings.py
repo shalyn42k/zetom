@@ -8,10 +8,11 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
 DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
 
-# Hosts / CSRF (заполняй через ENV в проде)
+# Hosts / CSRF
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()
 ]
+# Для Django 4+ лучше указывать со схемой: https://example.com
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
@@ -30,7 +31,7 @@ INSTALLED_APPS = [
 # --- Middleware ---
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # WhiteNoise в проде (добавим ниже условно)
+    # WhiteNoise добавим ниже условно в проде
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,7 +92,7 @@ if DEBUG:
 else:
     # PROD: сборка в STATIC_ROOT + WhiteNoise
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-    # В проде источники обычно не нужны (collectstatic сам корректно соберёт из app/static и BASE_DIR/static)
+    # если есть BASE_DIR/static — можно добавить как источник
     STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
     # Подключаем WhiteNoise
@@ -121,7 +122,7 @@ EMAIL_HOST_USER = os.environ.get('SMTP_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASS', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@example.com')
 
-# --- Совместимость со старым кодом (чтобы settings.SMTP_* существовали) ---
+# Совместимость со старым кодом (чтобы settings.SMTP_* существовали)
 SMTP_SERVER = EMAIL_HOST
 SMTP_PORT = EMAIL_PORT
 SMTP_USER = EMAIL_HOST_USER

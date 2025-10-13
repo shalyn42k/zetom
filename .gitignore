@@ -1,2 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+*.log
+
+# Virtualenv
+.venv/
 venv/
-idea/
+ENV/
+
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Django
+# Local env & secrets
+.env
+*.env
+.env.*
+
+# SQLite (local)
+db.sqlite3
+*.sqlite3
+
+# User uploads / generated
+media/
+staticfiles/
+
+# pytest / coverage / mypy (optional)
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Node / front-end (if any)
+node_modules/
+dist/
+build/
