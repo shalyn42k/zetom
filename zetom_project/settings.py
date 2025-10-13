@@ -113,12 +113,19 @@ else:
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip() or (
     "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend"
 )
+
 EMAIL_HOST = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('SMTP_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('SMTP_USE_TLS', 'true').lower() in ('1', 'true', 'yes', 'on')
 EMAIL_HOST_USER = os.environ.get('SMTP_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASS', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@example.com')
+
+# --- Совместимость со старым кодом (чтобы settings.SMTP_* существовали) ---
+SMTP_SERVER = EMAIL_HOST
+SMTP_PORT = EMAIL_PORT
+SMTP_USER = EMAIL_HOST_USER
+SMTP_PASS = EMAIL_HOST_PASSWORD
 
 # --- Other ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
