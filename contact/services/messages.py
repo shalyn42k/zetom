@@ -16,13 +16,42 @@ def add_message(*, first_name: str, last_name: str, phone: str, email: str, comp
     )
 
 
-def mark_messages_read(message_ids: Iterable[int]) -> None:
-    ContactMessage.objects.filter(id__in=message_ids).update(is_read=True)
+def mark_messages_new(message_ids: Iterable[int]) -> None:
+    ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
+        status=ContactMessage.STATUS_NEW
+    )
+
+
+def mark_messages_in_progress(message_ids: Iterable[int]) -> None:
+    ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
+        status=ContactMessage.STATUS_IN_PROGRESS
+    )
+
+
+def mark_messages_ready(message_ids: Iterable[int]) -> None:
+    ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
+        status=ContactMessage.STATUS_READY
+    )
 
 
 def delete_messages(message_ids: Iterable[int]) -> None:
-    ContactMessage.objects.filter(id__in=message_ids).delete()
+    ContactMessage.objects.filter(id__in=message_ids).update(is_deleted=True)
 
 
 def get_messages() -> QuerySet[ContactMessage]:
-    return ContactMessage.objects.all()
+    return ContactMessage.objects.filter(is_deleted=False)
+
+
+def get_deleted_messages() -> QuerySet[ContactMessage]:
+    return ContactMessage.objects.filter(is_deleted=True)
+
+
+def restore_messages(message_ids: Iterable[int]) -> None:
+    ContactMessage.objects.filter(id__in=message_ids).update(is_deleted=False)
+
+
+def purge_messages(message_ids: Iterable[int] | None = None) -> None:
+    queryset = ContactMessage.objects.filter(is_deleted=True)
+    if message_ids is not None:
+        queryset = queryset.filter(id__in=message_ids)
+    queryset.delete()

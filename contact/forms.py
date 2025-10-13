@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from django import forms
+
 from .models import ContactMessage
 
 
@@ -35,10 +38,14 @@ class LoginForm(forms.Form):
 
 
 class MessageBulkActionForm(forms.Form):
-    ACTION_MARK_READ = "mark_read"
+    ACTION_MARK_NEW = "mark_new"
+    ACTION_MARK_IN_PROGRESS = "mark_in_progress"
+    ACTION_MARK_READY = "mark_ready"
     ACTION_DELETE = "delete"
     ACTION_CHOICES = (
-        (ACTION_MARK_READ, "Mark as read"),
+        (ACTION_MARK_NEW, "Mark as new"),
+        (ACTION_MARK_IN_PROGRESS, "Mark as in progress"),
+        (ACTION_MARK_READY, "Mark as ready"),
         (ACTION_DELETE, "Delete"),
     )
 
@@ -53,6 +60,50 @@ class MessageBulkActionForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["selected"].choices = message_choices or []
         self.fields["action"].widget.attrs["class"] = "form-input"
+
+
+class TrashActionForm(forms.Form):
+    ACTION_RESTORE = "restore"
+    ACTION_DELETE = "delete"
+    ACTION_EMPTY = "empty"
+
+    ACTION_CHOICES = (
+        (ACTION_RESTORE, "restore"),
+        (ACTION_DELETE, "delete"),
+        (ACTION_EMPTY, "empty"),
+    )
+
+    form_name = forms.CharField(widget=forms.HiddenInput(), initial="trash")
+    action = forms.ChoiceField(choices=ACTION_CHOICES)
+    selected = forms.MultipleChoiceField(
+        choices=(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(
+        self,
+        *args,
+        message_choices: list[tuple[str, str]] | None = None,
+        language: str | None = None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.fields["selected"].choices = message_choices or []
+        self.fields["action"].widget = forms.HiddenInput()
+        self._empty_selection_message = (
+            "Wybierz co najmniej jedną wiadomość."
+            if language == "pl"
+            else "Select at least one message."
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get("action")
+        selected = cleaned_data.get("selected") or []
+        if action in {self.ACTION_RESTORE, self.ACTION_DELETE} and not selected:
+            raise forms.ValidationError(self._empty_selection_message)
+        return cleaned_data
 
 
 class EmailForm(forms.Form):
