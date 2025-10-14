@@ -683,6 +683,36 @@ input[type="file"].form-input {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.download-intro {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(27, 109, 52, 0.1);
+    background: linear-gradient(135deg, rgba(47, 168, 79, 0.09), rgba(27, 109, 52, 0.04));
+    color: var(--text-primary);
+}
+
+.download-intro p {
+    margin: 0;
+    font-size: 0.96rem;
+    line-height: 1.5;
+}
+
+.download-steps {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 6px;
+    font-size: 0.94rem;
+    color: var(--muted);
+}
+
+.download-steps li {
+    margin: 0;
+}
+
 .download-column {
     display: grid;
     gap: 12px;

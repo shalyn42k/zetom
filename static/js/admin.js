@@ -11,6 +11,10 @@
         const selectAll = $('[data-select-all]', bulkForm);
         const checkboxes = $$('[data-row-checkbox]', bulkForm);
         const submitButton = $('[data-bulk-submit]', bulkForm);
+        const downloadButton = $('[data-download-open]');
+        const canControlDownloadButton = Boolean(
+            downloadButton && downloadButton.dataset.downloadAvailable !== 'false',
+        );
         const emptyMessage = bulkForm.dataset.emptySelection || 'Please select at least one message.';
 
         const updateState = () => {
@@ -21,6 +25,9 @@
             }
             if (submitButton) {
                 submitButton.disabled = checkedCount === 0;
+            }
+            if (canControlDownloadButton) {
+                downloadButton.disabled = checkedCount === 0;
             }
         };
 
