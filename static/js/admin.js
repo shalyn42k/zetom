@@ -319,6 +319,7 @@
             updateRequestsSummary();
             updateFieldsSummary();
             updateSubmitState();
+            updateSummary();
         };
 
         const handleTableChange = () => {
