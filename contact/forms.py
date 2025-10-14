@@ -12,6 +12,18 @@ class ContactForm(forms.ModelForm):
         ("inna",   "Inna"),
     ]
 
+    bot_check = forms.BooleanField(
+        required=True,
+        label="",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
+    )
+
+    review_confirmed = forms.BooleanField(
+        required=True,
+        label="",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-review-confirm": "true"}),
+    )
+
     company = forms.ChoiceField(
         choices=COMPANY_CHOICES,
         required=True,
@@ -280,3 +292,31 @@ class DownloadMessagesForm(forms.Form):
         if not data:
             raise forms.ValidationError(self._fields_error)
         return data
+
+
+class MessageUpdateForm(forms.ModelForm):
+    class Meta:
+        model = ContactMessage
+        fields = [
+            "first_name",
+            "last_name",
+            "phone",
+            "email",
+            "company",
+            "message",
+            "status",
+        ]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-input"}),
+            "last_name": forms.TextInput(attrs={"class": "form-input"}),
+            "phone": forms.TextInput(attrs={"class": "form-input"}),
+            "email": forms.EmailInput(attrs={"class": "form-input"}),
+            "company": forms.Select(attrs={"class": "form-input"}),
+            "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
+            "status": forms.Select(attrs={"class": "form-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["company"].choices = ContactForm.COMPANY_CHOICES
+        self.fields["status"].choices = ContactMessage.STATUS_CHOICES

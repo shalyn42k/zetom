@@ -9,4 +9,6 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
     path('panel/', views.panel, name='panel'),
+    path('panel/messages/<int:message_id>/detail/', views.message_detail, name='message_detail'),
+    path('panel/messages/<int:message_id>/update/', views.update_message, name='update_message'),
 ]

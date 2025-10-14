@@ -297,6 +297,10 @@ body {
     color: var(--danger);
 }
 
+.form-error[hidden] {
+    display: none;
+}
+
 .table-wrapper {
     border-radius: 18px;
     overflow: hidden;
@@ -329,6 +333,15 @@ body {
 
 .table tbody tr:hover {
     background: rgba(47, 168, 79, 0.05);
+}
+
+.table tbody tr[data-request-row] {
+    cursor: pointer;
+}
+
+.table tbody tr[data-request-row]:focus {
+    outline: 2px solid rgba(47, 168, 79, 0.35);
+    outline-offset: -2px;
 }
 
 .badge {
@@ -594,11 +607,45 @@ input[type="file"].form-input {
     color: var(--green-dark);
 }
 
+.modal__subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+}
+
 .modal__toolbar {
     display: flex;
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+.request-modal__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.request-modal__field {
+    display: grid;
+    gap: 6px;
+}
+
+.request-modal__field--full {
+    grid-column: 1 / -1;
+}
+
+.request-modal__field textarea {
+    min-height: 160px;
+}
+
+.form-success {
+    color: var(--green-dark);
+    font-weight: 600;
+}
+
+.form-success[hidden] {
+    display: none;
 }
 
 .checkbox-pill {
