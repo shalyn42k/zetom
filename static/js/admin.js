@@ -142,26 +142,27 @@
         }
 
         const openButton = $('[data-download-open]');
+        const canControlOpenButton = Boolean(
+            openButton && openButton.dataset.downloadAvailable !== 'false',
+        );
         const closeElements = $$('[data-download-close]', downloadModal).concat(
             downloadModal.querySelector('.modal__backdrop')
         );
-        const selectAll = $('[data-download-select-all]', downloadModal);
-        const requestCheckboxes = $$('input[name="messages"]', downloadModal);
         const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
         const submitButton = $('[data-download-submit]', downloadModal);
         const tableSelection = $$('[data-row-checkbox]');
+        const hiddenInputsContainer = $('[data-download-selected]', downloadModal);
+        const requestsCountElement = $('[data-download-requests-count]', downloadModal);
+        const requestsTotalElement = $('[data-download-requests-total]', downloadModal);
+        const requestsHintElement = $('[data-download-requests-hint]', downloadModal);
+        const fieldsCountElement = $('[data-download-fields-count]', downloadModal);
+        const fieldsHintElement = $('[data-download-fields-hint]', downloadModal);
+        const fieldsPreviewElement = $('[data-download-fields-preview]', downloadModal);
+        const maxPreviewItems = Number(
+            (fieldsPreviewElement && fieldsPreviewElement.dataset.max) || 5,
+        );
 
-        const applyTableSelection = () => {
-            if (!tableSelection.length) {
-                return;
-            }
-            const selectedIds = tableSelection
-                .filter((checkbox) => checkbox.checked)
-                .map((checkbox) => checkbox.value);
-            requestCheckboxes.forEach((checkbox) => {
-                checkbox.checked = selectedIds.includes(checkbox.value);
-            });
-        };
+        let currentSelectedIds = [];
 
         const toggleModal = (shouldOpen) => {
             if (!downloadModal) {
@@ -178,50 +179,175 @@
             }
         };
 
-        const updateSelectAllState = () => {
-            if (!selectAll) {
+        const restoreSelectionFromHiddenInputs = () => {
+            if (!hiddenInputsContainer) {
                 return;
             }
-            const checkedCount = requestCheckboxes.filter((checkbox) => checkbox.checked).length;
-            const total = requestCheckboxes.length;
-            selectAll.checked = total > 0 && checkedCount === total;
-            selectAll.indeterminate = checkedCount > 0 && checkedCount < total;
+            const storedValues = $$('input[name="messages"]', hiddenInputsContainer).map(
+                (input) => input.value,
+            );
+            if (!storedValues.length) {
+                return;
+            }
+            const uniqueValues = Array.from(new Set(storedValues));
+            tableSelection.forEach((checkbox) => {
+                checkbox.checked = uniqueValues.includes(checkbox.value);
+            });
+        };
+
+        const getSelectedIdsFromTable = () =>
+            tableSelection
+                .filter((checkbox) => checkbox.checked && !checkbox.disabled)
+                .map((checkbox) => checkbox.value);
+
+        const syncHiddenInputs = () => {
+            if (!hiddenInputsContainer) {
+                return;
+            }
+            hiddenInputsContainer.innerHTML = '';
+            currentSelectedIds.forEach((id) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'messages';
+                input.value = id;
+                hiddenInputsContainer.appendChild(input);
+            });
+        };
+
+        const updateRequestsSummary = () => {
+            const total = tableSelection.length;
+            if (requestsCountElement) {
+                requestsCountElement.textContent = String(currentSelectedIds.length);
+            }
+            if (requestsTotalElement) {
+                requestsTotalElement.textContent = String(total);
+            }
+            if (requestsHintElement) {
+                const dataset = requestsHintElement.dataset;
+                const hint =
+                    currentSelectedIds.length === 0
+                        ? dataset.empty || ''
+                        : (dataset.selected || '').replace('{count}', String(currentSelectedIds.length));
+                requestsHintElement.textContent = hint;
+            }
+        };
+
+        const updatePreview = (selectedFields) => {
+            if (!fieldsPreviewElement) {
+                return;
+            }
+            fieldsPreviewElement.innerHTML = '';
+            if (!selectedFields.length) {
+                const emptyText = fieldsPreviewElement.dataset.empty || '';
+                if (emptyText) {
+                    const emptyElement = document.createElement('span');
+                    emptyElement.className = 'download-summary__empty';
+                    emptyElement.textContent = emptyText;
+                    fieldsPreviewElement.appendChild(emptyElement);
+                }
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            selectedFields.slice(0, maxPreviewItems).forEach((checkbox) => {
+                const optionElement = checkbox.closest('.download-option');
+                const label = optionElement
+                    ? optionElement.querySelector('.download-option__label')
+                    : null;
+                if (!label) {
+                    return;
+                }
+                const chip = document.createElement('span');
+                chip.className = 'download-chip';
+                const labelText = label.textContent ? label.textContent.trim() : '';
+                chip.textContent = labelText;
+                fragment.appendChild(chip);
+            });
+
+            if (selectedFields.length > maxPreviewItems) {
+                const chip = document.createElement('span');
+                chip.className = 'download-chip download-chip--more';
+                chip.textContent = `+${selectedFields.length - maxPreviewItems}`;
+                fragment.appendChild(chip);
+            }
+
+            fieldsPreviewElement.appendChild(fragment);
+        };
+
+        const updateFieldsSummary = () => {
+            const selectedFields = fieldCheckboxes.filter((checkbox) => checkbox.checked);
+            const totalFields = fieldCheckboxes.length;
+
+            if (fieldsCountElement) {
+                fieldsCountElement.textContent = String(selectedFields.length);
+            }
+            if (fieldsHintElement) {
+                const dataset = fieldsHintElement.dataset;
+                let hint = '';
+                if (selectedFields.length === 0) {
+                    hint = dataset.empty || '';
+                } else if (selectedFields.length === totalFields && totalFields > 0) {
+                    hint = dataset.all || '';
+                } else {
+                    hint = (dataset.partial || '')
+                        .replace('{count}', String(selectedFields.length))
+                        .replace('{total}', String(totalFields));
+                }
+                fieldsHintElement.textContent = hint;
+            }
+
+            updatePreview(selectedFields);
         };
 
         const updateSubmitState = () => {
-            const hasRequests = requestCheckboxes.some((checkbox) => checkbox.checked);
+            const hasRequests = currentSelectedIds.length > 0;
             const hasFields = fieldCheckboxes.some((checkbox) => checkbox.checked);
             if (submitButton) {
                 submitButton.disabled = !(hasRequests && hasFields);
             }
         };
 
-        const updateState = () => {
-            updateSelectAllState();
+        const updateOpenButtonState = () => {
+            if (!canControlOpenButton) {
+                return;
+            }
+            const shouldDisable = currentSelectedIds.length === 0;
+            openButton.disabled = shouldDisable;
+            openButton.toggleAttribute('disabled', shouldDisable);
+        };
+
+        const refreshAll = (options = {}) => {
+            const { syncHidden = false } = options;
+            if (syncHidden || downloadModal.classList.contains('is-visible')) {
+                syncHiddenInputs();
+            }
+            updateRequestsSummary();
+            updateFieldsSummary();
+            updateSubmitState();
+            updateOpenButtonState();
+        };
+
+        const handleTableChange = () => {
+            currentSelectedIds = getSelectedIdsFromTable();
+            refreshAll({ syncHidden: true });
+        };
+
+        const handleFieldChange = () => {
+            updateFieldsSummary();
             updateSubmitState();
         };
 
-        if (selectAll) {
-            selectAll.addEventListener('change', () => {
-                requestCheckboxes.forEach((checkbox) => {
-                    checkbox.checked = selectAll.checked;
-                });
-                updateState();
-            });
-        }
-
-        requestCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', updateState);
-        });
-
-        fieldCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', updateSubmitState);
-        });
+        restoreSelectionFromHiddenInputs();
+        currentSelectedIds = getSelectedIdsFromTable();
+        refreshAll({ syncHidden: true });
 
         if (openButton) {
             openButton.addEventListener('click', () => {
-                applyTableSelection();
-                updateState();
+                currentSelectedIds = getSelectedIdsFromTable();
+                if (!currentSelectedIds.length) {
+                    return;
+                }
+                refreshAll({ syncHidden: true });
                 toggleModal(true);
             });
         }
@@ -239,6 +365,12 @@
             }
         });
 
-        updateState();
+        tableSelection.forEach((checkbox) => {
+            checkbox.addEventListener('change', handleTableChange);
+        });
+
+        fieldCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', handleFieldChange);
+        });
     });
 })();

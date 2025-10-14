@@ -214,7 +214,7 @@ class DownloadMessagesForm(forms.Form):
     form_name = forms.CharField(widget=forms.HiddenInput(), initial="download")
     messages = forms.MultipleChoiceField(
         choices=(),
-        widget=forms.CheckboxSelectMultiple(),   # стандартный виджет
+        widget=forms.MultipleHiddenInput(),
         required=True,
     )
     fields = forms.MultipleChoiceField(
@@ -263,7 +263,6 @@ class DownloadMessagesForm(forms.Form):
         ]
 
         # data-* атрибуты для JS (не обяз.)
-        self.fields["messages"].widget.attrs.update({"data-download-row": "true"})
         self.fields["fields"].widget.attrs.update({"data-download-field": "true"})
 
         # По умолчанию — все поля отмечены
