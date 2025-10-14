@@ -6,6 +6,7 @@ from html import escape  # ← используем стандартный эк�
 
 from django.utils import timezone
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -44,12 +45,28 @@ def build_messages_pdf(
         spaceAfter=18,
     )
 
+    summary_label_style = ParagraphStyle(
+        "SummaryLabel",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        textColor=colors.HexColor("#1b6d34"),
+    )
+
+    summary_value_style = ParagraphStyle(
+        "SummaryValue",
+        parent=styles["Normal"],
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor("#234c39"),
+    )
+
     field_label_style = ParagraphStyle(
         "FieldLabel",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=11,
-        spaceAfter=4,
+        fontSize=10,
+        textColor=colors.HexColor("#1b6d34"),
     )
 
     field_value_style = ParagraphStyle(
@@ -60,12 +77,20 @@ def build_messages_pdf(
         spaceAfter=6,
     )
 
-    section_title_style = ParagraphStyle(
-        "SectionTitle",
+    section_header_title_style = ParagraphStyle(
+        "SectionHeaderTitle",
         parent=styles["Heading2"],
-        fontSize=14,
-        spaceAfter=8,
-        textColor=colors.HexColor("#2fa84f"),
+        fontSize=13,
+        spaceAfter=0,
+        textColor=colors.HexColor("#1b6d34"),
+    )
+
+    section_header_meta_style = ParagraphStyle(
+        "SectionHeaderMeta",
+        parent=styles["Normal"],
+        fontSize=9,
+        textColor=colors.HexColor("#5b6c6c"),
+        alignment=TA_RIGHT,
     )
 
     story: list = []
@@ -73,9 +98,13 @@ def build_messages_pdf(
     if language == "pl":
         title = "Zgłoszenia kontaktowe"
         subtitle = f"Wygenerowano: {generated_at.strftime('%Y-%m-%d %H:%M')}"
+        summary_requests_label = "Liczba zgłoszeń"
+        summary_fields_label = "Uwzględnione pola"
     else:
         title = "Contact requests"
         subtitle = f"Generated: {generated_at.strftime('%Y-%m-%d %H:%M')}"
+        summary_requests_label = "Total requests"
+        summary_fields_label = "Included fields"
 
     story.append(Paragraph(escape(title), title_style))
     story.append(Paragraph(escape(subtitle), subtitle_style))
@@ -84,6 +113,43 @@ def build_messages_pdf(
     field_labels = _field_labels(language)
 
     messages = list(messages)
+    selected_field_labels = [field_labels.get(field, field) for field in fields]
+
+    summary_rows = [
+        [
+            Paragraph(escape(summary_requests_label), summary_label_style),
+            Paragraph(str(len(messages)), summary_value_style),
+        ],
+        [
+            Paragraph(escape(summary_fields_label), summary_label_style),
+            Paragraph(
+                "<br/>".join(
+                    f"&#8226; {escape(label)}" for label in selected_field_labels
+                )
+                or "-",
+                summary_value_style,
+            ),
+        ],
+    ]
+
+    summary_table = Table(summary_rows, colWidths=[55 * mm, 120 * mm])
+    summary_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f3f8f4")),
+                ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#dce7de")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#dce7de")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    story.append(summary_table)
+    story.append(Spacer(1, 18))
+
     if not messages:
         empty_text = "Brak danych do wyświetlenia." if language == "pl" else "No requests to display."
         story.append(Paragraph(escape(empty_text), styles["Normal"]))
@@ -94,7 +160,38 @@ def build_messages_pdf(
         section_title = (
             f"Zgłoszenie #{message.id}" if language == "pl" else f"Request #{message.id}"
         )
-        story.append(Paragraph(escape(section_title), section_title_style))
+        timestamp = timezone.localtime(message.created_at)
+        meta_parts = [timestamp.strftime("%Y-%m-%d %H:%M")]
+        if message.company:
+            meta_parts.append(message.company)
+        if message.email:
+            meta_parts.append(message.email)
+        section_meta = " · ".join(part for part in meta_parts if part)
+
+        header_table = Table(
+            [
+                [
+                    Paragraph(escape(section_title), section_header_title_style),
+                    Paragraph(escape(section_meta), section_header_meta_style),
+                ]
+            ],
+            colWidths=[110 * mm, 65 * mm],
+        )
+        header_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#e8f4eb")),
+                    ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#c7e1ce")),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 8),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ]
+            )
+        )
+        story.append(header_table)
+        story.append(Spacer(1, 8))
 
         rows = []
         for field in fields:
@@ -105,19 +202,25 @@ def build_messages_pdf(
                 Paragraph(value, field_value_style),
             ])
 
-        table = Table(rows, colWidths=[45 * mm, 120 * mm])
+        table = Table(rows, colWidths=[50 * mm, 120 * mm])
         table.setStyle(
             TableStyle(
                 [
+                    ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.white, colors.HexColor("#f8fbf9")]),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("LINEBELOW", (0, 0), (-1, -1), 0.2, colors.HexColor("#dce7de")),
+                    ("BOX", (0, 0), (-1, -1), 0.3, colors.HexColor("#dce7de")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#e6efe7")),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ]
             )
         )
         story.append(table)
 
         if index < len(messages):
-            story.append(Spacer(1, 18))
+            story.append(Spacer(1, 20))
 
     doc.build(story)
     return buffer.getvalue()

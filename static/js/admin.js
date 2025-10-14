@@ -150,6 +150,14 @@
         const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
         const submitButton = $('[data-download-submit]', downloadModal);
         const tableSelection = $$('[data-row-checkbox]');
+        const requestsCountElement = $('[data-download-requests-count]', downloadModal);
+        const fieldsCountElement = $('[data-download-fields-count]', downloadModal);
+        const requestsHintElement = $('[data-download-requests-hint]', downloadModal);
+        const fieldsHintElement = $('[data-download-fields-hint]', downloadModal);
+        const fieldsPreviewElement = $('[data-download-fields-preview]', downloadModal);
+        const maxPreviewItems = Number(
+            (fieldsPreviewElement && fieldsPreviewElement.dataset.max) || 5,
+        );
 
         const applyTableSelection = () => {
             if (!tableSelection.length) {
@@ -196,9 +204,98 @@
             }
         };
 
+        const formatSummaryText = (dataset, selected, total) => {
+            if (!dataset) {
+                return '';
+            }
+            if (selected === 0) {
+                return dataset.empty || '';
+            }
+            if (selected === total && total > 0) {
+                return dataset.all || '';
+            }
+            const template = dataset.partial || '';
+            return template
+                .replace('{count}', String(selected))
+                .replace('{total}', String(total));
+        };
+
+        const updatePreview = (selectedFields) => {
+            if (!fieldsPreviewElement) {
+                return;
+            }
+            fieldsPreviewElement.innerHTML = '';
+            if (!selectedFields.length) {
+                const emptyText = fieldsPreviewElement.dataset.empty || '';
+                if (emptyText) {
+                    const emptyElement = document.createElement('span');
+                    emptyElement.className = 'download-summary__empty';
+                    emptyElement.textContent = emptyText;
+                    fieldsPreviewElement.appendChild(emptyElement);
+                }
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            selectedFields.slice(0, maxPreviewItems).forEach((checkbox) => {
+                const optionElement = checkbox.closest('.download-option');
+                const label = optionElement
+                    ? optionElement.querySelector('.download-option__label')
+                    : null;
+                if (!label) {
+                    return;
+                }
+                const chip = document.createElement('span');
+                chip.className = 'download-chip';
+                const labelText = label.textContent ? label.textContent.trim() : '';
+                chip.textContent = labelText;
+                fragment.appendChild(chip);
+            });
+
+            if (selectedFields.length > maxPreviewItems) {
+                const chip = document.createElement('span');
+                chip.className = 'download-chip download-chip--more';
+                chip.textContent = `+${selectedFields.length - maxPreviewItems}`;
+                fragment.appendChild(chip);
+            }
+
+            fieldsPreviewElement.appendChild(fragment);
+        };
+
+        const updateSummary = () => {
+            const selectedRequests = requestCheckboxes.filter((checkbox) => checkbox.checked);
+            const selectedFields = fieldCheckboxes.filter((checkbox) => checkbox.checked);
+            const totalRequests = requestCheckboxes.length;
+            const totalFields = fieldCheckboxes.length;
+
+            if (requestsCountElement) {
+                requestsCountElement.textContent = String(selectedRequests.length);
+            }
+            if (fieldsCountElement) {
+                fieldsCountElement.textContent = String(selectedFields.length);
+            }
+            if (requestsHintElement) {
+                requestsHintElement.textContent = formatSummaryText(
+                    requestsHintElement.dataset,
+                    selectedRequests.length,
+                    totalRequests,
+                );
+            }
+            if (fieldsHintElement) {
+                fieldsHintElement.textContent = formatSummaryText(
+                    fieldsHintElement.dataset,
+                    selectedFields.length,
+                    totalFields,
+                );
+            }
+
+            updatePreview(selectedFields);
+        };
+
         const updateState = () => {
             updateSelectAllState();
             updateSubmitState();
+            updateSummary();
         };
 
         if (selectAll) {
