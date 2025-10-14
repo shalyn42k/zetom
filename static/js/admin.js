@@ -11,6 +11,10 @@
         const selectAll = $('[data-select-all]', bulkForm);
         const checkboxes = $$('[data-row-checkbox]', bulkForm);
         const submitButton = $('[data-bulk-submit]', bulkForm);
+        const downloadButton = $('[data-download-open]');
+        const canControlDownloadButton = Boolean(
+            downloadButton && downloadButton.dataset.downloadAvailable !== 'false',
+        );
         const emptyMessage = bulkForm.dataset.emptySelection || 'Please select at least one message.';
 
         const updateState = () => {
@@ -21,6 +25,9 @@
             }
             if (submitButton) {
                 submitButton.disabled = checkedCount === 0;
+            }
+            if (canControlDownloadButton) {
+                downloadButton.disabled = checkedCount === 0;
             }
         };
 
@@ -145,31 +152,21 @@
         const closeElements = $$('[data-download-close]', downloadModal).concat(
             downloadModal.querySelector('.modal__backdrop')
         );
-        const selectAll = $('[data-download-select-all]', downloadModal);
-        const requestCheckboxes = $$('input[name="messages"]', downloadModal);
         const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
         const submitButton = $('[data-download-submit]', downloadModal);
         const tableSelection = $$('[data-row-checkbox]');
+        const hiddenInputsContainer = $('[data-download-selected]', downloadModal);
         const requestsCountElement = $('[data-download-requests-count]', downloadModal);
-        const fieldsCountElement = $('[data-download-fields-count]', downloadModal);
+        const requestsTotalElement = $('[data-download-requests-total]', downloadModal);
         const requestsHintElement = $('[data-download-requests-hint]', downloadModal);
+        const fieldsCountElement = $('[data-download-fields-count]', downloadModal);
         const fieldsHintElement = $('[data-download-fields-hint]', downloadModal);
         const fieldsPreviewElement = $('[data-download-fields-preview]', downloadModal);
         const maxPreviewItems = Number(
             (fieldsPreviewElement && fieldsPreviewElement.dataset.max) || 5,
         );
 
-        const applyTableSelection = () => {
-            if (!tableSelection.length) {
-                return;
-            }
-            const selectedIds = tableSelection
-                .filter((checkbox) => checkbox.checked)
-                .map((checkbox) => checkbox.value);
-            requestCheckboxes.forEach((checkbox) => {
-                checkbox.checked = selectedIds.includes(checkbox.value);
-            });
-        };
+        let currentSelectedIds = [];
 
         const toggleModal = (shouldOpen) => {
             if (!downloadModal) {
@@ -186,38 +183,57 @@
             }
         };
 
-        const updateSelectAllState = () => {
-            if (!selectAll) {
+        const restoreSelectionFromHiddenInputs = () => {
+            if (!hiddenInputsContainer) {
                 return;
             }
-            const checkedCount = requestCheckboxes.filter((checkbox) => checkbox.checked).length;
-            const total = requestCheckboxes.length;
-            selectAll.checked = total > 0 && checkedCount === total;
-            selectAll.indeterminate = checkedCount > 0 && checkedCount < total;
+            const storedValues = $$('input[name="messages"]', hiddenInputsContainer).map(
+                (input) => input.value,
+            );
+            if (!storedValues.length) {
+                return;
+            }
+            const uniqueValues = Array.from(new Set(storedValues));
+            tableSelection.forEach((checkbox) => {
+                checkbox.checked = uniqueValues.includes(checkbox.value);
+            });
         };
 
-        const updateSubmitState = () => {
-            const hasRequests = requestCheckboxes.some((checkbox) => checkbox.checked);
-            const hasFields = fieldCheckboxes.some((checkbox) => checkbox.checked);
-            if (submitButton) {
-                submitButton.disabled = !(hasRequests && hasFields);
+        const getSelectedIdsFromTable = () =>
+            tableSelection
+                .filter((checkbox) => checkbox.checked && !checkbox.disabled)
+                .map((checkbox) => checkbox.value);
+
+        const syncHiddenInputs = () => {
+            if (!hiddenInputsContainer) {
+                return;
             }
+            hiddenInputsContainer.innerHTML = '';
+            currentSelectedIds.forEach((id) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'messages';
+                input.value = id;
+                hiddenInputsContainer.appendChild(input);
+            });
         };
 
-        const formatSummaryText = (dataset, selected, total) => {
-            if (!dataset) {
-                return '';
+        const updateRequestsSummary = () => {
+            const total = tableSelection.length;
+            if (requestsCountElement) {
+                requestsCountElement.textContent = String(currentSelectedIds.length);
             }
-            if (selected === 0) {
-                return dataset.empty || '';
+            if (requestsTotalElement) {
+                requestsTotalElement.textContent = String(total);
             }
-            if (selected === total && total > 0) {
-                return dataset.all || '';
+            if (requestsHintElement) {
+                const dataset = requestsHintElement.dataset;
+                const hint =
+                    currentSelectedIds.length === 0
+                        ? dataset.empty || ''
+                        : (dataset.selected || '').replace('{count}', String(currentSelectedIds.length));
+                requestsHintElement.textContent = hint;
             }
-            const template = dataset.partial || '';
-            return template
-                .replace('{count}', String(selected))
-                .replace('{total}', String(total));
         };
 
         const updatePreview = (selectedFields) => {
@@ -262,63 +278,71 @@
             fieldsPreviewElement.appendChild(fragment);
         };
 
-        const updateSummary = () => {
-            const selectedRequests = requestCheckboxes.filter((checkbox) => checkbox.checked);
+        const updateFieldsSummary = () => {
             const selectedFields = fieldCheckboxes.filter((checkbox) => checkbox.checked);
-            const totalRequests = requestCheckboxes.length;
             const totalFields = fieldCheckboxes.length;
 
-            if (requestsCountElement) {
-                requestsCountElement.textContent = String(selectedRequests.length);
-            }
             if (fieldsCountElement) {
                 fieldsCountElement.textContent = String(selectedFields.length);
             }
-            if (requestsHintElement) {
-                requestsHintElement.textContent = formatSummaryText(
-                    requestsHintElement.dataset,
-                    selectedRequests.length,
-                    totalRequests,
-                );
-            }
             if (fieldsHintElement) {
-                fieldsHintElement.textContent = formatSummaryText(
-                    fieldsHintElement.dataset,
-                    selectedFields.length,
-                    totalFields,
-                );
+                const dataset = fieldsHintElement.dataset;
+                let hint = '';
+                if (selectedFields.length === 0) {
+                    hint = dataset.empty || '';
+                } else if (selectedFields.length === totalFields && totalFields > 0) {
+                    hint = dataset.all || '';
+                } else {
+                    hint = (dataset.partial || '')
+                        .replace('{count}', String(selectedFields.length))
+                        .replace('{total}', String(totalFields));
+                }
+                fieldsHintElement.textContent = hint;
             }
 
             updatePreview(selectedFields);
         };
 
-        const updateState = () => {
-            updateSelectAllState();
+        const updateSubmitState = () => {
+            const hasRequests = currentSelectedIds.length > 0;
+            const hasFields = fieldCheckboxes.some((checkbox) => checkbox.checked);
+            if (submitButton) {
+                submitButton.disabled = !(hasRequests && hasFields);
+            }
+        };
+
+        const refreshAll = (options = {}) => {
+            const { syncHidden = false } = options;
+            if (syncHidden || downloadModal.classList.contains('is-visible')) {
+                syncHiddenInputs();
+            }
+            updateRequestsSummary();
+            updateFieldsSummary();
             updateSubmitState();
             updateSummary();
         };
 
-        if (selectAll) {
-            selectAll.addEventListener('change', () => {
-                requestCheckboxes.forEach((checkbox) => {
-                    checkbox.checked = selectAll.checked;
-                });
-                updateState();
-            });
-        }
+        const handleTableChange = () => {
+            currentSelectedIds = getSelectedIdsFromTable();
+            refreshAll({ syncHidden: true });
+        };
 
-        requestCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', updateState);
-        });
+        const handleFieldChange = () => {
+            updateFieldsSummary();
+            updateSubmitState();
+        };
 
-        fieldCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', updateSubmitState);
-        });
+        restoreSelectionFromHiddenInputs();
+        currentSelectedIds = getSelectedIdsFromTable();
+        refreshAll({ syncHidden: true });
 
         if (openButton) {
             openButton.addEventListener('click', () => {
-                applyTableSelection();
-                updateState();
+                currentSelectedIds = getSelectedIdsFromTable();
+                if (!currentSelectedIds.length) {
+                    return;
+                }
+                refreshAll({ syncHidden: true });
                 toggleModal(true);
             });
         }
@@ -336,6 +360,12 @@
             }
         });
 
-        updateState();
+        tableSelection.forEach((checkbox) => {
+            checkbox.addEventListener('change', handleTableChange);
+        });
+
+        fieldCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', handleFieldChange);
+        });
     });
 })();

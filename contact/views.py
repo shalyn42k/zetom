@@ -176,8 +176,11 @@ def panel(request: HttpRequest) -> HttpResponse:
                     )
                 )
 
-    download_messages_total = len(download_form.fields['messages'].choices)
     download_fields_total = len(download_form.fields['fields'].choices)
+    selected_download_ids: list[str] = []
+    if download_form.is_bound:
+        raw_ids = download_form.data.getlist('messages')
+        selected_download_ids = list(dict.fromkeys(raw_ids))
 
     context = {
         'lang': lang,
@@ -193,10 +196,9 @@ def panel(request: HttpRequest) -> HttpResponse:
         'current_page': page_obj.number,
         'current_sort': sort_by,
         'current_company': company_filter,
-        'has_messages': bool(download_choices),
         'download_has_choices': bool(download_choices),
-        'download_messages_total': download_messages_total,
         'download_fields_total': download_fields_total,
+        'selected_download_ids': selected_download_ids,
     }
     return render(request, 'contact/admin_panel.html', context)
 
