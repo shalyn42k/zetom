@@ -380,4 +380,314 @@
             checkbox.addEventListener('change', handleFieldChange);
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const requestModal = $('[data-request-modal]');
+        if (!requestModal) {
+            return;
+        }
+
+        const rows = $$('[data-request-row]');
+        const form = $('[data-request-form]', requestModal);
+        const titleElement = $('[data-request-title]', requestModal);
+        const createdElement = $('[data-request-created]', requestModal);
+        const errorBox = $('[data-request-errors]', requestModal);
+        const feedbackBox = $('[data-request-feedback]', requestModal);
+        const backdrop = requestModal.querySelector('.modal__backdrop');
+        const closeElements = $$('[data-request-close]', requestModal);
+        const statusMap = (() => {
+            try {
+                return JSON.parse(requestModal.dataset.statusMap || '{}');
+            } catch (error) {
+                console.error('Invalid status map', error);
+                return {};
+            }
+        })();
+        const successMessage = requestModal.dataset.successMessage || '';
+        const detailErrorMessage = requestModal.dataset.detailError || '';
+        const updateErrorMessage = requestModal.dataset.updateError || '';
+        const detailTemplate = requestModal.dataset.detailTemplate || '';
+        const updateTemplate = requestModal.dataset.updateTemplate || '';
+        const language = requestModal.dataset.language || 'pl';
+
+        let currentRow = null;
+        let currentId = null;
+        let isBusy = false;
+
+        const buildUrl = (template, id) => template.replace(/0(?!.*0)/, String(id));
+
+        const toggleModal = (shouldOpen) => {
+            if (!requestModal) {
+                return;
+            }
+            if (shouldOpen) {
+                requestModal.classList.add('is-visible');
+                requestModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } else {
+                requestModal.classList.remove('is-visible');
+                requestModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+                currentRow = null;
+                currentId = null;
+                if (form) {
+                    form.reset();
+                }
+                if (errorBox) {
+                    errorBox.hidden = true;
+                    errorBox.textContent = '';
+                }
+                if (feedbackBox) {
+                    feedbackBox.hidden = true;
+                    feedbackBox.textContent = '';
+                }
+            }
+        };
+
+        const focusFirstField = () => {
+            if (!form) {
+                return;
+            }
+            const firstInput = form.querySelector('input, select, textarea');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        };
+
+        const escapeHtml = (value) => {
+            const div = document.createElement('div');
+            div.textContent = value;
+            return div.innerHTML;
+        };
+
+        const updateRowDisplay = (data) => {
+            if (!currentRow) {
+                return;
+            }
+            const customerCell = $('[data-cell="customer"]', currentRow);
+            if (customerCell) {
+                customerCell.textContent = `${data.first_name} ${data.last_name}`.trim();
+            }
+            const phoneLink = $('[data-cell-phone]', currentRow);
+            if (phoneLink) {
+                phoneLink.textContent = data.phone;
+                phoneLink.href = `tel:${data.phone}`;
+            }
+            const emailLink = $('[data-cell-email]', currentRow);
+            if (emailLink) {
+                emailLink.textContent = data.email;
+                emailLink.href = `mailto:${data.email}`;
+            }
+            const companyCell = $('[data-cell="company"]', currentRow);
+            if (companyCell) {
+                companyCell.textContent = data.company;
+            }
+            const messageCell = $('[data-cell="message"]', currentRow);
+            if (messageCell) {
+                const html = escapeHtml(data.message || '').replace(/\n/g, '<br>');
+                messageCell.innerHTML = html;
+            }
+            const statusCell = $('[data-cell="status"]', currentRow);
+            if (statusCell) {
+                const badge = $('[data-status-badge]', statusCell);
+                if (badge) {
+                    const statusInfo = statusMap[data.status] || {};
+                    const label = data.status_label || statusInfo.label || data.status;
+                    const badgeClass = data.status_badge || statusInfo.badge || '';
+                    badge.textContent = label;
+                    badge.className = `badge ${badgeClass}`.trim();
+                }
+            }
+        };
+
+        const showError = (message) => {
+            if (errorBox) {
+                errorBox.textContent = message;
+                errorBox.hidden = !message;
+            }
+        };
+
+        const showFeedback = (message) => {
+            if (feedbackBox) {
+                feedbackBox.textContent = message;
+                feedbackBox.hidden = !message;
+            }
+        };
+
+        const populateForm = (data) => {
+            if (!form) {
+                return;
+            }
+            form.reset();
+            Object.entries(data).forEach(([key, value]) => {
+                const field = form.elements.namedItem(key);
+                if (!field) {
+                    return;
+                }
+                if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+                    field.value = value ?? '';
+                } else if (field instanceof HTMLSelectElement) {
+                    field.value = value ?? '';
+                }
+            });
+        };
+
+        const setHeader = (id, createdAt) => {
+            if (titleElement) {
+                const prefix = language === 'pl' ? 'Zgłoszenie #' : 'Request #';
+                titleElement.textContent = `${prefix}${id}`;
+            }
+            if (createdElement) {
+                const label = language === 'pl' ? 'Utworzone:' : 'Created:';
+                createdElement.textContent = createdAt ? `${label} ${createdAt}` : '';
+            }
+        };
+
+        const getCsrfToken = () => {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('csrftoken='));
+            if (!cookieValue) {
+                return '';
+            }
+            return decodeURIComponent(cookieValue.split('=')[1]);
+        };
+
+        const fetchDetails = (row) => {
+            if (!row || isBusy) {
+                return;
+            }
+            const id = row.dataset.requestId;
+            if (!id) {
+                return;
+            }
+            const url = buildUrl(detailTemplate, id);
+            if (!url) {
+                return;
+            }
+            isBusy = true;
+            showError('');
+            showFeedback('');
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(String(response.status));
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    currentRow = row;
+                    currentId = data.id;
+                    populateForm(data);
+                    setHeader(data.id, data.created_at);
+                    toggleModal(true);
+                    focusFirstField();
+                })
+                .catch(() => {
+                    alert(detailErrorMessage || 'Unable to load request.');
+                })
+                .finally(() => {
+                    isBusy = false;
+                });
+        };
+
+        const submitUpdate = () => {
+            if (!form || !currentId) {
+                return;
+            }
+            const url = buildUrl(updateTemplate, currentId);
+            if (!url) {
+                return;
+            }
+            const formData = new FormData(form);
+            const csrfToken = formData.get('csrfmiddlewaretoken') || getCsrfToken();
+            isBusy = true;
+            showError('');
+            showFeedback('');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return response.json().then((data) => {
+                        throw data;
+                    });
+                })
+                .then((data) => {
+                    updateRowDisplay(data);
+                    showFeedback(successMessage);
+                    showError('');
+                })
+                .catch((error) => {
+                    if (error && error.errors) {
+                        const messages = Object.values(error.errors)
+                            .flat()
+                            .join(' ');
+                        showError(messages || updateErrorMessage);
+                    } else {
+                        showError(updateErrorMessage);
+                    }
+                })
+                .finally(() => {
+                    isBusy = false;
+                });
+        };
+
+        if (form) {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                submitUpdate();
+            });
+        }
+
+        const handleRowActivation = (row, event) => {
+            const interactive = event.target.closest('input, a, button, label');
+            if (interactive) {
+                return;
+            }
+            fetchDetails(row);
+        };
+
+        rows.forEach((row) => {
+            row.addEventListener('click', (event) => {
+                handleRowActivation(row, event);
+            });
+            row.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fetchDetails(row);
+                }
+            });
+        });
+
+        const closeModal = () => toggleModal(false);
+
+        closeElements.forEach((element) => {
+            if (!element) {
+                return;
+            }
+            element.addEventListener('click', closeModal);
+        });
+
+        if (backdrop) {
+            backdrop.addEventListener('click', closeModal);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && requestModal.classList.contains('is-visible')) {
+                closeModal();
+            }
+        });
+    });
 })();

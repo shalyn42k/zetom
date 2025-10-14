@@ -158,6 +158,73 @@
         </form>
     </div>
 </div>
+<div class="modal" data-request-modal
+     aria-hidden="true"
+     data-status-map="{{ status_meta_json|escapejs }}"
+     data-detail-template="{% url 'contact:message_detail' 0 %}"
+     data-update-template="{% url 'contact:update_message' 0 %}"
+     data-success-message="{{ request_update_success_message|escape }}"
+     data-detail-error="{{ request_detail_error_message|escape }}"
+     data-update-error="{{ request_update_error_message|escape }}"
+     data-language="{{ lang }}">
+    <div class="modal__backdrop" data-request-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
+        <button type="button" class="modal__close" data-request-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
+        <h2 class="modal__title" id="request-modal-title" data-request-title>{% if lang == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
+        <p class="modal__subtitle" data-request-created></p>
+        <form method="post" class="modal__form" data-request-form>
+            {% csrf_token %}
+            <div class="request-modal__grid">
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
+                    <input type="text" name="first_name" class="form-input" required>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
+                    <input type="text" name="last_name" class="form-input" required>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
+                    <input type="text" name="phone" class="form-input" required>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">E-mail</span>
+                    <input type="email" name="email" class="form-input" required>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
+                    <select name="company" class="form-input" required>
+                        {% for option in company_options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Status{% else %}Status{% endif %}</span>
+                    <select name="status" class="form-input" required>
+                        {% for option in status_options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="request-modal__field request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
+                    <textarea name="message" rows="6" class="form-input" required></textarea>
+                </label>
+            </div>
+            <div class="form-error" data-request-errors hidden></div>
+            <div class="form-success" data-request-feedback hidden></div>
+            <div class="modal__actions">
+                <button type="button" class="button button--ghost" data-request-close>
+                    {% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}
+                </button>
+                <button type="submit" class="button button--primary" data-request-save>
+                    {% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <header class="topbar">
     <div class="topbar-left">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM" class="topbar-logo">
@@ -258,7 +325,7 @@
                     </thead>
                     <tbody>
                     {% for message_item in messages_page %}
-                        <tr>
+                        <tr class="table-row" data-request-row data-request-id="{{ message_item.id }}" tabindex="0">
                             <td>
                                 {% with message_id=message_item.id|stringformat:'s' %}
                                 <input type="checkbox"
@@ -270,20 +337,20 @@
                                        aria-label="{% if lang == 'pl' %}Zaznacz wiadomość o ID {{ message_item.id }}{% else %}Select message with ID {{ message_item.id }}{% endif %}">
                                 {% endwith %}
                             </td>
-                            <td>#{{ message_item.id }}</td>
-                            <td>{{ message_item.created_at|date:'Y-m-d H:i' }}</td>
-                            <td>{{ message_item.first_name }} {{ message_item.last_name }}</td>
-                            <td><a href="tel:{{ message_item.phone }}">{{ message_item.phone }}</a></td>
-                            <td><a href="mailto:{{ message_item.email }}">{{ message_item.email }}</a></td>
-                            <td>{{ message_item.company }}</td>
-                            <td>{{ message_item.message|linebreaksbr }}</td>
-                            <td>
+                            <td data-cell="id">#{{ message_item.id }}</td>
+                            <td data-cell="created">{{ message_item.created_at|date:'Y-m-d H:i' }}</td>
+                            <td data-cell="customer">{{ message_item.first_name }} {{ message_item.last_name }}</td>
+                            <td data-cell="phone"><a href="tel:{{ message_item.phone }}" data-cell-phone>{{ message_item.phone }}</a></td>
+                            <td data-cell="email"><a href="mailto:{{ message_item.email }}" data-cell-email>{{ message_item.email }}</a></td>
+                            <td data-cell="company">{{ message_item.company }}</td>
+                            <td data-cell="message">{{ message_item.message|linebreaksbr }}</td>
+                            <td data-cell="status">
                                 {% if message_item.status == message_item.STATUS_NEW %}
-                                    <span class="badge badge--success">{% if lang == 'pl' %}Nowe{% else %}New{% endif %}</span>
+                                    <span class="badge badge--success" data-status-badge>{% if lang == 'pl' %}Nowe{% else %}New{% endif %}</span>
                                 {% elif message_item.status == message_item.STATUS_IN_PROGRESS %}
-                                    <span class="badge badge--warning">{% if lang == 'pl' %}W trakcie{% else %}In progress{% endif %}</span>
+                                    <span class="badge badge--warning" data-status-badge>{% if lang == 'pl' %}W trakcie{% else %}In progress{% endif %}</span>
                                 {% else %}
-                                    <span class="badge badge--info">{% if lang == 'pl' %}Gotowe{% else %}Ready{% endif %}</span>
+                                    <span class="badge badge--info" data-status-badge>{% if lang == 'pl' %}Gotowe{% else %}Ready{% endif %}</span>
                                 {% endif %}
                             </td>
                         </tr>
