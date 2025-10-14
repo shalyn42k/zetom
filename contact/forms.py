@@ -4,11 +4,9 @@ from django import forms
 from .models import ContactMessage
 
 
-# ✅ Используем дефолтные шаблоны Django для чекбоксов
-class PlainCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
-    # Явно фиксируем на стандартные шаблоны ядра
-    template_name = "django/forms/widgets/checkbox_select.html"
-    option_template_name = "django/forms/widgets/checkbox_option.html"
+class DownloadCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
+    option_inherits_attrs = True
+    option_template_name = "contact/widgets/download_checkbox_option.html"
 
 
 class ContactForm(forms.ModelForm):
@@ -219,16 +217,8 @@ class DownloadMessagesForm(forms.Form):
     )
 
     form_name = forms.CharField(widget=forms.HiddenInput(), initial="download")
-    messages = forms.MultipleChoiceField(
-        choices=(),
-        widget=PlainCheckboxSelectMultiple(),
-        required=True,
-    )
-    fields = forms.MultipleChoiceField(
-        choices=FIELD_CHOICES,
-        widget=PlainCheckboxSelectMultiple(),
-        required=True,
-    )
+    messages = forms.MultipleChoiceField(choices=(), widget=DownloadCheckboxSelectMultiple, required=True)
+    fields = forms.MultipleChoiceField(choices=FIELD_CHOICES, widget=DownloadCheckboxSelectMultiple, required=True)
 
     def __init__(
         self,
@@ -268,11 +258,12 @@ class DownloadMessagesForm(forms.Form):
         self.fields["fields"].choices = [
             (value, field_labels.get(value, label)) for value, label in self.FIELD_CHOICES
         ]
-
-        # ✅ НИЧЕГО не указываем про contact/widgets/*
-        # Добавим только data-атрибуты для JS-логики
+        self.fields["fields"].widget.option_template_name = "contact/widgets/download_field_option.html"
         self.fields["messages"].widget.attrs.update({"data-download-row": "true"})
         self.fields["fields"].widget.attrs.update({"data-download-field": "true"})
+
+        if not self.is_bound:
+            self.fields["fields"].initial = [value for value, _ in self.fields["fields"].choices]
 
     def clean_messages(self) -> list[str]:
         data = self.cleaned_data.get("messages") or []

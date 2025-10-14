@@ -149,6 +149,19 @@
         const requestCheckboxes = $$('input[name="messages"]', downloadModal);
         const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
         const submitButton = $('[data-download-submit]', downloadModal);
+        const tableSelection = $$('[data-row-checkbox]');
+
+        const applyTableSelection = () => {
+            if (!tableSelection.length) {
+                return;
+            }
+            const selectedIds = tableSelection
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => checkbox.value);
+            requestCheckboxes.forEach((checkbox) => {
+                checkbox.checked = selectedIds.includes(checkbox.value);
+            });
+        };
 
         const toggleModal = (shouldOpen) => {
             if (!downloadModal) {
@@ -206,7 +219,11 @@
         });
 
         if (openButton) {
-            openButton.addEventListener('click', () => toggleModal(true));
+            openButton.addEventListener('click', () => {
+                applyTableSelection();
+                updateState();
+                toggleModal(true);
+            });
         }
 
         closeElements.forEach((element) => {
