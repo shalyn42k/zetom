@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from io import BytesIO
 from typing import Iterable
+from html import escape  # ← используем стандартный экранировщик
 
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from xml.sax.saxutils import escape # or from html import escape
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..models import ContactMessage
@@ -99,7 +99,7 @@ def build_messages_pdf(
         rows = []
         for field in fields:
             label = field_labels.get(field, field)
-            value = _field_value(field, message, status_labels, language)
+            value = _field_value(field, message, status_labels)
             rows.append([
                 Paragraph(f"<b>{escape(label)}</b>", field_label_style),
                 Paragraph(value, field_value_style),
@@ -163,7 +163,6 @@ def _field_value(
     field: str,
     message: ContactMessage,
     status_labels: dict[str, str],
-    language: str,
 ) -> str:
     if field == "created_at":
         timestamp = timezone.localtime(message.created_at)

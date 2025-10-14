@@ -4,13 +4,6 @@ from django import forms
 from .models import ContactMessage
 
 
-# ✅ Используем дефолтные шаблоны Django для чекбоксов
-class PlainCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
-    # Явно фиксируем на стандартные шаблоны ядра
-    template_name = "django/forms/widgets/checkbox_select.html"
-    option_template_name = "django/forms/widgets/checkbox_option.html"
-
-
 class ContactForm(forms.ModelForm):
     COMPANY_CHOICES = [
         ("firma1", "Firma 1"),
@@ -58,7 +51,7 @@ class MessageBulkActionForm(forms.Form):
     selected = forms.MultipleChoiceField(
         choices=(),
         required=True,
-        widget=PlainCheckboxSelectMultiple(),   # ✅ инстанс, не класс
+        widget=forms.CheckboxSelectMultiple(),  # стандартный виджет
     )
 
     def __init__(self, *args, message_choices: list[tuple[str, str]] | None = None, **kwargs):
@@ -83,7 +76,7 @@ class TrashActionForm(forms.Form):
     selected = forms.MultipleChoiceField(
         choices=(),
         required=False,
-        widget=PlainCheckboxSelectMultiple(),
+        widget=forms.CheckboxSelectMultiple(),  # стандартный виджет
     )
 
     def __init__(
@@ -221,12 +214,12 @@ class DownloadMessagesForm(forms.Form):
     form_name = forms.CharField(widget=forms.HiddenInput(), initial="download")
     messages = forms.MultipleChoiceField(
         choices=(),
-        widget=PlainCheckboxSelectMultiple(),
+        widget=forms.CheckboxSelectMultiple(),   # стандартный виджет
         required=True,
     )
     fields = forms.MultipleChoiceField(
         choices=FIELD_CHOICES,
-        widget=PlainCheckboxSelectMultiple(),
+        widget=forms.CheckboxSelectMultiple(),   # стандартный виджет
         required=True,
     )
 
@@ -269,10 +262,13 @@ class DownloadMessagesForm(forms.Form):
             (value, field_labels.get(value, label)) for value, label in self.FIELD_CHOICES
         ]
 
-        # ✅ НИЧЕГО не указываем про contact/widgets/*
-        # Добавим только data-атрибуты для JS-логики
+        # data-* атрибуты для JS (не обяз.)
         self.fields["messages"].widget.attrs.update({"data-download-row": "true"})
         self.fields["fields"].widget.attrs.update({"data-download-field": "true"})
+
+        # По умолчанию — все поля отмечены
+        if not self.is_bound:
+            self.fields["fields"].initial = [value for value, _ in self.fields["fields"].choices]
 
     def clean_messages(self) -> list[str]:
         data = self.cleaned_data.get("messages") or []
