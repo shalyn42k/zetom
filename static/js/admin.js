@@ -134,4 +134,94 @@
 
         updateTrashState();
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const downloadModal = $('[data-download-modal]');
+        if (!downloadModal) {
+            return;
+        }
+
+        const openButton = $('[data-download-open]');
+        const closeElements = $$('[data-download-close]', downloadModal).concat(
+            downloadModal.querySelector('.modal__backdrop')
+        );
+        const selectAll = $('[data-download-select-all]', downloadModal);
+        const requestCheckboxes = $$('input[name="messages"]', downloadModal);
+        const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
+        const submitButton = $('[data-download-submit]', downloadModal);
+
+        const toggleModal = (shouldOpen) => {
+            if (!downloadModal) {
+                return;
+            }
+            if (shouldOpen) {
+                downloadModal.classList.add('is-visible');
+                downloadModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } else {
+                downloadModal.classList.remove('is-visible');
+                downloadModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+            }
+        };
+
+        const updateSelectAllState = () => {
+            if (!selectAll) {
+                return;
+            }
+            const checkedCount = requestCheckboxes.filter((checkbox) => checkbox.checked).length;
+            const total = requestCheckboxes.length;
+            selectAll.checked = total > 0 && checkedCount === total;
+            selectAll.indeterminate = checkedCount > 0 && checkedCount < total;
+        };
+
+        const updateSubmitState = () => {
+            const hasRequests = requestCheckboxes.some((checkbox) => checkbox.checked);
+            const hasFields = fieldCheckboxes.some((checkbox) => checkbox.checked);
+            if (submitButton) {
+                submitButton.disabled = !(hasRequests && hasFields);
+            }
+        };
+
+        const updateState = () => {
+            updateSelectAllState();
+            updateSubmitState();
+        };
+
+        if (selectAll) {
+            selectAll.addEventListener('change', () => {
+                requestCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = selectAll.checked;
+                });
+                updateState();
+            });
+        }
+
+        requestCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', updateState);
+        });
+
+        fieldCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', updateSubmitState);
+        });
+
+        if (openButton) {
+            openButton.addEventListener('click', () => toggleModal(true));
+        }
+
+        closeElements.forEach((element) => {
+            if (!element) {
+                return;
+            }
+            element.addEventListener('click', () => toggleModal(false));
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && downloadModal.classList.contains('is-visible')) {
+                toggleModal(false);
+            }
+        });
+
+        updateState();
+    });
 })();
