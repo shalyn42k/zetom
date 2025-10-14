@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import json
 from typing import Iterable
 from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
@@ -19,8 +20,10 @@ from .forms import (
     LoginForm,
     MessageBulkActionForm,
     MessageFilterForm,
+    MessageUpdateForm,
     TrashActionForm,
 )
+from .models import ContactMessage
 from .services import messages as message_service
 from .services.pdf_service import build_messages_pdf
 from .services.email_service import send_contact_email, send_email_with_attachment
@@ -33,7 +36,15 @@ def index(request: HttpRequest) -> HttpResponse:
     form = ContactForm(request.POST or None)
 
     if request.method == 'POST' and form.is_valid():
-        message = message_service.add_message(**form.cleaned_data)
+        payload = {
+            "first_name": form.cleaned_data["first_name"],
+            "last_name": form.cleaned_data["last_name"],
+            "phone": form.cleaned_data["phone"],
+            "email": form.cleaned_data["email"],
+            "company": form.cleaned_data["company"],
+            "message": form.cleaned_data["message"],
+        }
+        message = message_service.add_message(**payload)
         if settings.SMTP_USER:
             send_contact_email(form.cleaned_data['email'], message)
         success_message = (
@@ -182,6 +193,19 @@ def panel(request: HttpRequest) -> HttpResponse:
         raw_ids = download_form.data.getlist('messages')
         selected_download_ids = list(dict.fromkeys(raw_ids))
 
+    company_options = _company_options(lang)
+    status_options = _status_options(lang)
+    status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
+
+    if lang == 'pl':
+        update_success_message = 'Zgłoszenie zostało zaktualizowane.'
+        detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
+        update_error_message = 'Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie.'
+    else:
+        update_success_message = 'Request updated successfully.'
+        detail_error_message = 'Unable to load request data.'
+        update_error_message = 'Could not save changes. Please fix the errors and try again.'
+
     context = {
         'lang': lang,
         'messages_page': page_obj,
@@ -199,8 +223,71 @@ def panel(request: HttpRequest) -> HttpResponse:
         'download_has_choices': bool(download_choices),
         'download_fields_total': download_fields_total,
         'selected_download_ids': selected_download_ids,
+        'company_options': company_options,
+        'status_options': status_options,
+        'status_meta_json': json.dumps(status_meta),
+        'request_update_success_message': update_success_message,
+        'request_detail_error_message': detail_error_message,
+        'request_update_error_message': update_error_message,
     }
     return render(request, 'contact/admin_panel.html', context)
+
+
+@require_http_methods(['GET'])
+def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
+    if not request.session.get('logged_in'):
+        return JsonResponse({'error': 'unauthorized'}, status=403)
+
+    message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    language = get_language(request)
+    created_at = timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M')
+    status_options = _status_options(language)
+    status_labels = {item['value']: item['label'] for item in status_options}
+
+    data = {
+        'id': message.id,
+        'first_name': message.first_name,
+        'last_name': message.last_name,
+        'phone': message.phone,
+        'email': message.email,
+        'company': message.company,
+        'message': message.message,
+        'status': message.status,
+        'status_label': status_labels.get(message.status, message.status),
+        'created_at': created_at,
+    }
+    return JsonResponse(data)
+
+
+@require_POST
+def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
+    if not request.session.get('logged_in'):
+        return JsonResponse({'error': 'unauthorized'}, status=403)
+
+    message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    language = get_language(request)
+    form = MessageUpdateForm(request.POST, instance=message)
+    if form.is_valid():
+        updated_message = form.save()
+        status_options = _status_options(language)
+        status_lookup = {item['value']: item for item in status_options}
+        status_info = status_lookup.get(updated_message.status, {'label': updated_message.status, 'badge': 'badge--info'})
+        data = {
+            'id': updated_message.id,
+            'first_name': updated_message.first_name,
+            'last_name': updated_message.last_name,
+            'phone': updated_message.phone,
+            'email': updated_message.email,
+            'company': updated_message.company,
+            'message': updated_message.message,
+            'status': updated_message.status,
+            'status_label': status_info['label'],
+            'status_badge': status_info['badge'],
+            'created_at': timezone.localtime(updated_message.created_at).strftime('%Y-%m-%d %H:%M'),
+        }
+        return JsonResponse(data)
+
+    return JsonResponse({'errors': form.errors}, status=400)
 
 
 def _panel_redirect_url(
@@ -223,6 +310,57 @@ def _panel_redirect_url(
     if not params:
         return base_url
     return f"{base_url}?{urlencode(params)}"
+
+
+def _company_options(language: str) -> list[dict[str, str]]:
+    if language == 'pl':
+        labels = {value: label for value, label in ContactForm.COMPANY_CHOICES}
+    else:
+        labels = {
+            'firma1': 'Company 1',
+            'firma2': 'Company 2',
+            'firma3': 'Company 3',
+            'inna': 'Other',
+        }
+    return [
+        {
+            'value': value,
+            'label': labels.get(value, label),
+        }
+        for value, label in ContactForm.COMPANY_CHOICES
+    ]
+
+
+def _status_options(language: str) -> list[dict[str, str]]:
+    if language == 'pl':
+        labels = {
+            ContactMessage.STATUS_NEW: 'Nowe',
+            ContactMessage.STATUS_IN_PROGRESS: 'W trakcie',
+            ContactMessage.STATUS_READY: 'Gotowe',
+        }
+    else:
+        labels = {
+            ContactMessage.STATUS_NEW: 'New',
+            ContactMessage.STATUS_IN_PROGRESS: 'In progress',
+            ContactMessage.STATUS_READY: 'Ready',
+        }
+    return [
+        {
+            'value': ContactMessage.STATUS_NEW,
+            'label': labels[ContactMessage.STATUS_NEW],
+            'badge': 'badge--success',
+        },
+        {
+            'value': ContactMessage.STATUS_IN_PROGRESS,
+            'label': labels[ContactMessage.STATUS_IN_PROGRESS],
+            'badge': 'badge--warning',
+        },
+        {
+            'value': ContactMessage.STATUS_READY,
+            'label': labels[ContactMessage.STATUS_READY],
+            'badge': 'badge--info',
+        },
+    ]
 
 
 def _resolve_filter_data(request: HttpRequest, language: str) -> dict[str, str]:

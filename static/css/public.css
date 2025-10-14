@@ -313,7 +313,48 @@ a:focus {
 
 .form-actions {
     display: flex;
+    gap: 12px;
     justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-actions .button {
+    min-width: 140px;
+}
+
+.form-checkbox-group {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.form-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(47, 168, 79, 0.08);
+    border: 1px solid rgba(47, 168, 79, 0.22);
+    font-weight: 600;
+    color: var(--green-dark);
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid rgba(27, 109, 52, 0.4);
+    accent-color: var(--green);
+}
+
+.form-checkbox span {
+    flex: 1;
+}
+
+.form-error[hidden] {
+    display: none;
 }
 
 .message-list {
@@ -408,6 +449,184 @@ a:focus {
 
 .footer a {
     color: #d5ffe4;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(12, 32, 18, 0.32);
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 40;
+}
+
+.modal.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal__backdrop {
+    position: absolute;
+    inset: 0;
+}
+
+.modal__dialog {
+    position: relative;
+    width: min(680px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: var(--surface);
+    border-radius: 24px;
+    box-shadow: 0 30px 60px rgba(18, 64, 30, 0.26);
+    padding: clamp(24px, 4vw, 36px);
+    display: grid;
+    gap: 18px;
+}
+
+.modal__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(27, 109, 52, 0.12);
+    color: var(--green-dark);
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.modal__title {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+    color: var(--green-dark);
+}
+
+.modal__intro {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.review-summary {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.review-summary__item {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid rgba(27, 109, 52, 0.12);
+    box-shadow: 0 14px 28px rgba(18, 64, 30, 0.08);
+    display: grid;
+    gap: 10px;
+}
+
+.review-summary__item--full {
+    grid-column: 1 / -1;
+}
+
+.review-summary__item.is-editing {
+    border-color: rgba(47, 168, 79, 0.35);
+    box-shadow: 0 18px 32px rgba(18, 64, 30, 0.15);
+}
+
+.review-summary__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.review-summary__label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.review-summary__edit-button {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--green-dark);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.review-summary__edit-button:hover,
+.review-summary__edit-button:focus-visible {
+    background: rgba(47, 168, 79, 0.14);
+    outline: none;
+}
+
+.review-summary__value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-word;
+}
+
+.review-summary__value br {
+    content: "";
+}
+
+.review-summary__editor {
+    display: grid;
+    gap: 8px;
+}
+
+.review-summary__editor[hidden] {
+    display: none;
+}
+
+.review-summary__editor-input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(27, 109, 52, 0.18);
+    padding: 10px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.review-summary__editor-input:focus {
+    outline: 2px solid rgba(47, 168, 79, 0.35);
+    border-color: rgba(47, 168, 79, 0.55);
+}
+
+.review-confirm {
+    display: grid;
+    gap: 8px;
+}
+
+.review-confirm .form-checkbox {
+    background: rgba(47, 168, 79, 0.12);
+}
+
+body.has-modal {
+    overflow: hidden;
 }
 
 @media (max-width: 960px) {
