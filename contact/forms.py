@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django import forms
-
 from .models import ContactMessage
 
 
@@ -11,7 +10,6 @@ class DownloadCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
 
 
 class ContactForm(forms.ModelForm):
-    # варианты компаний для селекта
     COMPANY_CHOICES = [
         ("firma1", "Firma 1"),
         ("firma2", "Firma 2"),
@@ -19,7 +17,6 @@ class ContactForm(forms.ModelForm):
         ("inna",   "Inna"),
     ]
 
-    # переопределяем поле модели как ChoiceField
     company = forms.ChoiceField(
         choices=COMPANY_CHOICES,
         required=True,
@@ -47,6 +44,7 @@ class MessageBulkActionForm(forms.Form):
     ACTION_MARK_IN_PROGRESS = "mark_in_progress"
     ACTION_MARK_READY = "mark_ready"
     ACTION_DELETE = "delete"
+
     ACTION_CHOICES = (
         (ACTION_MARK_NEW, "Mark as new"),
         (ACTION_MARK_IN_PROGRESS, "Mark as in progress"),
@@ -58,7 +56,7 @@ class MessageBulkActionForm(forms.Form):
     selected = forms.MultipleChoiceField(
         choices=(),
         required=True,
-        widget=forms.CheckboxSelectMultiple
+        widget=PlainCheckboxSelectMultiple(),   # ✅ инстанс, не класс
     )
 
     def __init__(self, *args, message_choices: list[tuple[str, str]] | None = None, **kwargs):
@@ -83,7 +81,7 @@ class TrashActionForm(forms.Form):
     selected = forms.MultipleChoiceField(
         choices=(),
         required=False,
-        widget=forms.CheckboxSelectMultiple,
+        widget=PlainCheckboxSelectMultiple(),
     )
 
     def __init__(
@@ -95,6 +93,7 @@ class TrashActionForm(forms.Form):
     ):
         super().__init__(*args, **kwargs)
         self.fields["selected"].choices = message_choices or []
+        # action управляется кнопками — прячем поле
         self.fields["action"].widget = forms.HiddenInput()
         self._empty_selection_message = (
             "Wybierz co najmniej jedną wiadomość."
