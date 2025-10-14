@@ -16,12 +16,13 @@
 
         const botCheckbox = form.querySelector('[data-bot-check]');
         const submitButton = $('[data-form-submit]', form);
-        const reviewModal = $('[data-review-modal]');
+        const reviewModal = form.querySelector('[data-review-modal]') || $('[data-review-modal]');
         const reviewCheckbox = reviewModal
             ? reviewModal.querySelector('[data-review-confirm]') || reviewModal.querySelector('input[name="review_confirmed"]')
             : null;
         const reviewError = reviewModal ? $('[data-review-error]', reviewModal) : null;
         const reviewStaticError = $('[data-review-error-static]', form);
+        const botErrorMessage = form.dataset.botRequiredMessage || '';
         const closeButtons = reviewModal ? $$('[data-review-close]', reviewModal) : [];
         const editButton = reviewModal ? $('[data-review-edit]', reviewModal) : null;
         const sendButton = reviewModal ? $('[data-review-send]', reviewModal) : null;
@@ -160,6 +161,17 @@
             });
         };
 
+        let botErrorVisible = false;
+
+        const showStaticError = (message) => {
+            if (!reviewStaticError) {
+                return;
+            }
+            reviewStaticError.textContent = message;
+            reviewStaticError.hidden = !message;
+            botErrorVisible = Boolean(message);
+        };
+
         const updateSubmitState = () => {
             if (!submitButton) {
                 return;
@@ -170,15 +182,19 @@
 
         updateSubmitState();
         if (botCheckbox) {
-            botCheckbox.addEventListener('change', updateSubmitState);
+            botCheckbox.addEventListener('change', () => {
+                updateSubmitState();
+                if (botCheckbox.checked) {
+                    hideStaticError();
+                }
+            });
         }
 
         let allowSubmit = false;
 
         const hideStaticError = () => {
-            if (reviewStaticError) {
-                reviewStaticError.textContent = '';
-                reviewStaticError.hidden = true;
+            if (botErrorVisible) {
+                showStaticError('');
             }
         };
 
@@ -250,8 +266,10 @@
                 hideStaticError();
                 allowSubmit = true;
                 closeModal({ resetReview: false });
-                if (typeof form.requestSubmit === 'function') {
-                    form.requestSubmit();
+                if (submitButton && typeof form.requestSubmit === 'function') {
+                    form.requestSubmit(submitButton);
+                } else if (submitButton) {
+                    submitButton.click();
                 } else {
                     form.submit();
                 }
@@ -303,6 +321,9 @@
             const isChecked = botCheckbox ? botCheckbox.checked : true;
             if (!isChecked) {
                 updateSubmitState();
+                if (botErrorMessage) {
+                    showStaticError(botErrorMessage);
+                }
                 return;
             }
             openModal();

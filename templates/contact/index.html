@@ -101,7 +101,11 @@
                 </div>
             </aside>
 
-            <form method="post" action="{% url 'contact:index' %}?lang={{ lang }}" class="contact-form" data-contact-form>
+            <form method="post"
+                  action="{% url 'contact:index' %}?lang={{ lang }}"
+                  class="contact-form"
+                  data-contact-form
+                  data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
                     <div class="form-error">{{ form.non_field_errors.0 }}</div>
