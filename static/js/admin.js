@@ -149,6 +149,9 @@
         }
 
         const openButton = $('[data-download-open]');
+        const canControlOpenButton = Boolean(
+            openButton && openButton.dataset.downloadAvailable !== 'false',
+        );
         const closeElements = $$('[data-download-close]', downloadModal).concat(
             downloadModal.querySelector('.modal__backdrop')
         );
@@ -311,6 +314,15 @@
             }
         };
 
+        const updateOpenButtonState = () => {
+            if (!canControlOpenButton) {
+                return;
+            }
+            const shouldDisable = currentSelectedIds.length === 0;
+            openButton.disabled = shouldDisable;
+            openButton.toggleAttribute('disabled', shouldDisable);
+        };
+
         const refreshAll = (options = {}) => {
             const { syncHidden = false } = options;
             if (syncHidden || downloadModal.classList.contains('is-visible')) {
@@ -319,7 +331,7 @@
             updateRequestsSummary();
             updateFieldsSummary();
             updateSubmitState();
-            updateSummary();
+            updateOpenButtonState();
         };
 
         const handleTableChange = () => {

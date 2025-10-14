@@ -137,40 +137,6 @@
             <div data-download-selected>
                 {{ download_form.messages }}
             </div>
-            <div class="download-summary" data-download-summary>
-                <article class="download-summary__card">
-                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane zgłoszenia{% else %}Selected requests{% endif %}</h3>
-                    <p class="download-summary__value">
-                        <span data-download-requests-count>0</span>
-                        <span class="download-summary__total">/ {{ download_messages_total|default:0 }}</span>
-                    </p>
-                    <p class="download-summary__hint"
-                       data-download-requests-hint
-                       data-empty="{% if lang == 'pl' %}Zaznacz wiadomości z listy, aby dołączyć je do raportu.{% else %}Select messages from the list to include them in the report.{% endif %}"
-                       data-partial="{% if lang == 'pl' %}Wybrano {count} z {total} zgłoszeń.{% else %}Selected {count} of {total} requests.{% endif %}"
-                       data-all="{% if lang == 'pl' %}Wszystkie zgłoszenia są uwzględnione.{% else %}All requests are included.{% endif %}">
-                        {% if lang == 'pl' %}Zaznacz wiadomości z listy, aby dołączyć je do raportu.{% else %}Select messages from the list to include them in the report.{% endif %}
-                    </p>
-                </article>
-                <article class="download-summary__card">
-                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane pola{% else %}Selected fields{% endif %}</h3>
-                    <p class="download-summary__value">
-                        <span data-download-fields-count>0</span>
-                        <span class="download-summary__total">/ {{ download_fields_total|default:0 }}</span>
-                    </p>
-                    <p class="download-summary__hint"
-                       data-download-fields-hint
-                       data-empty="{% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}"
-                       data-partial="{% if lang == 'pl' %}Wybrano {count} z {total} pól.{% else %}Selected {count} of {total} fields.{% endif %}"
-                       data-all="{% if lang == 'pl' %}Wszystkie pola zostaną dołączone do raportu.{% else %}All fields will be included in the report.{% endif %}">
-                        {% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}
-                    </p>
-                    <div class="download-summary__chips"
-                         data-download-fields-preview
-                         data-empty="{% if lang == 'pl' %}Pola pojawią się tutaj po zaznaczeniu.{% else %}Selected fields will appear here.{% endif %}"
-                         data-max="5"></div>
-                </article>
-            </div>
             <div class="download-grid">
                 <div class="download-column">
                     <h3 class="download-heading">{% if lang == 'pl' %}Wybierz pola{% else %}Choose fields{% endif %}</h3>
