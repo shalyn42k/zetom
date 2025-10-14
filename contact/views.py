@@ -176,6 +176,9 @@ def panel(request: HttpRequest) -> HttpResponse:
                     )
                 )
 
+    download_messages_total = len(download_form.fields['messages'].choices)
+    download_fields_total = len(download_form.fields['fields'].choices)
+
     context = {
         'lang': lang,
         'messages_page': page_obj,
@@ -192,6 +195,8 @@ def panel(request: HttpRequest) -> HttpResponse:
         'current_company': company_filter,
         'has_messages': bool(download_choices),
         'download_has_choices': bool(download_choices),
+        'download_messages_total': download_messages_total,
+        'download_fields_total': download_fields_total,
     }
     return render(request, 'contact/admin_panel.html', context)
 

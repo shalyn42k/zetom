@@ -690,6 +690,36 @@ input[type="file"].form-input {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.download-intro {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(27, 109, 52, 0.1);
+    background: linear-gradient(135deg, rgba(47, 168, 79, 0.09), rgba(27, 109, 52, 0.04));
+    color: var(--text-primary);
+}
+
+.download-intro p {
+    margin: 0;
+    font-size: 0.96rem;
+    line-height: 1.5;
+}
+
+.download-steps {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 6px;
+    font-size: 0.94rem;
+    color: var(--muted);
+}
+
+.download-steps li {
+    margin: 0;
+}
+
 .download-column {
     display: grid;
     gap: 12px;
@@ -699,6 +729,81 @@ input[type="file"].form-input {
     margin: 0;
     font-size: 1rem;
     color: var(--green-dark);
+}
+
+.download-summary {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.download-summary__card {
+    display: grid;
+    gap: 10px;
+    padding: 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(27, 109, 52, 0.12);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.08);
+}
+
+.download-summary__title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--green-dark);
+}
+
+.download-summary__value {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.download-summary__total {
+    font-size: 1rem;
+    color: var(--muted);
+}
+
+.download-summary__hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.download-summary__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 28px;
+}
+
+.download-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(47, 168, 79, 0.12);
+    color: var(--green-dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.download-chip--more {
+    background: rgba(27, 109, 52, 0.08);
+    color: var(--muted);
+}
+
+.download-summary__empty {
+    font-size: 0.86rem;
+    color: var(--muted);
 }
 
 .download-options {
@@ -727,6 +832,11 @@ input[type="file"].form-input {
     border-color: rgba(27, 109, 52, 0.32);
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.16);
     transform: translateY(-1px);
+}
+
+.download-option__label {
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .download-empty {

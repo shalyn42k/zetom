@@ -79,7 +79,10 @@
         </form>
     </div>
 </div>
-<div class="modal{% if download_form.errors %} is-visible{% endif %}" data-download-modal aria-hidden="{% if download_form.errors %}false{% else %}true{% endif %}">
+<div class="modal{% if download_form.errors %} is-visible{% endif %}"
+     data-download-modal
+     data-language="{{ lang }}"
+     aria-hidden="{% if download_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-download-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="download-title">
         <button type="button" class="modal__close" data-download-close aria-label="{% if lang == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
@@ -90,6 +93,22 @@
             <input type="hidden" name="page" value="{{ current_page }}">
             <input type="hidden" name="sort_by" value="{{ current_sort }}">
             <input type="hidden" name="company" value="{{ current_company }}">
+            <div class="download-intro">
+                <p>
+                    {% if lang == 'pl' %}
+                        Wygeneruj przejrzysty plik PDF ze zgłoszeniami, które aktualnie przeglądasz.
+                        Najpierw zaznacz wiadomości, później wybierz pola, które mają pojawić się w raporcie.
+                    {% else %}
+                        Create a clean PDF with the requests you are reviewing right now.
+                        Start by picking the messages, then choose which fields should be visible in the report.
+                    {% endif %}
+                </p>
+                <ol class="download-steps">
+                    <li>{% if lang == 'pl' %}Zaznacz zgłoszenia z listy poniżej{% else %}Select the requests from the list below{% endif %}</li>
+                    <li>{% if lang == 'pl' %}Wskaż pola do umieszczenia w PDF{% else %}Choose the fields to include in the PDF{% endif %}</li>
+                    <li>{% if lang == 'pl' %}Kliknij „Pobierz”, aby pobrać raport{% else %}Press “Download” to save the report{% endif %}</li>
+                </ol>
+            </div>
             <div class="modal__toolbar">
                 <label class="checkbox-pill">
                     <input type="checkbox" data-download-select-all {% if not download_has_choices %}disabled{% endif %}>
@@ -98,6 +117,40 @@
                 {% if download_form.non_field_errors %}
                     <div class="form-error form-error--inline">{{ download_form.non_field_errors.0 }}</div>
                 {% endif %}
+            </div>
+            <div class="download-summary" data-download-summary>
+                <article class="download-summary__card">
+                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane zgłoszenia{% else %}Selected requests{% endif %}</h3>
+                    <p class="download-summary__value">
+                        <span data-download-requests-count>0</span>
+                        <span class="download-summary__total">/ {{ download_messages_total|default:0 }}</span>
+                    </p>
+                    <p class="download-summary__hint"
+                       data-download-requests-hint
+                       data-empty="{% if lang == 'pl' %}Zaznacz wiadomości z listy, aby dołączyć je do raportu.{% else %}Select messages from the list to include them in the report.{% endif %}"
+                       data-partial="{% if lang == 'pl' %}Wybrano {count} z {total} zgłoszeń.{% else %}Selected {count} of {total} requests.{% endif %}"
+                       data-all="{% if lang == 'pl' %}Wszystkie zgłoszenia są uwzględnione.{% else %}All requests are included.{% endif %}">
+                        {% if lang == 'pl' %}Zaznacz wiadomości z listy, aby dołączyć je do raportu.{% else %}Select messages from the list to include them in the report.{% endif %}
+                    </p>
+                </article>
+                <article class="download-summary__card">
+                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane pola{% else %}Selected fields{% endif %}</h3>
+                    <p class="download-summary__value">
+                        <span data-download-fields-count>0</span>
+                        <span class="download-summary__total">/ {{ download_fields_total|default:0 }}</span>
+                    </p>
+                    <p class="download-summary__hint"
+                       data-download-fields-hint
+                       data-empty="{% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}"
+                       data-partial="{% if lang == 'pl' %}Wybrano {count} z {total} pól.{% else %}Selected {count} of {total} fields.{% endif %}"
+                       data-all="{% if lang == 'pl' %}Wszystkie pola zostaną dołączone do raportu.{% else %}All fields will be included in the report.{% endif %}">
+                        {% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}
+                    </p>
+                    <div class="download-summary__chips"
+                         data-download-fields-preview
+                         data-empty="{% if lang == 'pl' %}Pola pojawią się tutaj po zaznaczeniu.{% else %}Selected fields will appear here.{% endif %}"
+                         data-max="5"></div>
+                </article>
             </div>
             <div class="download-grid">
                 <div class="download-column">
