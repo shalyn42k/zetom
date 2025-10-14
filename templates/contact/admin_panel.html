@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body{% if trash_form.errors %} class="has-modal"{% endif %}>
+<body{% if trash_form.errors or download_form.errors %} class="has-modal"{% endif %}>
 <div class="overlay"></div>
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
@@ -20,6 +20,8 @@
             {% csrf_token %}
             {{ trash_form.form_name }}
             <input type="hidden" name="page" value="{{ current_page }}">
+            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            <input type="hidden" name="company" value="{{ current_company }}">
             {{ trash_form.action }}
             <div class="modal__toolbar">
                 <label class="checkbox-pill">
@@ -77,6 +79,62 @@
         </form>
     </div>
 </div>
+<div class="modal{% if download_form.errors %} is-visible{% endif %}" data-download-modal aria-hidden="{% if download_form.errors %}false{% else %}true{% endif %}">
+    <div class="modal__backdrop" data-download-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="download-title">
+        <button type="button" class="modal__close" data-download-close aria-label="{% if lang == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
+        <h2 class="modal__title" id="download-title">{% if lang == 'pl' %}Eksportuj zgłoszenia{% else %}Export requests{% endif %}</h2>
+        <form method="post" class="modal__form" data-download-form>
+            {% csrf_token %}
+            {{ download_form.form_name }}
+            <input type="hidden" name="page" value="{{ current_page }}">
+            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            <input type="hidden" name="company" value="{{ current_company }}">
+            <div class="modal__toolbar">
+                <label class="checkbox-pill">
+                    <input type="checkbox" data-download-select-all {% if not download_has_choices %}disabled{% endif %}>
+                    <span>{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}</span>
+                </label>
+                {% if download_form.non_field_errors %}
+                    <div class="form-error form-error--inline">{{ download_form.non_field_errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="download-grid">
+                <div class="download-column">
+                    <h3 class="download-heading">{% if lang == 'pl' %}Wybierz zgłoszenia{% else %}Choose requests{% endif %}</h3>
+                    {% if download_form.messages.errors %}
+                        <div class="form-error">{{ download_form.messages.errors.0 }}</div>
+                    {% endif %}
+                    <div class="download-list" data-download-list>
+                        {% if has_messages %}
+                            {% for checkbox in download_form.messages %}
+                                {{ checkbox }}
+                            {% endfor %}
+                        {% else %}
+                            <p class="download-empty">{% if lang == 'pl' %}Brak zgłoszeń do pobrania.{% else %}No requests available.{% endif %}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="download-column">
+                    <h3 class="download-heading">{% if lang == 'pl' %}Wybierz pola{% else %}Choose fields{% endif %}</h3>
+                    {% if download_form.fields.errors %}
+                        <div class="form-error">{{ download_form.fields.errors.0 }}</div>
+                    {% endif %}
+                    <div class="download-options" data-download-fields>
+                        {% for checkbox in download_form.fields %}
+                            {{ checkbox }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal__actions">
+                <button type="submit" class="button button--primary" data-download-submit {% if not download_has_choices %}disabled{% endif %}>
+                    {% if lang == 'pl' %}Pobierz PDF{% else %}Download PDF{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <header class="topbar">
     <div class="topbar-left">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM" class="topbar-logo">
@@ -111,6 +169,20 @@
 
     <section class="panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
+        <form method="get" class="panel-filters">
+            {% if lang %}
+                <input type="hidden" name="lang" value="{{ lang }}">
+            {% endif %}
+            <div class="panel-filters__field">
+                <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">{% if lang == 'pl' %}Sortuj{% else %}Sort{% endif %}</label>
+                {{ filter_form.sort_by }}
+            </div>
+            <div class="panel-filters__field">
+                <label for="{{ filter_form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</label>
+                {{ filter_form.company }}
+            </div>
+            <button type="submit" class="button button--primary button--compact">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+        </form>
         <form method="post"
               class="panel-form"
               data-bulk-form
@@ -118,6 +190,8 @@
             {% csrf_token %}
             <input type="hidden" name="form_name" value="bulk">
             <input type="hidden" name="page" value="{{ current_page }}">
+            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            <input type="hidden" name="company" value="{{ current_company }}">
             <div class="panel-form-row">
                 <div class="panel-form-field">
                     <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if lang == 'pl' %}Akcja{% else %}Action{% endif %}</label>
@@ -127,6 +201,9 @@
                 <div class="panel-form-actions">
                     <button type="submit" class="button button--primary button--compact" data-bulk-submit>
                         {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
+                    </button>
+                    <button type="button" class="button button--ghost button--compact button--download" data-download-open {% if not download_has_choices %}disabled{% endif %}>
+                        {% if lang == 'pl' %}Pobierz{% else %}Download{% endif %}
                     </button>
                     <button type="button" class="button button--ghost button--compact button--trash" data-trash-open>
                         {% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}
@@ -196,7 +273,7 @@
         <nav class="pagination" aria-label="{% if lang == 'pl' %}Paginacja wiadomości{% else %}Message pagination{% endif %}">
             <div class="pagination__buttons">
                 {% if messages_page.has_previous %}
-                    <a class="pagination__button" href="?page={{ messages_page.previous_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}">
+                    <a class="pagination__button" href="?page={{ messages_page.previous_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
                         ‹ {% if lang == 'pl' %}Poprzednia{% else %}Previous{% endif %}
                     </a>
                 {% else %}
@@ -214,7 +291,7 @@
                                 <li><span class="pagination__page pagination__page--active">{{ page_number }}</span></li>
                             {% else %}
                                 <li>
-                                    <a class="pagination__page" href="?page={{ page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}">{{ page_number }}</a>
+                                    <a class="pagination__page" href="?page={{ page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">{{ page_number }}</a>
                                 </li>
                             {% endif %}
                         {% endif %}
@@ -222,7 +299,7 @@
                 </ul>
 
                 {% if messages_page.has_next %}
-                    <a class="pagination__button" href="?page={{ messages_page.next_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}">
+                    <a class="pagination__button" href="?page={{ messages_page.next_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
                         {% if lang == 'pl' %}Następna{% else %}Next{% endif %} ›
                     </a>
                 {% else %}
@@ -233,13 +310,19 @@
             </div>
 
             <form method="get" class="pagination__goto" aria-label="{% if lang == 'pl' %}Przejdź do strony{% else %}Go to page{% endif %}">
-                {% if lang %}
-                    <input type="hidden" name="lang" value="{{ lang }}">
-                {% endif %}
-                <label class="pagination__label" for="pagination-page">
-                    {% if lang == 'pl' %}Idź do{% else %}Go to{% endif %}
-                </label>
-                <input
+            {% if lang %}
+                <input type="hidden" name="lang" value="{{ lang }}">
+            {% endif %}
+            {% if current_sort %}
+                <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            {% endif %}
+            {% if current_company %}
+                <input type="hidden" name="company" value="{{ current_company }}">
+            {% endif %}
+            <label class="pagination__label" for="pagination-page">
+                {% if lang == 'pl' %}Idź do{% else %}Go to{% endif %}
+            </label>
+            <input
                     type="number"
                     id="pagination-page"
                     name="page"
@@ -260,6 +343,8 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="send_email" value="1">
+            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            <input type="hidden" name="company" value="{{ current_company }}">
             {% if email_form.non_field_errors %}
                 <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
             {% endif %}

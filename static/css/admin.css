@@ -171,6 +171,16 @@ body {
     color: var(--danger);
 }
 
+.button--download {
+    border-color: rgba(47, 168, 79, 0.28);
+    color: var(--green-dark);
+}
+
+.button--download:hover,
+.button--download:focus {
+    background: rgba(47, 168, 79, 0.12);
+}
+
 .button--trash:hover,
 .button--trash:focus {
     background: rgba(215, 58, 52, 0.12);
@@ -212,6 +222,19 @@ body {
 .panel h2 {
     margin: 0;
     font-size: clamp(22px, 2.4vw, 30px);
+}
+
+.panel-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.panel-filters__field {
+    display: grid;
+    gap: 6px;
+    min-width: 200px;
 }
 
 .panel-form {
@@ -601,7 +624,8 @@ input[type="file"].form-input {
     background: rgba(47, 168, 79, 0.18);
 }
 
-.trash-list {
+.trash-list,
+.download-list {
     display: grid;
     gap: 12px;
     max-height: clamp(240px, 40vh, 360px);
@@ -609,7 +633,8 @@ input[type="file"].form-input {
     padding-right: 6px;
 }
 
-.trash-item {
+.trash-item,
+.download-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 14px;
@@ -623,23 +648,28 @@ input[type="file"].form-input {
 }
 
 .trash-item:hover,
-.trash-item:focus-within {
+.trash-item:focus-within,
+.download-item:hover,
+.download-item:focus-within {
     border-color: rgba(27, 109, 52, 0.32);
     box-shadow: 0 12px 28px rgba(18, 64, 30, 0.18);
     transform: translateY(-2px);
 }
 
-.trash-item__checkbox {
+.trash-item__checkbox,
+.download-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
 }
 
-.trash-item__content {
+.trash-item__content,
+.download-item__label {
     display: grid;
     gap: 6px;
 }
 
-.trash-item__meta {
+.trash-item__meta,
+.download-item__label {
     font-weight: 600;
     color: var(--green-dark);
 }
@@ -651,6 +681,58 @@ input[type="file"].form-input {
 
 .trash-item__date {
     font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.download-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.download-column {
+    display: grid;
+    gap: 12px;
+}
+
+.download-heading {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--green-dark);
+}
+
+.download-options {
+    display: grid;
+    gap: 10px;
+}
+
+.download-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(27, 109, 52, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.download-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.download-option:hover,
+.download-option:focus-within {
+    border-color: rgba(27, 109, 52, 0.32);
+    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.16);
+    transform: translateY(-1px);
+}
+
+.download-empty {
+    margin: 0;
+    padding: 24px 0;
+    text-align: center;
     color: var(--muted);
 }
 

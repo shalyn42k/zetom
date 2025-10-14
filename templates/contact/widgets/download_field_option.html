@@ -1,0 +1,9 @@
+<label class="download-option"{% if widget.attrs.id %} for="{{ option.attrs.id }}"{% endif %}>
+    <input type="checkbox"
+           name="{{ widget.name }}"
+           value="{{ option.value }}"
+           {% include "django/forms/widgets/attrs.html" with attrs=widget.attrs only %}
+           {% include "django/forms/widgets/attrs.html" with attrs=option.attrs only %}
+           {% if option.selected %}checked{% endif %}>
+    <span>{{ option.label }}</span>
+</label>
