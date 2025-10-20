@@ -1,8 +1,8 @@
 Django>=6.0a1
+Faker~=37.11.0
+dj-database-url
+gunicorn
+psycopg2-binary
 python-dotenv~=1.1.1
 reportlab~=4.0
-gunicorn
 whitenoise
-psycopg2-binary
-dj-database-url
-Faker~=37.11.0
