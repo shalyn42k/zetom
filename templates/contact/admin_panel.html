@@ -163,7 +163,6 @@
      data-status-map="{{ status_meta_json|escapejs }}"
      data-detail-template="{% url 'contact:message_detail' 0 %}"
      data-update-template="{% url 'contact:update_message' 0 %}"
-     data-success-message="{{ request_update_success_message|escape }}"
      data-detail-error="{{ request_detail_error_message|escape }}"
      data-update-error="{{ request_update_error_message|escape }}"
      data-language="{{ lang }}">
@@ -258,18 +257,6 @@
 </header>
 
 <main class="admin-dashboard">
-    {% if messages %}
-        <div class="alerts">
-            {% for msg in messages %}
-                {% with tags=msg.tags %}
-                    <div class="alert {% if 'success' in tags %}alert-success{% elif 'error' in tags or 'warning' in tags %}alert-error{% else %}alert-success{% endif %}">
-                        {{ msg }}
-                    </div>
-                {% endwith %}
-            {% endfor %}
-        </div>
-    {% endif %}
-
     <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
