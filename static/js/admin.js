@@ -468,15 +468,17 @@
             if (customerCell) {
                 customerCell.textContent = `${data.first_name} ${data.last_name}`.trim();
             }
-            const phoneLink = $('[data-cell-phone]', currentRow);
-            if (phoneLink) {
-                phoneLink.textContent = data.phone;
-                phoneLink.href = `tel:${data.phone}`;
+            const phoneText = $('[data-cell-phone]', currentRow);
+            if (phoneText) {
+                phoneText.textContent = data.phone;
             }
             const emailLink = $('[data-cell-email]', currentRow);
             if (emailLink) {
                 emailLink.textContent = data.email;
-                emailLink.href = `mailto:${data.email}`;
+                const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(data.email || '')}`;
+                emailLink.href = composeUrl;
+                emailLink.target = '_blank';
+                emailLink.rel = 'noopener';
             }
             const companyCell = $('[data-cell="company"]', currentRow);
             if (companyCell) {
