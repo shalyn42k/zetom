@@ -34,6 +34,7 @@ from .utils import get_language
 def index(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = ContactForm(request.POST or None)
+    success_message = request.session.pop('contact_success', None)
 
     if request.method == 'POST' and form.is_valid():
         payload = {
@@ -48,16 +49,18 @@ def index(request: HttpRequest) -> HttpResponse:
         if settings.SMTP_USER:
             send_contact_email(form.cleaned_data['email'], message)
         success_message = (
-            'Wiadomość została wysłana. Skontaktujemy się w ciągu 24 godzin.'
+            'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy.'
             if lang == 'pl'
-            else 'Message sent. We will get back to you within 24 hours.'
+            else 'Your request has been sent. We will process it within 48 hours and contact you afterwards.'
         )
         messages.success(request, success_message)
+        request.session['contact_success'] = success_message
         return redirect(f"{reverse('contact:index')}?lang={lang}")
 
     context = {
         'form': form,
         'lang': lang,
+        'success_message': success_message,
     }
     return render(request, 'contact/index.html', context)
 
