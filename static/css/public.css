@@ -19,6 +19,7 @@
     --alert-success-border: rgba(47, 168, 79, 0.4);
     --alert-error-bg: rgba(198, 56, 42, 0.14);
     --alert-error-border: rgba(198, 56, 42, 0.35);
+    --form-error: #b42318;
 }
 
 * {
@@ -339,7 +340,7 @@ a:focus {
 }
 
 .form-error {
-    color: #b42318;
+    color: var(--form-error);
     font-size: 0.9rem;
 }
 
@@ -564,7 +565,7 @@ a:focus {
 }
 
 .admin-login__error {
-    color: #b42318;
+    color: var(--form-error);
     font-size: 0.9rem;
 }
 
@@ -638,6 +639,7 @@ body[data-theme='dark'] {
     --alert-success-border: rgba(47, 168, 79, 0.35);
     --alert-error-bg: rgba(198, 56, 42, 0.32);
     --alert-error-border: rgba(198, 56, 42, 0.45);
+    --form-error: #ffb4aa;
 }
 
 body[data-theme='dark'] .site-header,
@@ -697,11 +699,11 @@ body[data-theme='dark'] .admin-login__back {
 }
 
 body[data-theme='dark'] .alert-error {
-    color: #ffb4aa;
+    color: var(--form-error);
 }
 
 body[data-theme='dark'] .admin-login__error {
-    color: #ffb4aa;
+    color: var(--form-error);
 }
 
 body[data-theme='dark'] .admin-login__back:hover,
