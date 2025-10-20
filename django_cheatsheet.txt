@@ -87,7 +87,7 @@ python manage.py migrate
 Performance/dev utilities
 -------------------------
 # Create fake data with Faker (if you added the command)
-python manage.py seed_contact_messages --count 1000 --chunk 1000 --locale pl_PL
+python manage.py seed_contact_messages --count 10 --chunk 1000 --locale pl_PL
 
 # Run tests
 python manage.py test
