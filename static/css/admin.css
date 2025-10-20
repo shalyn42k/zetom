@@ -193,21 +193,8 @@ body {
 }
 
 .theme-toggle__icon {
-    width: 18px;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.45;
-    transition: opacity 0.25s ease;
-    flex-shrink: 0;
-}
-
-.theme-toggle__icon circle,
-.theme-toggle__icon line,
-.theme-toggle__icon path {
-    stroke: currentColor;
-    fill: none;
+    font-size: 0.85rem;
+    opacity: 0.6;
 }
 
 .theme-toggle__label {
@@ -299,21 +286,8 @@ body {
 }
 
 .theme-toggle__icon {
-    width: 18px;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.45;
-    transition: opacity 0.25s ease;
-    flex-shrink: 0;
-}
-
-.theme-toggle__icon circle,
-.theme-toggle__icon line,
-.theme-toggle__icon path {
-    stroke: currentColor;
-    fill: none;
+    font-size: 0.85rem;
+    opacity: 0.6;
 }
 
 .theme-toggle__label {
