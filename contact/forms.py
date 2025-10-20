@@ -77,7 +77,9 @@ class ContactForm(forms.ModelForm):
 
 
 class LoginForm(forms.Form):
-    password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-input login-input"})
+    )
 
 
 class MessageBulkActionForm(forms.Form):
