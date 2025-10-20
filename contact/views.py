@@ -33,7 +33,7 @@ from .utils import get_language
 @require_http_methods(['GET', 'POST'])
 def index(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
-    form = ContactForm(request.POST or None)
+    form = ContactForm(request.POST or None, language=lang)
     success_message = request.session.pop('contact_success', None)
 
     if request.method == 'POST' and form.is_valid():
