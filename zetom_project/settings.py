@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import dj_database_url
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -69,6 +71,17 @@ DATABASES = {
         'NAME': os.environ.get('SQLITE_NAME', BASE_DIR / 'db.sqlite3'),
     }
 }
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    conn_max_age = int(os.getenv('DB_CONN_MAX_AGE', '600'))
+    default_ssl = 'false' if DEBUG else 'true'
+    ssl_require = os.getenv('DB_SSL_REQUIRE', default_ssl).lower() in ('1', 'true', 'yes', 'on')
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=conn_max_age,
+        ssl_require=ssl_require,
+    )
 
 # --- Auth ---
 AUTH_PASSWORD_VALIDATORS = [

@@ -1,4 +1,4 @@
-Django>=6.0a1
+Django~=5.2
 Faker~=37.11.0
 dj-database-url
 gunicorn
