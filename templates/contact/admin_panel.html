@@ -340,8 +340,8 @@
                             <td data-cell="id">#{{ message_item.id }}</td>
                             <td data-cell="created">{{ message_item.created_at|date:'Y-m-d H:i' }}</td>
                             <td data-cell="customer">{{ message_item.first_name }} {{ message_item.last_name }}</td>
-                            <td data-cell="phone"><span data-cell-phone class="table-text">{{ message_item.phone }}</span></td>
-                            <td data-cell="email"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to={{ message_item.email|urlencode }}" target="_blank" rel="noopener noreferrer" data-cell-email>{{ message_item.email }}</a></td>
+                            <td data-cell="phone"><a href="tel:{{ message_item.phone }}" data-cell-phone>{{ message_item.phone }}</a></td>
+                            <td data-cell="email"><a href="mailto:{{ message_item.email }}" data-cell-email>{{ message_item.email }}</a></td>
                             <td data-cell="company">{{ message_item.company }}</td>
                             <td data-cell="message">{{ message_item.message|linebreaksbr }}</td>
                             <td data-cell="status">
