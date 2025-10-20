@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}" data-theme="dark">
+<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}">
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
