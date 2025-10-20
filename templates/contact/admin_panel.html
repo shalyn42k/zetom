@@ -226,44 +226,46 @@
         </form>
     </div>
 </div>
-<header class="site-header">
-    <div class="site-branding">
-        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
-        <h1 class="site-title">ZETOM Katowice</h1>
-    </div>
-    <nav class="site-nav">
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:panel' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
-    </nav>
-    <div class="site-header__actions">
-        <div class="lang-switcher">
-            <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
-            <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+<header class="topbar">
+    <div class="topbar__branding">
+        <div class="site-branding">
+            <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+            <div class="topbar__titles">
+                <h1 class="site-title">ZETOM Katowice</h1>
+                <p class="topbar-context">{% if lang == 'pl' %}Panel administracyjny · Zarządzaj wiadomościami od klientów{% else %}Admin panel · Manage customer enquiries{% endif %}</p>
+            </div>
         </div>
-        <button type="button"
-                class="theme-toggle"
-                data-theme-toggle
-                aria-pressed="false"
-                aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
-            <span class="theme-toggle__track">
-                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
-                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
-                <span class="theme-toggle__thumb" aria-hidden="true"></span>
-            </span>
-            <span class="theme-toggle__label"
-                  data-theme-toggle-label
-                  data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
-                  data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
-                {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
-            </span>
-        </button>
-        <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
-            {% csrf_token %}
-            <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
-        </form>
     </div>
+    <nav class="topbar-nav">
+        <a class="nav-link" href="{% url 'contact:index' %}?lang={{ lang }}">{% if lang == 'pl' %}Strona główna{% else %}Website{% endif %}</a>
+        <div class="topbar-nav__group">
+            <div class="lang-switcher">
+                <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+                <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+            </div>
+            <button type="button"
+                    class="theme-toggle"
+                    data-theme-toggle
+                    aria-pressed="false"
+                    aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
+                <span class="theme-toggle__track">
+                    <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
+                    <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                    <span class="theme-toggle__thumb" aria-hidden="true"></span>
+                </span>
+                <span class="theme-toggle__label"
+                      data-theme-toggle-label
+                      data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
+                      data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
+                    {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
+                </span>
+            </button>
+            <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
+                {% csrf_token %}
+                <button type="submit" class="nav-button">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
+            </form>
+        </div>
+    </nav>
 </header>
 
 <main class="main">
