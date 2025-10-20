@@ -13,7 +13,7 @@ class ContactForm(forms.ModelForm):
     ]
 
     bot_check = forms.BooleanField(
-        required=True,
+        required=False,
         label="",
         widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
     )
@@ -28,6 +28,16 @@ class ContactForm(forms.ModelForm):
             }
         ),
     )
+
+    def __init__(self, *args, language: str | None = None, **kwargs):
+        self.language = language
+        super().__init__(*args, **kwargs)
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        self.fields["bot_check"].error_messages["required"] = message
 
     class Meta:
         model = ContactMessage
@@ -53,6 +63,17 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_bot_check(self) -> bool:
+        bot_check = self.cleaned_data.get("bot_check")
+        if not bot_check:
+            message = (
+                "Potwierdź, że nie jesteś botem."
+                if self.language == "pl"
+                else "Please confirm you are not a bot."
+            )
+            raise forms.ValidationError(message)
+        return bot_check
 
 
 class LoginForm(forms.Form):
