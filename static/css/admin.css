@@ -46,10 +46,12 @@ body {
 }
 
 .topbar-logo {
-    width: clamp(56px, 5vw, 72px);
-    height: clamp(56px, 5vw, 72px);
+    height: clamp(64px, 8vw, 96px);
+    max-height: 96px;
+    width: auto;
+    max-width: 200px;
     border-radius: 12px;
-    object-fit: cover;
+    object-fit: contain;
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.25);
 }
 
@@ -342,6 +344,23 @@ body {
 .table tbody tr[data-request-row]:focus {
     outline: 2px solid rgba(47, 168, 79, 0.35);
     outline-offset: -2px;
+}
+
+.table-phone {
+    display: inline-block;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.table-email {
+    color: var(--green-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.table-email:hover,
+.table-email:focus {
+    text-decoration: underline;
 }
 
 .badge {
