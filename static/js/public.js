@@ -186,8 +186,18 @@
                 showBotError('');
             };
 
+            const updateSubmitState = () => {
+                if (!submitButton) {
+                    return;
+                }
+                const isChecked = botCheckbox ? botCheckbox.checked : true;
+                submitButton.disabled = !isChecked;
+            };
+
+            updateSubmitState();
             if (botCheckbox) {
                 botCheckbox.addEventListener('change', () => {
+                    updateSubmitState();
                     if (botCheckbox.checked) {
                         hideBotError();
                     }
@@ -263,16 +273,6 @@
                         showReviewError(requiredMessage);
                         return;
                     }
-                    if (botCheckbox && !botCheckbox.checked) {
-                        closeModal({ resetReview: false });
-                        if (botErrorMessage) {
-                            showBotError(botErrorMessage);
-                        }
-                        if (botCheckbox instanceof HTMLElement) {
-                            botCheckbox.focus();
-                        }
-                        return;
-                    }
                     showReviewStaticError('');
                     allowSubmit = true;
                     closeModal({ resetReview: false });
@@ -328,6 +328,13 @@
                     return;
                 }
                 event.preventDefault();
+                if (botCheckbox && !botCheckbox.checked) {
+                    updateSubmitState();
+                    if (botErrorMessage) {
+                        showBotError(botErrorMessage);
+                    }
+                    return;
+                }
                 openModal();
             });
         }
