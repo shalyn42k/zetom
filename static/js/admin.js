@@ -460,6 +460,13 @@
             return div.innerHTML;
         };
 
+        const buildGmailLink = (email) => {
+            if (!email) {
+                return 'https://mail.google.com/mail/?view=cm&fs=1';
+            }
+            return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
+        };
+
         const updateRowDisplay = (data) => {
             if (!currentRow) {
                 return;
@@ -468,15 +475,14 @@
             if (customerCell) {
                 customerCell.textContent = `${data.first_name} ${data.last_name}`.trim();
             }
-            const phoneLink = $('[data-cell-phone]', currentRow);
-            if (phoneLink) {
-                phoneLink.textContent = data.phone;
-                phoneLink.href = `tel:${data.phone}`;
+            const phoneElement = $('[data-cell-phone]', currentRow);
+            if (phoneElement) {
+                phoneElement.textContent = data.phone;
             }
             const emailLink = $('[data-cell-email]', currentRow);
             if (emailLink) {
                 emailLink.textContent = data.email;
-                emailLink.href = `mailto:${data.email}`;
+                emailLink.href = buildGmailLink(data.email);
             }
             const companyCell = $('[data-cell="company"]', currentRow);
             if (companyCell) {
@@ -652,7 +658,9 @@
         }
 
         const handleRowActivation = (row, event) => {
-            const interactive = event.target.closest('input, a, button, label');
+            const interactive = event.target instanceof Element
+                ? event.target.closest('input, a, button, label')
+                : null;
             if (interactive) {
                 return;
             }
