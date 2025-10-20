@@ -30,46 +30,55 @@ body {
 }
 
 .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 22px clamp(18px, 4vw, 48px);
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(18px);
     box-shadow: 0 12px 32px rgba(18, 64, 30, 0.16);
+    border-bottom: 1px solid rgba(18, 64, 30, 0.08);
+    padding: 18px clamp(16px, 4vw, 48px);
+
+    /* как в site-header */
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: center;
 }
 
 .topbar-left {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 16px; /* как в .site-branding */
 }
 
 .topbar-logo {
-    width: clamp(56px, 5vw, 72px);
-    height: clamp(56px, 5vw, 72px);
-    border-radius: 12px;
+    width: clamp(56px, 6vw, 72px);
+    height: clamp(56px, 6vw, 72px);
     object-fit: cover;
-    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(15, 90, 50, 0.28);
 }
 
 .topbar-title {
     margin: 0;
-    font-size: clamp(22px, 2.6vw, 32px);
+    font-size: clamp(18px, 2.6vw, 28px);
     font-weight: 700;
     color: var(--green-dark);
 }
 
 .site-subtitle {
-    margin: 4px 0 0;
+    margin: 2px 0 0;
+    font-size: 0.95rem;
     color: var(--muted);
 }
 
-.topbar-nav {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+.site-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.95rem;
+    color: var(--muted);
 }
+
 
 .nav-link,
 .nav-button {
