@@ -11,7 +11,7 @@
     <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}" data-theme="light">
+<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}" data-theme="dark">
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
@@ -252,9 +252,9 @@
             <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
         </div>
         <button type="button"
-                class="theme-toggle"
+                class="theme-toggle is-dark"
                 data-theme-toggle
-                aria-pressed="false"
+                aria-pressed="true"
                 aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
             <span class="theme-toggle__track">
                 <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">

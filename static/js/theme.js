@@ -52,6 +52,10 @@
             if (stored === "dark" || stored === "light") {
                 return stored;
             }
+            const preset = document.body && document.body.dataset ? document.body.dataset.theme : null;
+            if (preset === "dark" || preset === "light") {
+                return preset;
+            }
             return prefersDark ? "dark" : "light";
         })();
 

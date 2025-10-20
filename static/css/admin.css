@@ -753,6 +753,47 @@ body[data-theme='dark'] .table-row:focus-visible {
     box-shadow: inset 0 0 0 1px rgba(146, 186, 214, 0.45), 0 18px 42px rgba(0, 0, 0, 0.55);
 }
 
+body[data-theme='dark'] .panel select,
+body[data-theme='dark'] .panel input,
+body[data-theme='dark'] .panel textarea,
+body[data-theme='dark'] .panel .form-input,
+body[data-theme='dark'] .panel-email input,
+body[data-theme='dark'] .panel-email textarea,
+body[data-theme='dark'] .panel-email select {
+    background: rgba(9, 13, 20, 0.88);
+    border-color: rgba(91, 124, 158, 0.5);
+    color: #e6edf3;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body[data-theme='dark'] .panel select option,
+body[data-theme='dark'] .panel-email select option,
+body[data-theme='dark'] .panel textarea,
+body[data-theme='dark'] .panel-email textarea {
+    background: #0d1117;
+    color: #e6edf3;
+}
+
+body[data-theme='dark'] .panel .form-label,
+body[data-theme='dark'] .panel .form-input::placeholder,
+body[data-theme='dark'] .panel-email .form-input::placeholder {
+    color: rgba(230, 237, 243, 0.82);
+}
+
+body[data-theme='dark'] .table td,
+body[data-theme='dark'] .table th {
+    color: rgba(230, 237, 243, 0.92);
+}
+
+body[data-theme='dark'] .table td[data-cell='message'] {
+    color: rgba(210, 220, 238, 0.85);
+}
+
+body[data-theme='dark'] .table td[data-cell='customer'],
+body[data-theme='dark'] .table td[data-cell='company'] {
+    color: rgba(222, 234, 255, 0.9);
+}
+
 body[data-theme='dark'] .table-email {
     color: #98f5c5;
     text-shadow: 0 0 8px rgba(63, 150, 112, 0.42);
@@ -841,4 +882,24 @@ body[data-theme='dark'] .button--danger {
 
 body[data-theme='dark'] .panel-email .form-submit {
     box-shadow: 0 16px 38px rgba(0, 0, 0, 0.45);
+}
+
+body[data-theme='dark'] .modal__title {
+    color: #d6ffec;
+}
+
+body[data-theme='dark'] .modal__subtitle {
+    color: rgba(180, 202, 230, 0.75);
+}
+
+body[data-theme='dark'] .trash-item__meta {
+    color: rgba(189, 214, 255, 0.75);
+}
+
+body[data-theme='dark'] .trash-item__preview {
+    color: rgba(210, 220, 238, 0.85);
+}
+
+body[data-theme='dark'] .trash-item__date {
+    color: rgba(158, 187, 220, 0.7);
 }

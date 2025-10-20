@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <script src="{% static 'js/theme.js' %}" defer></script>
 </head>
-<body class="admin-login-page" data-theme="light">
+<body class="admin-login-page" data-theme="dark">
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -36,9 +36,9 @@
             <a href="{% url 'contact:login' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
         </div>
         <button type="button"
-                class="theme-toggle"
+                class="theme-toggle is-dark"
                 data-theme-toggle
-                aria-pressed="false"
+                aria-pressed="true"
                 aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
             <span class="theme-toggle__track">
                 <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
