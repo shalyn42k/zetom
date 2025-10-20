@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import dj_database_url
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,13 +12,33 @@ DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
 
 # Hosts / CSRF
-ALLOWED_HOSTS = [
-    h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()
+allowed_hosts_env = [
+    h.strip()
+    for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip() and not h.strip().startswith("${")
 ]
+
+# Render автоматически задаёт домен в переменной RENDER_EXTERNAL_HOSTNAME.
+# Добавим его в списки хостов/происхождений, чтобы избежать ошибок 400.
+render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+
+ALLOWED_HOSTS = allowed_hosts_env
+if render_hostname:
+    ALLOWED_HOSTS.append(render_hostname)
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
+
 # Для Django 4+ лучше указывать со схемой: https://example.com
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+csrf_trusted = [
+    o.strip()
+    for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o.strip() and not o.strip().startswith("${")
 ]
+if render_hostname:
+    csrf_origin = f"https://{render_hostname}"
+    if csrf_origin not in csrf_trusted:
+        csrf_trusted.append(csrf_origin)
+
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(csrf_trusted))
 
 # --- Apps ---
 INSTALLED_APPS = [
@@ -69,6 +91,17 @@ DATABASES = {
         'NAME': os.environ.get('SQLITE_NAME', BASE_DIR / 'db.sqlite3'),
     }
 }
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    conn_max_age = int(os.getenv('DB_CONN_MAX_AGE', '600'))
+    default_ssl = 'false' if DEBUG else 'true'
+    ssl_require = os.getenv('DB_SSL_REQUIRE', default_ssl).lower() in ('1', 'true', 'yes', 'on')
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=conn_max_age,
+        ssl_require=ssl_require,
+    )
 
 # --- Auth ---
 AUTH_PASSWORD_VALIDATORS = [
