@@ -1,51 +1,37 @@
-# Python
+# Byte-compiled / cache
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
 *.so
-*.egg-info/
-*.egg
-*.log
 
-# Virtualenv
+# Virtual environments
 .venv/
 venv/
 ENV/
 
-# OS junk
-.DS_Store
-Thumbs.db
-ehthumbs.db
-desktop.ini
+# Logs
+*.log
 
-# IDE
-.idea/
-.vscode/
-*.code-workspace
-
-# Django
-# Local env & secrets
+# Environment files
 .env
 *.env
 .env.*
 !.env.example
 
-# SQLite (local)
+# Django artifacts
 db.sqlite3
 *.sqlite3
-
-# User uploads / generated
 media/
 staticfiles/
 
-# pytest / coverage / mypy (optional)
+# Test / type-check cache
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 
-# Node / front-end (if any)
-node_modules/
-dist/
-build/
+# IDE / OS files
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
