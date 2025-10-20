@@ -7,9 +7,10 @@
     <title>{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</title>
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body{% if trash_form.errors or download_form.errors %} class="has-modal"{% endif %}>
+<body data-theme="light"{% if trash_form.errors or download_form.errors %} class="has-modal"{% endif %}>
 <div class="overlay"></div>
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
@@ -226,24 +227,44 @@
     </div>
 </div>
 <header class="topbar">
-    <div class="topbar-branding">
+    <div class="topbar__branding">
         <div class="site-branding">
             <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
-            <div>
+            <div class="topbar__titles">
                 <h1 class="site-title">ZETOM Katowice</h1>
-                <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
+                <p class="topbar-context">{% if lang == 'pl' %}Panel administracyjny · Zarządzaj wiadomościami od klientów{% else %}Admin panel · Manage customer enquiries{% endif %}</p>
             </div>
         </div>
-        <p class="topbar-context">{% if lang == 'pl' %}Panel administracyjny · Zarządzaj wiadomościami od klientów{% else %}Admin panel · Manage customer enquiries{% endif %}</p>
     </div>
     <nav class="topbar-nav">
         <a class="nav-link" href="{% url 'contact:index' %}?lang={{ lang }}">{% if lang == 'pl' %}Strona główna{% else %}Website{% endif %}</a>
-        <a class="nav-link" href="?lang=pl">PL</a>
-        <a class="nav-link" href="?lang=en">EN</a>
-        <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
-            {% csrf_token %}
-            <button type="submit" class="nav-button">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
-        </form>
+        <div class="topbar-nav__group">
+            <div class="lang-switcher">
+                <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+                <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+            </div>
+            <button type="button"
+                    class="theme-toggle"
+                    data-theme-toggle
+                    aria-pressed="false"
+                    aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
+                <span class="theme-toggle__track">
+                    <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
+                    <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                    <span class="theme-toggle__thumb" aria-hidden="true"></span>
+                </span>
+                <span class="theme-toggle__label"
+                      data-theme-toggle-label
+                      data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
+                      data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
+                    {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
+                </span>
+            </button>
+            <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
+                {% csrf_token %}
+                <button type="submit" class="nav-button">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
+            </form>
+        </div>
     </nav>
 </header>
 

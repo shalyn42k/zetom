@@ -5,111 +5,66 @@
     <meta charset="UTF-8">
     <title>{% if lang == 'pl' %}Panel Admina - Logowanie{% else %}Admin Login{% endif %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --green:#2fa84f;
-            --green-dark:#23863d;
-            --white:#ffffff;
-            --text:#000000;
-        }
-        .site-branding {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            text-align: left;
-        }
-        .site-logo {
-            width: clamp(96px, 12vw, 140px);
-            max-width: 140px;
-            height: auto;
-            max-height: 120px;
-            object-fit: contain;
-            border-radius: 16px;
-            padding: 8px;
-            background: #ffffff;
-            box-shadow: 0 10px 24px rgba(15, 90, 50, 0.18);
-        }
-        .site-title {
-            margin: 0;
-            font-weight: 700;
-            font-size: 1.25rem;
-        }
-        .site-subtitle {
-            margin: 4px 0 0;
-            font-size: 0.9rem;
-            opacity: 0.85;
-        }
-        .login-actions {
-            display: grid;
-            gap: 12px;
-            margin-top: 18px;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(180deg, #f6fff6 0%, #ffffff 100%);
-            color: var(--text);
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-        }
-        .card {
-            width: 360px;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(15, 90, 50, 0.08);
-            background: var(--white);
-        }
-        .card-header {
-            background: linear-gradient(90deg,var(--green),var(--green-dark));
-            color: #fff;
-            text-align: center;
-            padding: 18px;
-        }
-        .form-control:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 0.15rem rgba(47,168,79,0.25);
-        }
-        .btn-login {
-            background: var(--green);
-            color: white;
-            font-weight: 600;
-            border: none;
-        }
-        .btn-login:hover {
-            background: var(--green-dark);
-        }
-    </style>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+    <script src="{% static 'js/theme.js' %}" defer></script>
 </head>
-<body>
-<div class="card">
-    <div class="card-header">
-        <div class="site-branding">
-            <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
-            <div>
-                <h1 class="site-title">ZETOM Katowice</h1>
-                <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
-            </div>
-        </div>
+<body class="admin-login-page" data-theme="light">
+<header class="site-header">
+    <div class="site-branding">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+        <h1 class="site-title">ZETOM Katowice</h1>
     </div>
-    <div class="card-body p-4">
-        <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}">
+    <nav class="site-nav">
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:login' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
+    </nav>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:login' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:login' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+        <button type="button"
+                class="theme-toggle"
+                data-theme-toggle
+                aria-pressed="false"
+                aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
+            <span class="theme-toggle__track">
+                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
+                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__thumb" aria-hidden="true"></span>
+            </span>
+            <span class="theme-toggle__label"
+                  data-theme-toggle-label
+                  data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
+                  data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
+                {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
+            </span>
+        </button>
+    </div>
+</header>
+<main class="admin-login-page__main">
+    <section class="admin-login" aria-labelledby="admin-login-title">
+        <div class="admin-login__intro">
+            <h2 class="admin-login__title" id="admin-login-title">{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}</h2>
+            <p class="admin-login__description">{% if lang == 'pl' %}Wprowadź hasło, aby uzyskać dostęp do panelu.{% else %}Enter the password to access the panel.{% endif %}</p>
+        </div>
+        <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ back_url }}">
-            <div class="mb-3">
-                <label class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
-                {{ form.password }}
-                {% if form.password.errors %}
-                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
-                {% endif %}
-            </div>
-            <div class="login-actions">
-                <button type="submit" class="btn btn-login w-100">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
-                <a href="{{ back_url }}" class="btn btn-outline-secondary w-100">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
+            <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+                <div class="admin-login__error">{{ form.password.errors.0 }}</div>
+            {% endif %}
+            <div class="admin-login__actions">
+                <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
+                <a href="{{ back_url }}" class="admin-login__back">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
+</main>
 </body>
 </html>

@@ -7,9 +7,10 @@
     <title>{% if lang == 'pl' %}ZETOM Katowice – Badania i certyfikacja{% else %}ZETOM Katowice – Testing & Certification{% endif %}</title>
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
+    <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/public.js' %}" defer></script>
 </head>
-<body>
+<body data-theme="light">
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -24,9 +25,28 @@
         <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
         <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
     </nav>
-    <div class="lang-switcher">
-        <a href="{% url 'contact:index' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
-        <a href="{% url 'contact:index' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:index' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:index' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+        <button type="button"
+                class="theme-toggle"
+                data-theme-toggle
+                aria-pressed="false"
+                aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
+            <span class="theme-toggle__track">
+                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
+                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__thumb" aria-hidden="true"></span>
+            </span>
+            <span class="theme-toggle__label"
+                  data-theme-toggle-label
+                  data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
+                  data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
+                {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
+            </span>
+        </button>
     </div>
 </header>
 
