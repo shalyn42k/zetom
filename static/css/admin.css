@@ -27,13 +27,20 @@ body {
     background: linear-gradient(135deg, rgba(47, 168, 79, 0.16), rgba(27, 109, 52, 0.25)),
                 url('../img/zet2.avif') center/cover fixed;
     color: var(--text);
+    position: relative;
+}
+
+body > * {
+    position: relative;
+    z-index: 1;
 }
 
 .overlay {
     position: fixed;
     inset: 0;
     background: var(--overlay);
-    z-index: -1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .site-header {
