@@ -233,6 +233,15 @@ def panel(request: HttpRequest) -> HttpResponse:
         detail_error_message = 'Unable to load request data.'
         update_error_message = 'Could not save changes. Please fix the errors and try again.'
 
+    panel_base_url = reverse('contact:panel')
+    current_query_params = request.GET.copy()
+
+    def _panel_lang_switch(target_lang: str) -> str:
+        params = current_query_params.copy()
+        params['lang'] = target_lang
+        query_string = params.urlencode()
+        return f"{panel_base_url}?{query_string}" if query_string else panel_base_url
+
     context = {
         'lang': lang,
         'messages_page': page_obj,
@@ -256,6 +265,8 @@ def panel(request: HttpRequest) -> HttpResponse:
         'request_update_success_message': update_success_message,
         'request_detail_error_message': detail_error_message,
         'request_update_error_message': update_error_message,
+        'panel_lang_switch_pl': _panel_lang_switch('pl'),
+        'panel_lang_switch_en': _panel_lang_switch('en'),
     }
     return render(request, 'contact/admin_panel.html', context)
 
