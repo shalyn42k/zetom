@@ -22,6 +22,16 @@ body {
     color: var(--text);
 }
 
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover,
+a:focus {
+    color: var(--green-dark);
+}
+
 .overlay {
     position: fixed;
     inset: 0;
@@ -46,11 +56,24 @@ body {
 }
 
 .topbar-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: clamp(56px, 5vw, 72px);
     height: clamp(56px, 5vw, 72px);
-    border-radius: 12px;
-    object-fit: cover;
+    border-radius: 16px;
+    padding: clamp(8px, 1.4vw, 12px);
+    background: var(--surface);
+    border: 1px solid rgba(27, 109, 52, 0.12);
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.25);
+    overflow: hidden;
+}
+
+.topbar-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .topbar-title {
@@ -323,6 +346,11 @@ body {
     text-align: left;
     border-bottom: 1px solid rgba(27, 109, 52, 0.1);
     vertical-align: top;
+}
+
+.table-text {
+    display: inline-block;
+    color: inherit;
 }
 
 .table th:first-child,
