@@ -10,6 +10,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -69,6 +70,21 @@ def index(request: HttpRequest) -> HttpResponse:
 def login(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = LoginForm(request.POST or None)
+    default_back_url = f"{reverse('contact:index')}?lang={lang}"
+
+    def _sanitize_back_url(candidate: str | None) -> str | None:
+        if not candidate:
+            return None
+        if url_has_allowed_host_and_scheme(candidate, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+            return candidate
+        return None
+
+    back_url = (
+        _sanitize_back_url(request.POST.get('next'))
+        or _sanitize_back_url(request.GET.get('next'))
+        or _sanitize_back_url(request.META.get('HTTP_REFERER'))
+        or default_back_url
+    )
 
     if request.method == 'POST' and form.is_valid():
         if form.cleaned_data['password'] == settings.ADMIN_PASSWORD:
@@ -77,7 +93,15 @@ def login(request: HttpRequest) -> HttpResponse:
         error_message = 'Nieprawidłowe hasło!' if lang == 'pl' else 'Wrong password!'
         form.add_error('password', error_message)
 
-    return render(request, 'contact/admin_login.html', {'form': form, 'lang': lang})
+    return render(
+        request,
+        'contact/admin_login.html',
+        {
+            'form': form,
+            'lang': lang,
+            'back_url': back_url,
+        },
+    )
 
 
 @require_POST
