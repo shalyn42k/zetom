@@ -157,6 +157,91 @@
                     <button type="submit" class="button button--primary" data-form-submit>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
                 </div>
             </form>
+            <div class="modal" data-review-modal aria-hidden="true">
+                <div class="modal__backdrop" data-review-close></div>
+                <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+                    <button type="button"
+                            class="modal__close"
+                            data-review-close
+                            aria-label="{% if lang == 'pl' %}Zamknij okno podglądu{% else %}Close review window{% endif %}">×</button>
+                    <h2 class="modal__title" id="review-modal-title">
+                        {% if lang == 'pl' %}Sprawdź dane przed wysłaniem{% else %}Review your request{% endif %}
+                    </h2>
+                    <p class="modal__intro">
+                        {% if lang == 'pl' %}
+                            Upewnij się, że wszystkie informacje są poprawne. W każdej chwili możesz wrócić do formularza,
+                            aby je zmienić.
+                        {% else %}
+                            Make sure the details below are correct. You can return to the form at any time to adjust
+                            them.
+                        {% endif %}
+                    </p>
+                    <div class="review-summary" data-review-summary>
+                        <div class="review-summary__item">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="first_name">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="first_name"></div>
+                        </div>
+                        <div class="review-summary__item">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="last_name">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="last_name"></div>
+                        </div>
+                        <div class="review-summary__item">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="phone">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="phone"></div>
+                        </div>
+                        <div class="review-summary__item">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">E-mail</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="email">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="email"></div>
+                        </div>
+                        <div class="review-summary__item">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="company">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="company"></div>
+                        </div>
+                        <div class="review-summary__item review-summary__item--full">
+                            <div class="review-summary__header">
+                                <span class="review-summary__label">{% if lang == 'pl' %}Wiadomość{% else %}Message{% endif %}</span>
+                                <button type="button" class="review-summary__edit-button" data-review-edit="message">
+                                    {% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}
+                                </button>
+                            </div>
+                            <div class="review-summary__value" data-review-value="message"></div>
+                        </div>
+                    </div>
+                    <div class="modal__actions">
+                        <button type="button" class="button button--ghost" data-review-close data-review-back>
+                            {% if lang == 'pl' %}Wróć do edycji{% else %}Return to edit{% endif %}
+                        </button>
+                        <button type="button" class="button button--primary" data-review-submit>
+                            {% if lang == 'pl' %}Potwierdź i wyślij{% else %}Confirm &amp; send{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
