@@ -18,14 +18,6 @@ class ContactForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
     )
 
-    review_confirmed = forms.BooleanField(
-        required=True,
-        label="",
-        widget=forms.CheckboxInput(
-            attrs={"class": "form-checkbox-input", "data-review-confirm": "true"}
-        ),
-    )
-
     company = forms.ChoiceField(
         choices=COMPANY_CHOICES,
         required=True,

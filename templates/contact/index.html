@@ -12,10 +12,7 @@
 <body>
 <header class="site-header">
     <div class="site-branding">
-        <picture class="site-logo">
-            <source srcset="{% static 'img/zet3.avif' %}" type="image/avif">
-            <img src="{% static 'img/zet1.png' %}" alt="ZETOM Katowice" loading="lazy">
-        </picture>
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
         <div>
             <h1 class="site-title">ZETOM Katowice</h1>
             <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
@@ -157,81 +154,7 @@
                     {% endif %}
                 </div>
                 <div class="form-actions">
-                    {% if form.review_confirmed.errors %}
-                        <div class="form-error" data-review-error-static>{{ form.review_confirmed.errors.0 }}</div>
-                    {% else %}
-                        <div class="form-error" data-bot-error hidden></div>
-                    {% endif %}
-                </div>
-
-                <div class="modal" data-review-modal aria-hidden="true" data-error-required="{% if lang == 'pl' %}Potwierdź poprawność danych przed wysłaniem.{% else %}Please confirm your details before sending.{% endif %}">
-                    <div class="modal__backdrop" data-review-close></div>
-                    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
-                        <button type="button" class="modal__close" data-review-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
-                        <h2 class="modal__title" id="review-modal-title">{% if lang == 'pl' %}Sprawdź zgłoszenie{% else %}Review your request{% endif %}</h2>
-                        <p class="modal__intro">{% if lang == 'pl' %}Upewnij się, że dane są poprawne przed wysłaniem wiadomości.{% else %}Make sure your details are correct before sending the message.{% endif %}</p>
-                        <div class="review-summary">
-                            <div class="review-summary__item" data-review-field="first_name">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="first_name" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="first_name"></span>
-                                <div class="review-summary__editor" data-review-editor="first_name" hidden></div>
-                            </div>
-                            <div class="review-summary__item" data-review-field="last_name">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="last_name" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="last_name"></span>
-                                <div class="review-summary__editor" data-review-editor="last_name" hidden></div>
-                            </div>
-                            <div class="review-summary__item" data-review-field="phone">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="phone" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="phone"></span>
-                                <div class="review-summary__editor" data-review-editor="phone" hidden></div>
-                            </div>
-                            <div class="review-summary__item" data-review-field="email">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">E-mail</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="email" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="email"></span>
-                                <div class="review-summary__editor" data-review-editor="email" hidden></div>
-                            </div>
-                            <div class="review-summary__item" data-review-field="company">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="company" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="company"></span>
-                                <div class="review-summary__editor" data-review-editor="company" hidden></div>
-                            </div>
-                            <div class="review-summary__item review-summary__item--full" data-review-field="message">
-                                <div class="review-summary__header">
-                                    <span class="review-summary__label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
-                                    <button type="button" class="review-summary__edit-button" data-review-edit-field="message" data-label-edit="{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}" data-label-done="{% if lang == 'pl' %}Gotowe{% else %}Done{% endif %}" aria-expanded="false">{% if lang == 'pl' %}Edytuj{% else %}Edit{% endif %}</button>
-                                </div>
-                                <span class="review-summary__value" data-review-value="message"></span>
-                                <div class="review-summary__editor" data-review-editor="message" hidden></div>
-                            </div>
-                        </div>
-                        <div class="review-confirm">
-                            <label class="form-checkbox">
-                                {{ form.review_confirmed }}
-                                <span>{% if lang == 'pl' %}Potwierdzam, że wszystkie dane są poprawne{% else %}I confirm that all details are correct{% endif %}</span>
-                            </label>
-                            <div class="form-error" data-review-error hidden></div>
-                        </div>
-                        <div class="modal__actions">
-                            <button type="button" class="button button--ghost" data-review-edit>{% if lang == 'pl' %}Przejdź do formularza{% else %}Go back to form{% endif %}</button>
-                            <button type="button" class="button button--primary" data-review-send>{% if lang == 'pl' %}Potwierdź i wyślij{% else %}Confirm and send{% endif %}</button>
-                        </div>
-                    </div>
+                    <button type="submit" class="button button--primary" data-form-submit>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
                 </div>
             </form>
         </div>
