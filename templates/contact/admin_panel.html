@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</title>
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body data-theme="light"{% if trash_form.errors or download_form.errors %} class="has-modal"{% endif %}>
-<div class="overlay"></div>
+<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}" data-theme="light">
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
@@ -257,15 +257,22 @@
                 aria-pressed="false"
                 aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
             <span class="theme-toggle__track">
-                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
-                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-width="1.6"></path>
+                    </svg>
+                </span>
+                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path d="M16.8 3.5a7.5 7.5 0 1 1-8.3 11.9 7.5 7.5 0 0 0 8.3-11.9z"></path>
+                    </svg>
+                </span>
                 <span class="theme-toggle__thumb" aria-hidden="true"></span>
-            </span>
-            <span class="theme-toggle__label"
-                  data-theme-toggle-label
-                  data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
-                  data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
-                {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
             </span>
         </button>
         <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
@@ -275,7 +282,7 @@
     </div>
 </header>
 
-<main class="main">
+<main class="admin-dashboard">
     {% if messages %}
         <div class="alerts">
             {% for msg in messages %}
@@ -288,7 +295,7 @@
         </div>
     {% endif %}
 
-    <section class="panel">
+    <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
@@ -472,7 +479,7 @@
         </nav>
     {% endif %}
 
-    <section class="email-card">
+    <section class="admin-card email-card">
         <h2>{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
