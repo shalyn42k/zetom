@@ -219,6 +219,99 @@ body {
     outline-offset: 2px;
 }
 
+.lang-switcher {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.lang-switcher a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid var(--lang-border);
+    background: rgba(255, 255, 255, 0.92);
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.lang-switcher a.is-active,
+.lang-switcher a:hover,
+.lang-switcher a:focus {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    border-color: transparent;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 6px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.92);
+    color: inherit;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.theme-toggle__track {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(47, 168, 79, 0.18), rgba(27, 109, 52, 0.22));
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+.theme-toggle__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 60, 32, 0.25);
+    transition: transform 0.25s ease;
+}
+
+.theme-toggle__icon {
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+.theme-toggle__label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.theme-toggle.is-dark .theme-toggle__thumb {
+    transform: translateX(24px);
+}
+
+.theme-toggle.is-dark .theme-toggle__icon--moon {
+    opacity: 1;
+}
+
+.theme-toggle:not(.is-dark) .theme-toggle__icon--sun {
+    opacity: 1;
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgba(47, 168, 79, 0.35);
+    outline-offset: 2px;
+}
+
 .main {
     padding: clamp(28px, 6vw, 72px) clamp(18px, 4vw, 64px);
     display: grid;
