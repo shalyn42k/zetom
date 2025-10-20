@@ -12,7 +12,7 @@ except Exception:
     Faker = None
 
 
-def has_field(model, name: str) -> bool:
+def has_field(model, name):
     try:
         model._meta.get_field(name)
         return True
@@ -80,7 +80,8 @@ class Command(BaseCommand):
                 "message": fake.paragraph(nb_sentences=5),
             }
             if has_phone:
-                data["phone"] = fake.msisdn()[:15]
+                # msisdn иногда длинный — ограничим
+                data["phone"] = (fake.msisdn() or "")[:15]
             if has_company:
                 data["company"] = fake.company()
             if has_status:
@@ -98,10 +99,10 @@ class Command(BaseCommand):
             if len(objs) >= chunk_size:
                 with transaction.atomic():
                     ContactMessage.objects.bulk_create(objs, batch_size=chunk_size)
-                objs.clear()
+                objs = []  # вместо clear()
 
         if objs:
             with transaction.atomic():
                 ContactMessage.objects.bulk_create(objs, batch_size=chunk_size)
 
-        self.stdout.write(self.style.SUCCESS(f"Готово: добавлено {count} записей"))
+        self.stdout.write(self.style.SUCCESS("Готово: добавлено {} записей".format(count)))
