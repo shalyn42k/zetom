@@ -53,16 +53,15 @@ a:focus {
 }
 
 .site-logo {
-    width: clamp(48px, 5vw, 64px);
-    max-height: 64px;
+    width: clamp(56px, 6vw, 72px);
     aspect-ratio: 1;
     height: auto;
     object-fit: contain;
-    border-radius: 14px;
-    padding: 6px;
+    border-radius: 16px;
+    padding: 8px;
     background: var(--surface);
     border: 1px solid rgba(18, 64, 30, 0.12);
-    box-shadow: 0 8px 20px rgba(15, 90, 50, 0.24);
+    box-shadow: 0 10px 24px rgba(15, 90, 50, 0.28);
 }
 
 .site-title {
