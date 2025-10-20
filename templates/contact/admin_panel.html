@@ -227,7 +227,10 @@
 </div>
 <header class="topbar">
     <div class="topbar-left">
-        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM" class="topbar-logo">
+        <picture class="topbar-logo">
+            <source srcset="{% static 'img/zet3.avif' %}" type="image/avif">
+            <img src="{% static 'img/zet1.png' %}" alt="ZETOM" loading="lazy">
+        </picture>
         <div>
             <h1 class="topbar-title">{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</h1>
             <p class="site-subtitle">{% if lang == 'pl' %}Zarządzaj wiadomościami od klientów{% else %}Manage customer enquiries{% endif %}</p>
