@@ -479,7 +479,19 @@
         {% endif %}
 
         <div class="panel-email">
-            <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
+            <div class="panel-email__header">
+                <span class="panel-email__icon" aria-hidden="true">✉️</span>
+                <div class="panel-email__intro">
+                    <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
+                    <p class="panel-email__description">
+                        {% if lang == 'pl' %}
+                            Personalizuj odpowiedzi i utrzymuj kontakt, korzystając z gotowych pól poniżej.
+                        {% else %}
+                            Craft a personalised reply and keep the conversation going with the form below.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
             <form method="post" enctype="multipart/form-data" class="panel-email__form">
                 {% csrf_token %}
                 <input type="hidden" name="send_email" value="1">
