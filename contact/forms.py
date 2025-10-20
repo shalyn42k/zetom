@@ -21,18 +21,37 @@ class ContactForm(forms.ModelForm):
     company = forms.ChoiceField(
         choices=COMPANY_CHOICES,
         required=True,
-        widget=forms.Select(attrs={"class": "form-input"})
+        widget=forms.Select(
+            attrs={
+                "class": "form-input",
+                "data-review-source": "company",
+            }
+        ),
     )
 
     class Meta:
         model = ContactMessage
         fields = ["first_name", "last_name", "phone", "email", "company", "message"]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
-            "phone": forms.TextInput(attrs={"class": "form-input"}),
-            "email": forms.EmailInput(attrs={"class": "form-input"}),
-            "message": forms.Textarea(attrs={"rows": 5, "class": "form-input"}),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "first_name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "last_name"}
+            ),
+            "phone": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "phone"}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-input", "data-review-source": "email"}
+            ),
+            "message": forms.Textarea(
+                attrs={
+                    "rows": 5,
+                    "class": "form-input",
+                    "data-review-source": "message",
+                }
+            ),
         }
 
 
