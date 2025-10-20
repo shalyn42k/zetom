@@ -22,16 +22,6 @@ body {
     color: var(--text);
 }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
-
-a:hover,
-a:focus {
-    color: var(--green-dark);
-}
-
 .overlay {
     position: fixed;
     inset: 0;
@@ -57,14 +47,9 @@ a:focus {
 
 .topbar-logo {
     width: clamp(56px, 5vw, 72px);
-    aspect-ratio: 1;
-    height: auto;
-    display: block;
-    object-fit: contain;
-    border-radius: 16px;
-    padding: 8px;
-    background: var(--surface);
-    border: 1px solid rgba(27, 109, 52, 0.12);
+    height: clamp(56px, 5vw, 72px);
+    border-radius: 12px;
+    object-fit: cover;
     box-shadow: 0 12px 24px rgba(18, 64, 30, 0.25);
 }
 
@@ -338,11 +323,6 @@ a:focus {
     text-align: left;
     border-bottom: 1px solid rgba(27, 109, 52, 0.1);
     vertical-align: top;
-}
-
-.table-text {
-    display: inline-block;
-    color: inherit;
 }
 
 .table th:first-child,
