@@ -142,19 +142,32 @@
                         {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
-                <div class="form-checkbox-group">
-                    <label class="form-checkbox">
-                        {{ form.bot_check }}
-                        <span>{% if lang == 'pl' %}Potwierdzam, że nie jestem botem{% else %}I confirm that I am not a bot{% endif %}</span>
-                    </label>
-                    {% if form.bot_check.errors %}
-                        <div class="form-error" data-bot-error>{{ form.bot_check.errors.0 }}</div>
-                    {% else %}
-                        <div class="form-error" data-bot-error hidden></div>
-                    {% endif %}
-                </div>
                 <div class="form-actions">
-                    <button type="submit" class="button button--primary" data-form-submit>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
+                    <button type="button" class="button button--primary" data-review-open>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
+                </div>
+                <div class="modal review-modal" data-review-modal hidden aria-hidden="true">
+                    <div class="modal__backdrop" data-review-close></div>
+                    <div class="modal__dialog review-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+                        <button type="button" class="modal__close" data-review-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close review{% endif %}">×</button>
+                        <h3 class="modal__title" id="review-modal-title">{% if lang == 'pl' %}Sprawdź i wyślij{% else %}Review and send{% endif %}</h3>
+                        <p class="modal__intro review-modal__intro">{% if lang == 'pl' %}Przejrzyj i w razie potrzeby popraw dane przed finalnym wysłaniem wiadomości.{% else %}Review your details and make any final edits before sending the message.{% endif %}</p>
+                        <div class="review-modal__fields" data-review-fields></div>
+                        <div class="form-checkbox-group review-modal__checkbox">
+                            <label class="form-checkbox">
+                                {{ form.bot_check }}
+                                <span>{% if lang == 'pl' %}Potwierdzam, że nie jestem botem{% else %}I confirm that I am not a bot{% endif %}</span>
+                            </label>
+                            {% if form.bot_check.errors %}
+                                <div class="form-error" data-bot-error>{{ form.bot_check.errors.0 }}</div>
+                            {% else %}
+                                <div class="form-error" data-bot-error hidden></div>
+                            {% endif %}
+                        </div>
+                        <div class="modal__actions review-modal__actions">
+                            <button type="button" class="button button--ghost" data-review-close>{% if lang == 'pl' %}Wróć do edycji{% else %}Back to form{% endif %}</button>
+                            <button type="submit" class="button button--primary" data-form-submit>{% if lang == 'pl' %}Wyślij wiadomość{% else %}Send message{% endif %}</button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

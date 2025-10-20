@@ -13,6 +13,38 @@
             --white:#ffffff;
             --text:#000000;
         }
+        .site-branding {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+        }
+        .site-logo {
+            width: clamp(96px, 12vw, 140px);
+            max-width: 140px;
+            height: auto;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 16px;
+            padding: 8px;
+            background: #ffffff;
+            box-shadow: 0 10px 24px rgba(15, 90, 50, 0.18);
+        }
+        .site-title {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        .site-subtitle {
+            margin: 4px 0 0;
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+        .login-actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
         body {
             display: flex;
             justify-content: center;
@@ -53,11 +85,18 @@
 <body>
 <div class="card">
     <div class="card-header">
-        <h5>{% if lang == 'pl' %}Logowanie admina{% else %}Admin Login{% endif %}</h5>
+        <div class="site-branding">
+            <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+            <div>
+                <h1 class="site-title">ZETOM Katowice</h1>
+                <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
+            </div>
+        </div>
     </div>
     <div class="card-body p-4">
         <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ back_url }}">
             <div class="mb-3">
                 <label class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
                 {{ form.password }}
@@ -65,7 +104,10 @@
                     <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
                 {% endif %}
             </div>
-            <button type="submit" class="btn btn-login w-100">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
+            <div class="login-actions">
+                <button type="submit" class="btn btn-login w-100">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
+                <a href="{{ back_url }}" class="btn btn-outline-secondary w-100">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
+            </div>
         </form>
     </div>
 </div>

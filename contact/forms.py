@@ -13,7 +13,7 @@ class ContactForm(forms.ModelForm):
     ]
 
     bot_check = forms.BooleanField(
-        required=True,
+        required=False,
         label="",
         widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
     )
@@ -21,19 +21,59 @@ class ContactForm(forms.ModelForm):
     company = forms.ChoiceField(
         choices=COMPANY_CHOICES,
         required=True,
-        widget=forms.Select(attrs={"class": "form-input"})
+        widget=forms.Select(
+            attrs={
+                "class": "form-input",
+                "data-review-source": "company",
+            }
+        ),
     )
+
+    def __init__(self, *args, language: str | None = None, **kwargs):
+        self.language = language
+        super().__init__(*args, **kwargs)
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        self.fields["bot_check"].error_messages["required"] = message
 
     class Meta:
         model = ContactMessage
         fields = ["first_name", "last_name", "phone", "email", "company", "message"]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
-            "phone": forms.TextInput(attrs={"class": "form-input"}),
-            "email": forms.EmailInput(attrs={"class": "form-input"}),
-            "message": forms.Textarea(attrs={"rows": 5, "class": "form-input"}),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "first_name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "last_name"}
+            ),
+            "phone": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "phone"}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-input", "data-review-source": "email"}
+            ),
+            "message": forms.Textarea(
+                attrs={
+                    "rows": 5,
+                    "class": "form-input",
+                    "data-review-source": "message",
+                }
+            ),
         }
+
+    def clean_bot_check(self) -> bool:
+        bot_check = self.cleaned_data.get("bot_check")
+        if not bot_check:
+            message = (
+                "Potwierdź, że nie jesteś botem."
+                if self.language == "pl"
+                else "Please confirm you are not a bot."
+            )
+            raise forms.ValidationError(message)
+        return bot_check
 
 
 class LoginForm(forms.Form):
