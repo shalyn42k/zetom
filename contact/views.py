@@ -203,8 +203,6 @@ def panel(request: HttpRequest) -> HttpResponse:
                     attachment=file,
                     filename=file.name if file else None,
                 )
-                success_message = 'E-mail został wysłany.' if lang == 'pl' else 'Email sent.'
-                messages.success(request, success_message)
                 return redirect(
                     _panel_redirect_url(
                         lang,
@@ -225,11 +223,9 @@ def panel(request: HttpRequest) -> HttpResponse:
     status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
 
     if lang == 'pl':
-        update_success_message = 'Zgłoszenie zostało zaktualizowane.'
         detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
         update_error_message = 'Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie.'
     else:
-        update_success_message = 'Request updated successfully.'
         detail_error_message = 'Unable to load request data.'
         update_error_message = 'Could not save changes. Please fix the errors and try again.'
 
@@ -253,7 +249,6 @@ def panel(request: HttpRequest) -> HttpResponse:
         'company_options': company_options,
         'status_options': status_options,
         'status_meta_json': json.dumps(status_meta),
-        'request_update_success_message': update_success_message,
         'request_detail_error_message': detail_error_message,
         'request_update_error_message': update_error_message,
     }
@@ -453,7 +448,6 @@ def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequ
             if lang == 'pl'
             else 'Selected messages moved to trash.'
         )
-    messages.success(request, text)
 
 
 def _handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
@@ -478,7 +472,6 @@ def _handle_trash_action(action: str, ids: Iterable[int], lang: str, request: Ht
             if lang == 'pl'
             else 'Trash emptied.'
         )
-    messages.success(request, text)
 
 
 def _localise_action_choices(form: MessageBulkActionForm, lang: str) -> None:

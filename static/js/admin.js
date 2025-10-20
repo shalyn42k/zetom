@@ -403,7 +403,6 @@
                 return {};
             }
         })();
-        const successMessage = requestModal.dataset.successMessage || '';
         const detailErrorMessage = requestModal.dataset.detailError || '';
         const updateErrorMessage = requestModal.dataset.updateError || '';
         const detailTemplate = requestModal.dataset.detailTemplate || '';
@@ -518,10 +517,10 @@
             }
         };
 
-        const showFeedback = (message) => {
+        const clearFeedback = () => {
             if (feedbackBox) {
-                feedbackBox.textContent = message;
-                feedbackBox.hidden = !message;
+                feedbackBox.textContent = '';
+                feedbackBox.hidden = true;
             }
         };
 
@@ -578,7 +577,7 @@
             }
             isBusy = true;
             showError('');
-            showFeedback('');
+            clearFeedback();
             fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -618,7 +617,7 @@
             const csrfToken = formData.get('csrfmiddlewaretoken') || getCsrfToken();
             isBusy = true;
             showError('');
-            showFeedback('');
+            clearFeedback();
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -637,7 +636,6 @@
                 })
                 .then((data) => {
                     updateRowDisplay(data);
-                    showFeedback(successMessage);
                     showError('');
                 })
                 .catch((error) => {
