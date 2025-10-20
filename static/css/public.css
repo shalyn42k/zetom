@@ -3,6 +3,7 @@
     --green-dark: #1b6d34;
     --green-light: #daf3e2;
     --text: #1c1f23;
+    --text-strong: #11161c;
     --text-muted: #5a6a6a;
     --background: #f7faf7;
     --surface: #ffffff;
@@ -624,6 +625,7 @@ body[data-theme='dark'] {
     --green: #3ed67a;
     --green-dark: #2aa35e;
     --text: #e6edf3;
+    --text-strong: #f6faff;
     --text-muted: #9baec8;
     --background: #0d1117;
     --surface: #161b22;
