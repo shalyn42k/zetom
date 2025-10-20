@@ -53,9 +53,8 @@ a:focus {
 }
 
 .site-logo {
-    width: clamp(56px, 6vw, 72px);
-    aspect-ratio: 1;
-    height: auto;
+    width: clamp(56px, 5vw, 72px);
+    height: clamp(56px, 5vw, 72px);
     object-fit: contain;
     border-radius: 16px;
     padding: 8px;
