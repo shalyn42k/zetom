@@ -46,11 +46,14 @@ body {
 }
 
 .topbar-logo {
-    width: clamp(56px, 5vw, 72px);
-    height: clamp(56px, 5vw, 72px);
+    width: clamp(48px, 4.5vw, 64px);
+    height: clamp(48px, 4.5vw, 64px);
+    max-height: 64px;
     border-radius: 12px;
-    object-fit: cover;
-    box-shadow: 0 12px 24px rgba(18, 64, 30, 0.25);
+    object-fit: contain;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 24px rgba(18, 64, 30, 0.22);
 }
 
 .topbar-title {
