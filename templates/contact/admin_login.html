@@ -10,17 +10,50 @@
     <script src="{% static 'js/theme.js' %}" defer></script>
 </head>
 <body class="admin-login-page" data-theme="light">
-{% url 'contact:index' as index_url %}
-{% url 'contact:login' as login_url %}
-{% with active_lang=lang|default:'pl' %}
-    {% include 'contact/includes/site_header.html' with
-        nav_base=index_url|add:'?lang='|add:active_lang
-        admin_link_url=login_url|add:'?lang='|add:active_lang
-        active_nav='admin'
-        lang_switch_pl=login_url|add:'?lang=pl'
-        lang_switch_en=login_url|add:'?lang=en'
-    %}
-{% endwith %}
+<header class="site-header">
+    <div class="site-branding">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+        <div>
+            <h1 class="site-title">ZETOM Katowice</h1>
+            <p class="site-subtitle">
+                {% if lang == 'pl' %}
+                    Badania • Certyfikacja • Kontrola techniczna
+                {% else %}
+                    Testing • Certification • Technical inspections
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <nav class="site-nav">
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:login' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
+    </nav>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:login' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:login' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+        <button type="button"
+                class="theme-toggle"
+                data-theme-toggle
+                aria-pressed="false"
+                aria-label="{% if lang == 'pl' %}Przełącz motyw{% else %}Toggle theme{% endif %}">
+            <span class="theme-toggle__track">
+                <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀️</span>
+                <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__thumb" aria-hidden="true"></span>
+            </span>
+            <span class="theme-toggle__label"
+                  data-theme-toggle-label
+                  data-light-label="{% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}"
+                  data-dark-label="{% if lang == 'pl' %}Tryb jasny{% else %}Light mode{% endif %}">
+                {% if lang == 'pl' %}Tryb ciemny{% else %}Dark mode{% endif %}
+            </span>
+        </button>
+    </div>
+</header>
 <main class="admin-login-page__main">
     <section class="admin-login" aria-labelledby="admin-login-title">
         <div class="admin-login__intro">
