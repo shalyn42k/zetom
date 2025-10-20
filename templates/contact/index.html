@@ -160,9 +160,8 @@
                     {% if form.review_confirmed.errors %}
                         <div class="form-error" data-review-error-static>{{ form.review_confirmed.errors.0 }}</div>
                     {% else %}
-                        <div class="form-error" data-review-error-static hidden></div>
+                        <div class="form-error" data-bot-error hidden></div>
                     {% endif %}
-                    <button type="submit" class="button button--primary" data-form-submit>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
                 </div>
 
                 <div class="modal" data-review-modal aria-hidden="true" data-error-required="{% if lang == 'pl' %}Potwierdź poprawność danych przed wysłaniem.{% else %}Please confirm your details before sending.{% endif %}">
