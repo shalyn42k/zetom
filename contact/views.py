@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Iterable
 from urllib.parse import urlencode
+from django.contrib.auth.decorators import login_required
 
 from django.conf import settings
 from django.contrib import messages
@@ -29,6 +30,13 @@ from .services import messages as message_service
 from .services.pdf_service import build_messages_pdf
 from .services.email_service import send_contact_email, send_email_with_attachment
 from .utils import get_language
+from datetime import timedelta
+from django.utils import timezone
+
+# Глобальные словари для учёта попыток
+failed_attempts = {}
+blocked_ips = {}
+
 
 
 @require_http_methods(['GET', 'POST'])
@@ -70,28 +78,53 @@ def index(request: HttpRequest) -> HttpResponse:
 def login(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = LoginForm(request.POST or None)
-    default_back_url = f"{reverse('contact:index')}?lang={lang}"
+    ip = request.META.get('REMOTE_ADDR', 'unknown')
 
-    def _sanitize_back_url(candidate: str | None) -> str | None:
-        if not candidate:
-            return None
-        if url_has_allowed_host_and_scheme(candidate, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
-            return candidate
-        return None
+    # Проверка блокировки
+    blocked = False
+    time_left = None
 
-    back_url = (
-        _sanitize_back_url(request.POST.get('next'))
-        or _sanitize_back_url(request.GET.get('next'))
-        or _sanitize_back_url(request.META.get('HTTP_REFERER'))
-        or default_back_url
-    )
+    if ip in blocked_ips:
+        if timezone.now() < blocked_ips[ip]:
+            blocked = True
+            # Вычисляем оставшееся время блокировки
+            remaining_time = blocked_ips[ip] - timezone.now()
+            total_seconds = int(remaining_time.total_seconds())
+            minutes, seconds = divmod(total_seconds, 60)
+            time_left = f"{minutes:02d}:{seconds:02d}"
+        else:
+            # Сбрасываем, если время истекло
+            blocked_ips.pop(ip, None)
+            failed_attempts[ip] = 0
 
-    if request.method == 'POST' and form.is_valid():
+    # Обработка POST-запроса
+    if request.method == 'POST' and not blocked and form.is_valid():
         if form.cleaned_data['password'] == settings.ADMIN_PASSWORD:
+            # Успешный вход
             request.session['logged_in'] = True
+            failed_attempts[ip] = 0
             return redirect('contact:panel')
-        error_message = 'Nieprawidłowe hasło!' if lang == 'pl' else 'Wrong password!'
-        form.add_error('password', error_message)
+        else:
+            # Неверный пароль
+            failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
+            if failed_attempts[ip] >= 5:
+                # Блокируем на 5 минут
+                blocked_ips[ip] = timezone.now() + timedelta(minutes=5)
+                blocked = True
+                remaining_time = blocked_ips[ip] - timezone.now()
+                total_seconds = int(remaining_time.total_seconds())
+                minutes, seconds = divmod(total_seconds, 60)
+                time_left = f"{minutes:02d}:{seconds:02d}"
+            else:
+                # Показываем сколько попыток осталось
+                error_message = (
+                    f"Nieprawidłowe hasło! Pozostało prób: {5 - failed_attempts[ip]}"
+                    if lang == 'pl'
+                    else f"Wrong password! Attempts left: {5 - failed_attempts[ip]}"
+                )
+                form.add_error('password', error_message)
+                if 'logged_in' in request.session:
+                 del request.session['logged_in']
 
     return render(
         request,
@@ -99,7 +132,8 @@ def login(request: HttpRequest) -> HttpResponse:
         {
             'form': form,
             'lang': lang,
-            'back_url': back_url,
+            'blocked': blocked,
+            'time_left': time_left,
         },
     )
 
