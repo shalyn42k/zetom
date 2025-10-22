@@ -207,3 +207,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
 LOGIN_URL = 'contact:login'
+
+CONTACT_FORM_THROTTLE_SECONDS = int(os.getenv('CONTACT_FORM_THROTTLE_SECONDS', '30'))
