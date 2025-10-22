@@ -25,7 +25,7 @@ from .forms import (
     TrashActionForm,
     UserMessageUpdateForm,
 )
-from .models import ContactMessage, ContactMessageRevision
+from .models import ContactMessage
 from .services import messages as message_service
 from .services.pdf_service import build_messages_pdf
 from .services.email_service import (
@@ -34,16 +34,6 @@ from .services.email_service import (
     send_email_with_attachment,
 )
 from .utils import get_language
-
-
-USER_EDITABLE_FIELDS = [
-    "first_name",
-    "last_name",
-    "phone",
-    "email",
-    "company",
-    "message",
-]
 
 
 @require_http_methods(['GET', 'POST'])
@@ -371,16 +361,8 @@ def user_update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     language = get_language(request)
     form = UserMessageUpdateForm(request.POST, instance=message)
-    before_snapshot = _capture_message_snapshot(message, USER_EDITABLE_FIELDS)
     if form.is_valid():
         updated_message = form.save()
-        after_snapshot = _capture_message_snapshot(updated_message, USER_EDITABLE_FIELDS)
-        _record_revision_if_changed(
-            updated_message,
-            before_snapshot,
-            after_snapshot,
-            editor=ContactMessageRevision.EDITOR_USER,
-        )
         status_options = _status_options(language)
         status_lookup = {item['value']: item for item in status_options}
         company_labels = _company_labels(language)
@@ -431,7 +413,6 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     created_at = timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M')
     status_options = _status_options(language)
     status_labels = {item['value']: item['label'] for item in status_options}
-    revision_payload = _build_user_revision_payload(message, language)
 
     data = {
         'id': message.id,
@@ -446,8 +427,6 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
         'created_at': created_at,
         'final_changes': message.final_changes,
         'final_response': message.final_response,
-        'user_revisions': revision_payload['items'],
-        'user_revisions_total': revision_payload['total'],
     }
     return JsonResponse(data)
 
@@ -465,7 +444,6 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
         status_options = _status_options(language)
         status_lookup = {item['value']: item for item in status_options}
         status_info = status_lookup.get(updated_message.status, {'label': updated_message.status, 'badge': 'badge--info'})
-        revision_payload = _build_user_revision_payload(updated_message, language)
         data = {
             'id': updated_message.id,
             'first_name': updated_message.first_name,
@@ -480,8 +458,6 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
             'created_at': timezone.localtime(updated_message.created_at).strftime('%Y-%m-%d %H:%M'),
             'final_changes': updated_message.final_changes,
             'final_response': updated_message.final_response,
-            'user_revisions': revision_payload['items'],
-            'user_revisions_total': revision_payload['total'],
         }
         return JsonResponse(data)
 
@@ -710,119 +686,3 @@ def _localise_action_choices(form: MessageBulkActionForm, lang: str) -> None:
             (MessageBulkActionForm.ACTION_MARK_READY, 'Mark as ready'),
             (MessageBulkActionForm.ACTION_DELETE, 'Delete'),
         ]
-
-
-def _capture_message_snapshot(message: ContactMessage, fields: Iterable[str]) -> dict[str, str]:
-    snapshot: dict[str, str] = {}
-    for field in fields:
-        value = getattr(message, field, '')
-        if value is None:
-            prepared = ''
-        elif isinstance(value, str):
-            prepared = value
-        else:
-            prepared = str(value)
-        snapshot[field] = prepared
-    return snapshot
-
-
-def _record_revision_if_changed(
-    message: ContactMessage,
-    before: dict[str, str],
-    after: dict[str, str],
-    *,
-    editor: str,
-) -> ContactMessageRevision | None:
-    changed_fields = [
-        field for field, new_value in after.items() if new_value != before.get(field, '')
-    ]
-    if not changed_fields:
-        return None
-    previous_data = {field: before.get(field, '') for field in changed_fields}
-    new_data = {field: after.get(field, '') for field in changed_fields}
-    return ContactMessageRevision.objects.create(
-        message=message,
-        editor=editor,
-        previous_data=previous_data,
-        new_data=new_data,
-    )
-
-
-def _build_user_revision_payload(
-    message: ContactMessage,
-    language: str,
-    *,
-    limit: int = 6,
-) -> dict[str, object]:
-    queryset = message.revisions.filter(editor=ContactMessageRevision.EDITOR_USER)
-    total = queryset.count()
-    revisions = list(queryset[:limit])
-    field_order = {field: index for index, field in enumerate(USER_EDITABLE_FIELDS)}
-    field_labels = _field_labels(language)
-    company_labels = _company_labels(language)
-    editor_label = 'Klient' if language == 'pl' else 'Client'
-
-    items: list[dict[str, object]] = []
-    for revision in revisions:
-        localized_created = timezone.localtime(revision.created_at)
-        fields = sorted(
-            set(revision.previous_data.keys()) | set(revision.new_data.keys()),
-            key=lambda name: field_order.get(name, len(field_order)),
-        )
-        changes: list[dict[str, str]] = []
-        for field in fields:
-            previous_value = revision.previous_data.get(field, '')
-            current_value = revision.new_data.get(field, '')
-            changes.append(
-                {
-                    'field': field,
-                    'label': field_labels.get(field, field),
-                    'previous': _format_revision_value(field, previous_value, company_labels),
-                    'current': _format_revision_value(field, current_value, company_labels),
-                }
-            )
-        items.append(
-            {
-                'id': revision.id,
-                'editor': revision.editor,
-                'editor_label': editor_label,
-                'created_at': localized_created.strftime('%Y-%m-%d %H:%M'),
-                'created_at_iso': localized_created.isoformat(),
-                'changes_count': len(changes),
-                'changes': changes,
-            }
-        )
-
-    return {'items': items, 'total': total}
-
-
-def _field_labels(language: str) -> dict[str, str]:
-    if language == 'pl':
-        return {
-            'first_name': 'Imię',
-            'last_name': 'Nazwisko',
-            'phone': 'Telefon',
-            'email': 'E-mail',
-            'company': 'Firma',
-            'message': 'Treść zgłoszenia',
-        }
-    return {
-        'first_name': 'First name',
-        'last_name': 'Last name',
-        'phone': 'Phone',
-        'email': 'E-mail',
-        'company': 'Company',
-        'message': 'Request message',
-    }
-
-
-def _format_revision_value(
-    field: str,
-    value: str | None,
-    company_labels: dict[str, str],
-) -> str:
-    if value is None:
-        return ''
-    if field == 'company':
-        return company_labels.get(str(value), str(value))
-    return str(value)
