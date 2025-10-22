@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import json
+import logging
+import math
+import smtplib
+from datetime import timedelta
 from typing import Callable, Iterable
 from urllib.parse import urlencode
-from django.contrib.auth.decorators import login_required
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import (
@@ -35,12 +39,11 @@ from .services.email_service import (
     send_email_with_attachment,
 )
 from .utils import get_language
-from datetime import timedelta
-from django.utils import timezone
-
 # Глобальные словари для учёта попыток
 failed_attempts = {}
 blocked_ips = {}
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -50,7 +53,32 @@ def index(request: HttpRequest) -> HttpResponse:
     form = ContactForm(request.POST or None, language=lang)
     success_message = request.session.pop('contact_success', None)
 
-    if request.method == 'POST' and form.is_valid():
+    throttle_seconds = getattr(settings, 'CONTACT_FORM_THROTTLE_SECONDS', 30)
+    form_valid = False
+    throttle_error = False
+    submission_timestamp: float | None = None
+
+    if request.method == 'POST':
+        form_valid = form.is_valid()
+        submission_timestamp = timezone.now().timestamp()
+        last_submission_raw = request.session.get('contact_last_submission')
+        try:
+            last_submission_ts = float(last_submission_raw)
+        except (TypeError, ValueError):
+            last_submission_ts = None
+
+        if last_submission_ts is not None and submission_timestamp is not None:
+            elapsed = submission_timestamp - last_submission_ts
+            if elapsed < throttle_seconds:
+                remaining_seconds = max(1, int(math.ceil(throttle_seconds - elapsed)))
+                if lang == 'pl':
+                    error_message = f'Proszę poczekać {remaining_seconds} s przed ponownym wysłaniem formularza.'
+                else:
+                    error_message = f'Please wait {remaining_seconds} s before submitting the form again.'
+                form.add_error(None, error_message)
+                throttle_error = True
+
+    if request.method == 'POST' and form_valid and not throttle_error:
         payload = {
             "first_name": form.cleaned_data["first_name"],
             "last_name": form.cleaned_data["last_name"],
@@ -60,19 +88,31 @@ def index(request: HttpRequest) -> HttpResponse:
             "message": form.cleaned_data["message"],
         }
         message = message_service.add_message(**payload)
-        _remember_user_message(request, message.id)
-        if settings.SMTP_USER:
-            send_contact_email(form.cleaned_data['email'], message)
-            notification_link = request.build_absolute_uri(reverse('contact:panel'))
-            send_company_notification(message, link=notification_link)
-        success_message = (
-            'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy.'
-            if lang == 'pl'
-            else 'Your request has been sent. We will process it within 48 hours and contact you afterwards.'
-        )
-        messages.success(request, success_message)
-        request.session['contact_success'] = success_message
-        return redirect(f"{reverse('contact:index')}?lang={lang}")
+        try:
+            if settings.SMTP_USER:
+                send_contact_email(form.cleaned_data['email'], message)
+                notification_link = request.build_absolute_uri(reverse('contact:panel'))
+                send_company_notification(message, link=notification_link)
+        except smtplib.SMTPException:
+            logger.exception('Failed to send contact form emails')
+            message.delete()
+            if lang == 'pl':
+                error_text = 'Nie udało się wysłać wiadomości e-mail. Spróbuj ponownie później.'
+            else:
+                error_text = 'Unable to send the email right now. Please try again later.'
+            form.add_error(None, error_text)
+        else:
+            _remember_user_message(request, message.id)
+            if submission_timestamp is not None:
+                request.session['contact_last_submission'] = submission_timestamp
+            success_message = (
+                'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy.'
+                if lang == 'pl'
+                else 'Your request has been sent. We will process it within 48 hours and contact you afterwards.'
+            )
+            messages.success(request, success_message)
+            request.session['contact_success'] = success_message
+            return redirect(f"{reverse('contact:index')}?lang={lang}")
 
     context = {
         'form': form,
