@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %} · ZETOM Katowice</title>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_requests.css' %}">
+    <script src="{% static 'js/user_requests.js' %}" defer></script>
+</head>
+<body class="user-requests">
+<header class="site-header">
+    <a href="{% url 'contact:login' %}?lang={{ lang }}"
+       class="site-branding site-branding--link"
+       aria-label="{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+        <div>
+            <h1 class="site-title">ZETOM Katowice</h1>
+            <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
+        </div>
+    </a>
+    <nav class="site-nav">
+        <a href="{% url 'contact:index' %}?lang={{ lang }}">{% if lang == 'pl' %}Strona główna{% else %}Homepage{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Nowa wiadomość{% else %}New request{% endif %}</a>
+        <a class="is-active" href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
+    </nav>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:user_requests' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:user_requests' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+    </div>
+</header>
+<main class="user-requests__content">
+    <section class="requests-header">
+        <h2>{% if lang == 'pl' %}Twoje zgłoszenia{% else %}Your requests{% endif %}</h2>
+        <p>
+            {% if lang == 'pl' %}
+                Tutaj możesz podejrzeć status zgłoszeń, wprowadzać poprawki oraz sprawdzać odpowiedzi przygotowane przez nasz zespół.
+            {% else %}
+                Review the status of your requests, make adjustments, and read the final response prepared by our team.
+            {% endif %}
+        </p>
+    </section>
+    <section class="requests-section"
+             data-requests-section
+             data-empty-message="{% if lang == 'pl' %}Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki.{% else %}You do not have any requests from this browser yet.{% endif %}"
+             data-empty-action-label="{% if lang == 'pl' %}Wyślij nowe zgłoszenie{% else %}Submit a new request{% endif %}"
+             data-empty-action-url="{% url 'contact:index' %}?lang={{ lang }}#contact">
+        {% if request_cards %}
+            <div class="requests-carousel" data-request-carousel>
+                <button type="button" class="carousel-button" data-carousel-prev aria-label="{% if lang == 'pl' %}Poprzednie zgłoszenie{% else %}Previous request{% endif %}">‹</button>
+                <div class="requests-track" data-carousel-track>
+                    {% for request in request_cards %}
+                        <article class="request-card" data-request-card data-request-id="{{ request.id }}" tabindex="0">
+                            <header class="request-card__header">
+                                <span class="request-card__id">#{{ request.id }}</span>
+                                <span class="badge {{ request.status_badge }}" data-card-status>{{ request.status_label }}</span>
+                            </header>
+                            <p class="request-card__meta">{{ request.created_at }} · {{ request.company_label }}</p>
+                            <p class="request-card__message">{{ request.message_preview|truncatechars:140 }}</p>
+                            <footer class="request-card__footer">
+                                <span class="request-card__hint">{% if lang == 'pl' %}Kliknij, aby zobaczyć szczegóły{% else %}Click to view details{% endif %}</span>
+                            </footer>
+                        </article>
+                    {% endfor %}
+                </div>
+                <button type="button" class="carousel-button" data-carousel-next aria-label="{% if lang == 'pl' %}Następne zgłoszenie{% else %}Next request{% endif %}">›</button>
+            </div>
+        {% else %}
+            <div class="requests-empty">
+                <p>{% if lang == 'pl' %}Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki.{% else %}You do not have any requests from this browser yet.{% endif %}</p>
+                <a class="button button--primary" href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Wyślij nowe zgłoszenie{% else %}Submit a new request{% endif %}</a>
+            </div>
+        {% endif %}
+    </section>
+</main>
+<div class="modal" data-user-request-modal
+     aria-hidden="true"
+     data-status-map="{{ status_meta_json|escapejs }}"
+     data-detail-template="{% url 'contact:user_message_detail' 0 %}"
+     data-update-template="{% url 'contact:user_update_message' 0 %}"
+     data-delete-template="{% url 'contact:user_delete_message' 0 %}"
+     data-detail-error="{{ detail_error_message|escape }}"
+     data-update-error="{{ update_error_message|escape }}"
+     data-delete-confirm="{{ delete_confirm_message|escape }}"
+     data-language="{{ lang }}">
+    <div class="modal__backdrop" data-user-request-close></div>
+    <div class="modal__dialog user-request-modal" role="dialog" aria-modal="true" aria-labelledby="user-request-title">
+        <button type="button" class="modal__close" data-user-request-close aria-label="{% if lang == 'pl' %}Zamknij okno{% else %}Close window{% endif %}">×</button>
+        <h2 class="modal__title" id="user-request-title" data-user-request-title>{% if lang == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
+        <p class="modal__subtitle" data-user-request-created></p>
+        <div class="user-request-modal__status">
+            <span class="badge" data-user-request-status-badge></span>
+        </div>
+        <form method="post" class="user-request-modal__form" data-user-request-form>
+            {% csrf_token %}
+            <div class="user-request-modal__grid">
+                <label class="user-request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
+                    <input type="text" name="first_name" class="form-input" required>
+                </label>
+                <label class="user-request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
+                    <input type="text" name="last_name" class="form-input" required>
+                </label>
+                <label class="user-request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
+                    <input type="text" name="phone" class="form-input" required>
+                </label>
+                <label class="user-request-modal__field">
+                    <span class="form-label">E-mail</span>
+                    <input type="email" name="email" class="form-input" required>
+                </label>
+                <label class="user-request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
+                    <select name="company" class="form-input" required>
+                        {% for option in company_options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="user-request-modal__field user-request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Treść zgłoszenia{% else %}Request message{% endif %}</span>
+                    <textarea name="message" rows="6" class="form-input" required></textarea>
+                </label>
+            </div>
+            <section class="user-request-modal__final">
+                <h3>{% if lang == 'pl' %}Finalne informacje{% else %}Final information{% endif %}</h3>
+                <div class="user-request-modal__final-grid">
+                    <article>
+                        <h4>{% if lang == 'pl' %}Wprowadzone zmiany{% else %}Final changes{% endif %}</h4>
+                        <p data-user-request-final-changes
+                           data-empty="{% if lang == 'pl' %}Brak dodatkowych zmian.{% else %}No additional changes yet.{% endif %}">
+                            {% if lang == 'pl' %}Brak dodatkowych zmian.{% else %}No additional changes yet.{% endif %}
+                        </p>
+                    </article>
+                    <article>
+                        <h4>{% if lang == 'pl' %}Odpowiedź zespołu{% else %}Team response{% endif %}</h4>
+                        <p data-user-request-final-response
+                           data-empty="{% if lang == 'pl' %}Odpowiedź pojawi się tutaj.{% else %}The response will appear here.{% endif %}">
+                            {% if lang == 'pl' %}Odpowiedź pojawi się tutaj.{% else %}The response will appear here.{% endif %}
+                        </p>
+                    </article>
+                </div>
+            </section>
+            <div class="form-error" data-user-request-error hidden></div>
+            <div class="modal__actions user-request-modal__actions">
+                <button type="button" class="button button--ghost" data-user-request-close>{% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}</button>
+                <button type="button" class="button button--danger" data-user-request-delete>{% if lang == 'pl' %}Usuń zgłoszenie{% else %}Delete request{% endif %}</button>
+                <button type="submit" class="button button--primary" data-user-request-save>{% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

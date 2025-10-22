@@ -19,6 +19,8 @@ class ContactMessage(models.Model):
     email = models.EmailField()
     company = models.CharField(max_length=50)
     message = models.TextField()
+    final_changes = models.TextField(blank=True)
+    final_response = models.TextField(blank=True)
 
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_NEW, db_index=True)
@@ -29,3 +31,29 @@ class ContactMessage(models.Model):
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.email})"
+
+
+class ContactMessageRevision(models.Model):
+    EDITOR_USER = "user"
+    EDITOR_ADMIN = "admin"
+
+    EDITOR_CHOICES = (
+        (EDITOR_USER, "user"),
+        (EDITOR_ADMIN, "admin"),
+    )
+
+    message = models.ForeignKey(
+        ContactMessage,
+        on_delete=models.CASCADE,
+        related_name="revisions",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    editor = models.CharField(max_length=16, choices=EDITOR_CHOICES, db_index=True)
+    previous_data = models.JSONField(default=dict)
+    new_data = models.JSONField(default=dict)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self) -> str:
+        return f"Revision {self.pk} for message #{self.message_id}"

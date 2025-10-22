@@ -393,6 +393,19 @@
         const createdElement = $('[data-request-created]', requestModal);
         const errorBox = $('[data-request-errors]', requestModal);
         const feedbackBox = $('[data-request-feedback]', requestModal);
+        const historySection = $('[data-request-history]', requestModal);
+        const historyList = historySection ? $('[data-request-history-list]', historySection) : null;
+        const historyEmpty = historySection ? $('[data-request-history-empty]', historySection) : null;
+        const historyMore = historySection ? $('[data-request-history-more]', historySection) : null;
+        const historyStrings = {
+            empty: historySection ? historySection.dataset.emptyMessage || '' : '',
+            timestamp: historySection ? historySection.dataset.timestampLabel || 'Changed' : 'Changed',
+            previous: historySection ? historySection.dataset.previousLabel || 'Previous' : 'Previous',
+            current: historySection ? historySection.dataset.currentLabel || 'Current' : 'Current',
+            count: historySection ? historySection.dataset.countLabel || 'Fields changed' : 'Fields changed',
+            more: historySection ? historySection.dataset.moreLabel || '' : '',
+            emptyHtml: historyEmpty ? historyEmpty.innerHTML : '',
+        };
         const backdrop = requestModal.querySelector('.modal__backdrop');
         const closeElements = $$('[data-request-close]', requestModal);
         const statusMap = (() => {
@@ -440,6 +453,7 @@
                     feedbackBox.hidden = true;
                     feedbackBox.textContent = '';
                 }
+                renderHistory([], 0);
             }
         };
 
@@ -524,6 +538,98 @@
             }
         };
 
+        const renderHistory = (revisions = [], total = 0) => {
+            if (!historySection) {
+                return;
+            }
+            const hasRevisions = Array.isArray(revisions) && revisions.length > 0;
+            if (historyList) {
+                historyList.innerHTML = '';
+                historyList.hidden = !hasRevisions;
+            }
+            if (historyEmpty) {
+                if (hasRevisions) {
+                    historyEmpty.hidden = true;
+                } else {
+                    historyEmpty.hidden = false;
+                    if (historyStrings.empty) {
+                        historyEmpty.innerHTML = `<p>${historyStrings.empty}</p>`;
+                    } else if (historyStrings.emptyHtml) {
+                        historyEmpty.innerHTML = historyStrings.emptyHtml;
+                    }
+                }
+            }
+            if (historyMore) {
+                historyMore.hidden = true;
+            }
+            if (!hasRevisions || !historyList) {
+                return;
+            }
+
+            const formatValue = (value) => {
+                if (value === null || value === undefined) {
+                    return '—';
+                }
+                const stringValue = String(value);
+                return stringValue.trim() === '' ? '—' : stringValue;
+            };
+
+            const fragment = document.createDocumentFragment();
+            revisions.forEach((revision) => {
+                const item = document.createElement('li');
+                item.className = 'request-history__item';
+
+                const meta = document.createElement('div');
+                meta.className = 'request-history__meta';
+                if (revision.editor_label) {
+                    const actor = document.createElement('span');
+                    actor.innerHTML = `<strong>${revision.editor_label}</strong>`;
+                    meta.appendChild(actor);
+                }
+                const timestamp = document.createElement('span');
+                timestamp.innerHTML = `<strong>${historyStrings.timestamp}:</strong> ${revision.created_at || ''}`;
+                meta.appendChild(timestamp);
+                const count = document.createElement('span');
+                const changeCount = revision.changes_count || (revision.changes ? revision.changes.length : 0);
+                count.innerHTML = `<strong>${historyStrings.count}:</strong> ${changeCount}`;
+                meta.appendChild(count);
+                item.appendChild(meta);
+
+                const changesContainer = document.createElement('div');
+                changesContainer.className = 'request-history__changes';
+                (revision.changes || []).forEach((entry) => {
+                    const change = document.createElement('div');
+                    change.className = 'request-history__change';
+                    const field = document.createElement('div');
+                    field.className = 'request-history__field';
+                    field.textContent = entry.label || entry.field || '';
+                    change.appendChild(field);
+                    const values = document.createElement('div');
+                    values.className = 'request-history__values';
+                    const previous = document.createElement('span');
+                    previous.className = 'request-history__value request-history__value--previous';
+                    previous.textContent = `${historyStrings.previous}: ${formatValue(entry.previous)}`;
+                    const current = document.createElement('span');
+                    current.className = 'request-history__value request-history__value--current';
+                    current.textContent = `${historyStrings.current}: ${formatValue(entry.current)}`;
+                    values.appendChild(previous);
+                    values.appendChild(current);
+                    change.appendChild(values);
+                    changesContainer.appendChild(change);
+                });
+                item.appendChild(changesContainer);
+                fragment.appendChild(item);
+            });
+
+            historyList.appendChild(fragment);
+
+            if (historyMore && total > revisions.length && historyStrings.more) {
+                const remaining = total - revisions.length;
+                historyMore.textContent = historyStrings.more.replace('{count}', String(remaining));
+                historyMore.hidden = false;
+            }
+        };
+
         const populateForm = (data) => {
             if (!form) {
                 return;
@@ -594,6 +700,7 @@
                     currentId = data.id;
                     populateForm(data);
                     setHeader(data.id, data.created_at);
+                    renderHistory(data.user_revisions || [], data.user_revisions_total || 0);
                     toggleModal(true);
                     focusFirstField();
                 })
@@ -637,6 +744,7 @@
                 .then((data) => {
                     updateRowDisplay(data);
                     showError('');
+                    renderHistory(data.user_revisions || [], data.user_revisions_total || 0);
                 })
                 .catch((error) => {
                     if (error && error.errors) {

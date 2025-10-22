@@ -69,6 +69,17 @@ a:focus {
     gap: 16px;
 }
 
+.site-branding--link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.site-branding--link:focus-visible {
+    outline: 3px solid rgba(31, 102, 52, 0.3);
+    border-radius: 16px;
+    outline-offset: 6px;
+}
+
 .site-logo {
     width: clamp(96px, 12vw, 160px);
     max-width: 160px;
