@@ -10,7 +10,7 @@
 </head>
 <body class="admin-login-page">
 <header class="site-header">
-    <div class="site-branding">
+    <a href="{% url 'contact:login' %}?lang={{ lang }}" class="site-branding" title="{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}" aria-label="{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
         <div>
             <h1 class="site-title">ZETOM Katowice</h1>
@@ -22,12 +22,12 @@
                 {% endif %}
             </p>
         </div>
-    </div>
+    </a>
     <nav class="site-nav">
         <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:login' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
+        <a href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
