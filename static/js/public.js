@@ -226,8 +226,14 @@
                     updateSubmitState();
                     if (requiredMessage) {
                         showBotError(requiredMessage);
-                    }
+                        }
+                    return;
                 }
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
+                closeReviewModal();
             });
         }
 
