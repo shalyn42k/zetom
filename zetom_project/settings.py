@@ -166,25 +166,25 @@ SMTP_PASS = EMAIL_HOST_PASSWORD
 COMPANY_NOTIFICATION_RECIPIENTS = {
     # Для фирмы 1 отправка сотруднику, менеджеру и дополнительному контакту
     "firma1": [
-        "tymirapps@gmai.com",
+        "tymirdanylov1@gmail.com",
         "ilitovko660@gmail.com",
         "volkovnikita1977@gmail.com",
     ],
     # Для фирмы 2
     "firma2": [
-        "tymirapps@gmai.com",
+        "tymirdanylov1@gmail.com",
         "ilitovko660@gmail.com",
         "volkovnikita1977@gmail.com",
     ],
     # Для фирмы 3
     "firma3": [
-        "tymirapps@gmai.com",
+        "tymirdanylov1@gmail.com",
         "ilitovko660@gmail.com",
         "volkovnikita1977@gmail.com",
     ],
     # Общий список по умолчанию для всех остальных компаний (например, "inna")
     "default": [
-        "tymirapps@gmai.com",
+        "tymirdanylov1@gmail.com",
         "ilitovko660@gmail.com",
         "volkovnikita1977@gmail.com",
     ],
