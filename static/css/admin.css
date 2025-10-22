@@ -52,6 +52,34 @@ body[data-theme='dark'] .modal__backdrop {
     background: rgba(0, 0, 0, 0.6);
 }
 
+.site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.site-header__actions form {
+    margin: 0;
+}
+
+.site-header__actions .button--ghost {
+    background: var(--green-dark);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 12px 28px rgba(27, 109, 52, 0.28);
+}
+
+.site-header__actions .button--ghost:hover,
+.site-header__actions .button--ghost:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(27, 109, 52, 0.32);
+}
+
+.site-header__actions .button--ghost:focus-visible {
+    outline: 2px solid rgba(27, 109, 52, 0.55);
+    outline-offset: 2px;
+}
+
 body[data-theme='dark'] .panel select,
 body[data-theme='dark'] .panel input,
 body[data-theme='dark'] .panel textarea,
