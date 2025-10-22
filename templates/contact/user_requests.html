@@ -49,48 +49,25 @@
         {% endif %}
 
         {% if has_messages %}
-            <div class="requests-carousel" data-requests-gallery>
-                <button type="button" class="requests-carousel__nav" data-gallery-nav="prev" aria-label="{% if lang == 'pl' %}Poprzednie zgłoszenie{% else %}Previous request{% endif %}">
-                    <span aria-hidden="true">‹</span>
-                </button>
-                <div class="requests-carousel__track" data-gallery-track>
-                    {% for entry in entries %}
-                        <article class="request-card{% if entry.is_active %} is-active{% endif %}" data-request-card data-request-id="{{ entry.message.id }}" tabindex="0"{% if entry.is_active %} data-initial-open="true"{% endif %}>
-                            <div class="request-card__status-indicator {{ entry.status_badge }}" aria-hidden="true"></div>
-                            <div class="request-card__content">
-                                <h3 class="request-card__title">#{{ entry.message.id }}</h3>
-                                <p class="request-card__meta">{{ entry.message.created_at|date:'Y-m-d H:i' }} · {{ entry.company_label }}</p>
-                                <p class="request-card__summary">{{ entry.summary }}</p>
-                            </div>
-                            <span class="request-card__badge badge {{ entry.status_badge }}">{{ entry.status_label }}</span>
-                        </article>
-                    {% endfor %}
-                </div>
-                <button type="button" class="requests-carousel__nav" data-gallery-nav="next" aria-label="{% if lang == 'pl' %}Następne zgłoszenie{% else %}Next request{% endif %}">
-                    <span aria-hidden="true">›</span>
-                </button>
-            </div>
-
-            <div class="request-detail-layer" data-request-layer>
+            <div class="requests-list">
                 {% for entry in entries %}
-                    <div class="request-detail{% if entry.is_active %} is-active{% endif %}" data-request-detail="{{ entry.message.id }}" aria-hidden="{% if entry.is_active %}false{% else %}true{% endif %}">
-                        <div class="request-detail__panel" role="dialog" aria-modal="true" aria-labelledby="request-detail-title-{{ entry.message.id }}">
-                            <button type="button" class="request-detail__close" data-request-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                            <header class="request-detail__header">
-                                <h3 class="request-detail__title" id="request-detail-title-{{ entry.message.id }}">{% if lang == 'pl' %}Zgłoszenie{% else %}Request{% endif %} #{{ entry.message.id }}</h3>
-                                <p class="request-detail__meta">{{ entry.message.created_at|date:'Y-m-d H:i' }} · {{ entry.company_label }}</p>
+                    <article class="request-card">
+                        <header class="request-card__header">
+                            <div class="request-card__meta">
+                                <span class="request-card__id">#{{ entry.message.id }}</span>
                                 <span class="badge {{ entry.status_badge }}">{{ entry.status_label }}</span>
-                            </header>
-                            <form method="post" action="{% url 'contact:user_requests' %}?lang={{ lang }}" class="request-detail__form">
+                            </div>
+                            <div class="request-card__date">{{ entry.message.created_at|date:'Y-m-d H:i' }}</div>
+                        </header>
+                        <div class="request-card__body">
+                            <form method="post" action="{% url 'contact:user_requests' %}?lang={{ lang }}" class="request-card__form">
                                 {% csrf_token %}
                                 <input type="hidden" name="message_id" value="{{ entry.message.id }}">
                                 <input type="hidden" name="form_prefix" value="{{ entry.form.prefix }}">
                                 {% if entry.form.non_field_errors %}
                                     <div class="form-error">{{ entry.form.non_field_errors.0 }}</div>
                                 {% endif %}
-                                <div class="request-detail__grid">
+                                <div class="form-grid form-grid--compact">
                                     <div class="form-field">
                                         <label for="{{ entry.form.first_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</label>
                                         {{ entry.form.first_name }}
@@ -116,23 +93,22 @@
                                         {{ entry.form.company }}
                                         {% if entry.form.company.errors %}<div class="form-error">{{ entry.form.company.errors.0 }}</div>{% endif %}
                                     </div>
-                                    <div class="form-field form-field--wide">
+                                    <div class="form-field" style="grid-column: 1 / -1;">
                                         <label for="{{ entry.form.message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść zgłoszenia{% else %}Request details{% endif %}</label>
                                         {{ entry.form.message }}
                                         {% if entry.form.message.errors %}<div class="form-error">{{ entry.form.message.errors.0 }}</div>{% endif %}
                                     </div>
                                 </div>
-                                <div class="request-detail__actions">
-                                    <button type="submit" name="action" value="update" class="button button--primary">
+                                <div class="request-card__footer">
+                                    <span class="request-card__status-label">{% if lang == 'pl' %}Status:{% else %}Status:{% endif %}</span>
+                                    <span class="badge {{ entry.status_badge }}">{{ entry.status_label }}</span>
+                                    <button type="submit" class="button button--primary request-card__submit">
                                         {% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}
-                                    </button>
-                                    <button type="submit" name="action" value="delete" class="button button--danger" data-delete-button data-confirm="{% if lang == 'pl' %}Czy na pewno chcesz usunąć to zgłoszenie?{% else %}Are you sure you want to delete this request?{% endif %}">
-                                        {% if lang == 'pl' %}Usuń zgłoszenie{% else %}Delete request{% endif %}
                                     </button>
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </article>
                 {% endfor %}
             </div>
         {% else %}
@@ -150,117 +126,5 @@
 <footer class="site-footer">
     <p>© {% now 'Y' %} ZETOM Katowice</p>
 </footer>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const gallery = document.querySelector('[data-requests-gallery]');
-        if (!gallery) {
-            return;
-        }
-
-        const track = gallery.querySelector('[data-gallery-track]');
-        const cards = Array.from(gallery.querySelectorAll('[data-request-card]'));
-        const layer = document.querySelector('[data-request-layer]');
-        const details = new Map();
-
-        document.querySelectorAll('[data-request-detail]').forEach(function (detail) {
-            details.set(detail.getAttribute('data-request-detail'), detail);
-            detail.setAttribute('aria-hidden', detail.classList.contains('is-active') ? 'false' : 'true');
-        });
-
-        const closeActiveDetail = function () {
-            details.forEach(function (detail) {
-                detail.classList.remove('is-active');
-                detail.setAttribute('aria-hidden', 'true');
-            });
-            cards.forEach(function (card) {
-                card.classList.remove('is-active');
-            });
-            if (layer) {
-                layer.classList.remove('is-visible');
-            }
-            document.body.classList.remove('has-modal');
-        };
-
-        const openDetail = function (id) {
-            const detail = details.get(String(id));
-            if (!detail) {
-                return;
-            }
-            details.forEach(function (panel) {
-                const isActive = panel === detail;
-                panel.classList.toggle('is-active', isActive);
-                panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
-            });
-            cards.forEach(function (card) {
-                card.classList.toggle('is-active', card.getAttribute('data-request-id') === String(id));
-            });
-            if (layer) {
-                layer.classList.add('is-visible');
-            }
-            document.body.classList.add('has-modal');
-            const focusTarget = detail.querySelector('input, textarea, select, button');
-            if (focusTarget) {
-                focusTarget.focus({ preventScroll: true });
-            }
-        };
-
-        if (layer) {
-            layer.addEventListener('click', function (event) {
-                if (event.target === layer) {
-                    closeActiveDetail();
-                }
-            });
-        }
-
-        gallery.querySelectorAll('[data-request-close]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                closeActiveDetail();
-            });
-        });
-
-        cards.forEach(function (card) {
-            card.addEventListener('click', function () {
-                const id = card.getAttribute('data-request-id');
-                openDetail(id);
-            });
-            card.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    openDetail(card.getAttribute('data-request-id'));
-                }
-            });
-        });
-
-        gallery.querySelectorAll('[data-gallery-nav]').forEach(function (button) {
-            const direction = button.getAttribute('data-gallery-nav');
-            button.addEventListener('click', function () {
-                const multiplier = direction === 'prev' ? -1 : 1;
-                const offset = track.clientWidth * 0.8 * multiplier;
-                track.scrollBy({ left: offset, behavior: 'smooth' });
-            });
-        });
-
-        const initialCard = gallery.querySelector('[data-request-card][data-initial-open="true"]');
-        if (initialCard) {
-            openDetail(initialCard.getAttribute('data-request-id'));
-        }
-
-        document.querySelectorAll('[data-delete-button]').forEach(function (button) {
-            button.addEventListener('click', function (event) {
-                const message = button.getAttribute('data-confirm');
-                if (message && !window.confirm(message)) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-            });
-        });
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && document.body.classList.contains('has-modal')) {
-                closeActiveDetail();
-            }
-        });
-    });
-</script>
 </body>
 </html>
