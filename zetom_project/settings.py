@@ -5,6 +5,11 @@ import dj_database_url
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SESSION_COOKIE_AGE = 60  # Сессия живет max 1 мин, даже если не del.
+SESSION_SAVE_EVERY_REQUEST = False  # Не обновлять expiration на каждый запрос.
+SESSION_COOKIE_SECURE = True  # Только HTTPS.
+SESSION_COOKIE_HTTPONLY = True  # Защита от JS-доступа.
+SESSION_COOKIE_SAMESITE = 'Strict'  # Защита от CSRF в cross-site.
 
 # --- Core ---
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
