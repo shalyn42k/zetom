@@ -356,28 +356,3 @@ class MessageUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["company"].choices = ContactForm.COMPANY_CHOICES
         self.fields["status"].choices = ContactMessage.STATUS_CHOICES
-
-
-class UserMessageUpdateForm(forms.ModelForm):
-    class Meta:
-        model = ContactMessage
-        fields = [
-            "first_name",
-            "last_name",
-            "phone",
-            "email",
-            "company",
-            "message",
-        ]
-        widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
-            "phone": forms.TextInput(attrs={"class": "form-input"}),
-            "email": forms.EmailInput(attrs={"class": "form-input"}),
-            "company": forms.Select(attrs={"class": "form-input"}),
-            "message": forms.Textarea(attrs={"rows": 5, "class": "form-input"}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["company"].choices = ContactForm.COMPANY_CHOICES
