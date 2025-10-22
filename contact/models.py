@@ -19,6 +19,8 @@ class ContactMessage(models.Model):
     email = models.EmailField()
     company = models.CharField(max_length=50)
     message = models.TextField()
+    final_changes = models.TextField(blank=True)
+    final_response = models.TextField(blank=True)
 
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_NEW, db_index=True)

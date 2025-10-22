@@ -210,6 +210,14 @@
                     <span class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
                     <textarea name="message" rows="6" class="form-input" required></textarea>
                 </label>
+                <label class="request-modal__field request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
+                    <textarea name="final_changes" rows="4" class="form-input"></textarea>
+                </label>
+                <label class="request-modal__field request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Odpowiedź dla klienta{% else %}Client response{% endif %}</span>
+                    <textarea name="final_response" rows="4" class="form-input"></textarea>
+                </label>
             </div>
             <div class="form-error" data-request-errors hidden></div>
             <div class="form-success" data-request-feedback hidden></div>

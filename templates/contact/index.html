@@ -11,18 +11,20 @@
 </head>
 <body>
 <header class="site-header">
-    <div class="site-branding">
+    <a href="{% url 'contact:login' %}?lang={{ lang }}"
+       class="site-branding site-branding--link"
+       aria-label="{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
         <div>
             <h1 class="site-title">ZETOM Katowice</h1>
             <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
         </div>
-    </div>
+    </a>
     <nav class="site-nav">
         <a href="#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
+        <a href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
