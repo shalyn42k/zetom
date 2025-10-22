@@ -12,7 +12,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
-from django.utils.text import Truncator
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import (
@@ -281,12 +280,10 @@ def user_requests(request: HttpRequest) -> HttpResponse:
         message.id: UserMessageUpdateForm(instance=message, prefix=f"message-{message.id}")
         for message in messages_qs
     }
-    active_message_id: int | None = None
 
     if request.method == 'POST':
         message_id_raw = request.POST.get('message_id')
         prefix = request.POST.get('form_prefix')
-        action = request.POST.get('action') or 'update'
         try:
             message_id = int(message_id_raw) if message_id_raw else None
         except (TypeError, ValueError):
@@ -294,18 +291,6 @@ def user_requests(request: HttpRequest) -> HttpResponse:
 
         if message_id and message_id in valid_ids:
             message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
-            if action == 'delete':
-                message_service.delete_messages([message.id])
-                request.session['user_message_ids'] = [
-                    stored_id for stored_id in valid_ids if stored_id != message.id
-                ]
-                if lang == 'pl':
-                    success_message = 'Zgłoszenie zostało usunięte.'
-                else:
-                    success_message = 'The request has been deleted.'
-                messages.success(request, success_message)
-                return redirect(f"{reverse('contact:user_requests')}?lang={lang}")
-
             form_prefix = prefix or f"message-{message.id}"
             form = UserMessageUpdateForm(
                 request.POST,
@@ -321,7 +306,6 @@ def user_requests(request: HttpRequest) -> HttpResponse:
                 messages.success(request, success_message)
                 return redirect(f"{reverse('contact:user_requests')}?lang={lang}")
             forms_map[message.id] = form
-            active_message_id = message.id
         else:
             if lang == 'pl':
                 error_message = 'Nie można było zaktualizować zgłoszenia.'
@@ -330,16 +314,6 @@ def user_requests(request: HttpRequest) -> HttpResponse:
             messages.error(request, error_message)
 
     entries = []
-    if lang == 'pl':
-        company_labels = {value: label for value, label in ContactForm.COMPANY_CHOICES}
-    else:
-        company_labels = {
-            'firma1': 'Company 1',
-            'firma2': 'Company 2',
-            'firma3': 'Company 3',
-            'inna': 'Other',
-        }
-
     for message in messages_qs:
         status_meta = status_lookup.get(
             message.status,
@@ -351,21 +325,17 @@ def user_requests(request: HttpRequest) -> HttpResponse:
                 'form': forms_map[message.id],
                 'status_label': status_meta['label'],
                 'status_badge': status_meta['badge'],
-                'status_value': message.status,
-                'summary': Truncator(message.message).chars(140),
-                'company_label': company_labels.get(message.company, message.company),
-                'is_active': message.id == active_message_id,
             }
         )
 
     if lang == 'pl':
         empty_state_title = 'Brak zapisanych zgłoszeń'
         empty_state_text = 'Wypełnij formularz kontaktowy, aby dodać swoje pierwsze zgłoszenie.'
-        update_hint = 'Możesz edytować lub usunąć swoje zgłoszenie w dowolnym momencie. Pamiętaj o zapisaniu zmian.'
+        update_hint = 'Możesz edytować swoje zgłoszenie w dowolnym momencie. Pamiętaj o zapisaniu zmian.'
     else:
         empty_state_title = 'No requests yet'
         empty_state_text = 'Fill in the contact form to add your first request.'
-        update_hint = 'You can edit or delete your request at any time. Remember to save the changes.'
+        update_hint = 'You can edit your request at any time. Remember to save the changes.'
 
     context = {
         'lang': lang,
@@ -374,7 +344,6 @@ def user_requests(request: HttpRequest) -> HttpResponse:
         'empty_state_title': empty_state_title,
         'empty_state_text': empty_state_text,
         'update_hint': update_hint,
-        'active_message_id': active_message_id,
     }
     return render(request, 'contact/user_requests.html', context)
 
