@@ -27,7 +27,11 @@ from .forms import (
 from .models import ContactMessage
 from .services import messages as message_service
 from .services.pdf_service import build_messages_pdf
-from .services.email_service import send_contact_email, send_email_with_attachment
+from .services.email_service import (
+    send_company_notification,
+    send_contact_email,
+    send_email_with_attachment,
+)
 from .utils import get_language
 
 
@@ -49,6 +53,8 @@ def index(request: HttpRequest) -> HttpResponse:
         message = message_service.add_message(**payload)
         if settings.SMTP_USER:
             send_contact_email(form.cleaned_data['email'], message)
+            notification_link = request.build_absolute_uri(reverse('contact:panel'))
+            send_company_notification(message, link=notification_link)
         success_message = (
             'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy.'
             if lang == 'pl'
