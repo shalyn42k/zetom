@@ -27,7 +27,6 @@
         <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:login' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
@@ -41,6 +40,38 @@
         <div class="admin-login__intro">
             <h2 class="admin-login__title" id="admin-login-title">{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}</h2>
             <p class="admin-login__description">{% if lang == 'pl' %}Wprowadź hasło, aby uzyskać dostęp do panelu.{% else %}Enter the password to access the panel.{% endif %}</p>
+            {% if blocked %}
+    <div class="admin-login__blocked">
+        {% if lang == 'pl' %}
+            <p style="color:red;">Zablokowano logowanie na 5 minut.</p>
+            <p>Pozostały czas: <span id="timeLeft">{{ time_left }}</span></p>
+        {% else %}
+            <p style="color:red;">Login temporarily blocked for 5 minutes.</p>
+            <p>Time left: <span id="timeLeft">{{ time_left }}</span></p>
+        {% endif %}
+    </div>
+    <script>
+        // Обратный отсчёт в реальном времени
+        let timeParts = "{{ time_left }}".split(":");
+        let minutes = parseInt(timeParts[0]);
+        let seconds = parseInt(timeParts[1]);
+        let total = minutes * 60 + seconds;
+
+        const timer = setInterval(() => {
+            if (total <= 0) {
+                clearInterval(timer);
+                document.getElementById("timeLeft").innerText = "00:00";
+                location.reload();
+                return;
+            }
+            total--;
+            let m = String(Math.floor(total / 60)).padStart(2, "0");
+            let s = String(total % 60).padStart(2, "0");
+            document.getElementById("timeLeft").innerText = `${m}:${s}`;
+        }, 1000);
+    </script>
+{% endif %}
+
         </div>
         <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
             {% csrf_token %}
@@ -59,3 +90,4 @@
 </main>
 </body>
 </html>
+
