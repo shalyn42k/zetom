@@ -873,76 +873,136 @@ body.has-modal {
     flex: 1;
 }
 
-.requests-list {
+.requests-carousel {
     display: grid;
-    gap: 24px;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.requests-carousel__track {
+    display: flex;
+    gap: clamp(16px, 3vw, 28px);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 16px 8px;
+    align-items: stretch;
+    justify-content: center;
+}
+
+.requests-carousel__track::-webkit-scrollbar {
+    height: 8px;
+}
+
+.requests-carousel__track::-webkit-scrollbar-thumb {
+    background: rgba(27, 109, 52, 0.25);
+    border-radius: 999px;
+}
+
+.requests-carousel__nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(47, 168, 79, 0.15);
+    color: var(--green-dark);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.requests-carousel__nav:hover,
+.requests-carousel__nav:focus-visible {
+    background: rgba(47, 168, 79, 0.25);
+    transform: translateY(-1px);
+}
+
+.requests-carousel__nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .request-card {
-    background: rgba(255, 255, 255, 0.96);
-    border-radius: 20px;
-    border: 1px solid rgba(27, 109, 52, 0.12);
-    box-shadow: 0 16px 36px rgba(18, 64, 30, 0.1);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    min-width: clamp(260px, 32vw, 360px);
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    border: 1px solid rgba(27, 109, 52, 0.1);
+    box-shadow: 0 18px 40px rgba(18, 64, 30, 0.12);
+    padding: clamp(20px, 4vw, 28px);
+    display: grid;
+    gap: 14px;
+    text-align: left;
+    cursor: pointer;
+    scroll-snap-align: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.request-card__header {
-    padding: 18px 22px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    background: linear-gradient(135deg, rgba(47, 168, 79, 0.12), rgba(18, 64, 30, 0.05));
+.request-card:focus-visible,
+.request-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 56px rgba(18, 64, 30, 0.18);
+    outline: none;
 }
 
-.request-card__meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
+.request-card.is-active {
+    border-color: rgba(27, 109, 52, 0.3);
+    box-shadow: 0 26px 56px rgba(18, 64, 30, 0.18);
 }
 
-.request-card__id {
-    font-size: 1rem;
+.request-card__status-indicator {
+    position: absolute;
+    inset-inline: 22px;
+    top: 16px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(47, 168, 79, 0.4);
+}
+
+.request-card__status-indicator.badge--success {
+    background: rgba(47, 168, 79, 0.8);
+}
+
+.request-card__status-indicator.badge--warning {
+    background: rgba(250, 200, 88, 0.85);
+}
+
+.request-card__status-indicator.badge--info {
+    background: rgba(57, 143, 231, 0.8);
+}
+
+.request-card__content {
+    display: grid;
+    gap: 10px;
+    padding-top: 10px;
+}
+
+.request-card__title {
+    margin: 0;
+    font-size: clamp(1.05rem, 2.2vw, 1.25rem);
     color: var(--green-dark);
 }
 
-.request-card__date {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.request-card__body {
-    padding: 24px;
-}
-
-.request-card__form {
-    display: grid;
-    gap: 18px;
-}
-
-.form-grid--compact {
-    gap: 18px;
-}
-
-.request-card__footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.request-card__status-label {
-    font-weight: 600;
+.request-card__meta {
+    margin: 0;
+    font-size: 0.88rem;
     color: var(--text-muted);
 }
 
-.request-card__submit {
-    margin-left: auto;
+.request-card__summary {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.request-card__badge {
+    justify-self: flex-start;
 }
 
 .empty-state {
@@ -1008,6 +1068,131 @@ body.has-modal {
 .badge--info {
     background: rgba(57, 143, 231, 0.18);
     color: #1b4e8f;
+}
+
+.request-detail-layer {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10, 33, 18, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 50;
+}
+
+.request-detail-layer.is-visible {
+    display: flex;
+}
+
+.request-detail {
+    display: none;
+    width: min(720px, 100%);
+}
+
+.request-detail.is-active {
+    display: block;
+}
+
+.request-detail__panel {
+    position: relative;
+    background: #fff;
+    border-radius: 28px;
+    padding: clamp(28px, 4vw, 40px);
+    box-shadow: 0 30px 70px rgba(18, 64, 30, 0.22);
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: grid;
+    gap: 24px;
+}
+
+.request-detail__close {
+    position: absolute;
+    top: 18px;
+    inset-inline-end: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(27, 109, 52, 0.1);
+    color: var(--green-dark);
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.request-detail__close:hover,
+.request-detail__close:focus-visible {
+    background: rgba(27, 109, 52, 0.18);
+}
+
+.request-detail__header {
+    display: grid;
+    gap: 8px;
+}
+
+.request-detail__title {
+    margin: 0;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    color: var(--green-dark);
+}
+
+.request-detail__meta {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.request-detail__form {
+    display: grid;
+    gap: 24px;
+}
+
+.request-detail__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.form-field--wide {
+    grid-column: 1 / -1;
+}
+
+.request-detail__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.button--danger {
+    background: rgba(225, 67, 67, 0.18);
+    color: #932020;
+}
+
+.button--danger:hover,
+.button--danger:focus-visible {
+    background: rgba(225, 67, 67, 0.28);
+    color: #701010;
+}
+
+@media (max-width: 720px) {
+    .requests-carousel {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .requests-carousel__track {
+        justify-content: flex-start;
+    }
+
+    .requests-carousel__nav {
+        display: none;
+    }
 }
 
 @media (max-width: 960px) {
