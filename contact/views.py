@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.utils.text import Truncator
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import (
@@ -23,6 +24,7 @@ from .forms import (
     MessageFilterForm,
     MessageUpdateForm,
     TrashActionForm,
+    UserMessageUpdateForm,
 )
 from .models import ContactMessage
 from .services import messages as message_service
@@ -51,6 +53,7 @@ def index(request: HttpRequest) -> HttpResponse:
             "message": form.cleaned_data["message"],
         }
         message = message_service.add_message(**payload)
+        _store_message_for_user(request, message.id)
         if settings.SMTP_USER:
             send_contact_email(form.cleaned_data['email'], message)
             notification_link = request.build_absolute_uri(reverse('contact:panel'))
@@ -261,6 +264,121 @@ def panel(request: HttpRequest) -> HttpResponse:
     return render(request, 'contact/admin_panel.html', context)
 
 
+@require_http_methods(['GET', 'POST'])
+def user_requests(request: HttpRequest) -> HttpResponse:
+    lang = get_language(request)
+    message_ids = _get_user_message_ids(request)
+
+    messages_qs = ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).order_by('-created_at')
+    valid_ids = list(messages_qs.values_list('id', flat=True))
+    if set(valid_ids) != set(message_ids):
+        request.session['user_message_ids'] = valid_ids
+
+    status_options = _status_options(lang)
+    status_lookup = {item['value']: item for item in status_options}
+
+    forms_map: dict[int, UserMessageUpdateForm] = {
+        message.id: UserMessageUpdateForm(instance=message, prefix=f"message-{message.id}")
+        for message in messages_qs
+    }
+    active_message_id: int | None = None
+
+    if request.method == 'POST':
+        message_id_raw = request.POST.get('message_id')
+        prefix = request.POST.get('form_prefix')
+        action = request.POST.get('action') or 'update'
+        try:
+            message_id = int(message_id_raw) if message_id_raw else None
+        except (TypeError, ValueError):
+            message_id = None
+
+        if message_id and message_id in valid_ids:
+            message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+            if action == 'delete':
+                message_service.delete_messages([message.id])
+                request.session['user_message_ids'] = [
+                    stored_id for stored_id in valid_ids if stored_id != message.id
+                ]
+                if lang == 'pl':
+                    success_message = 'Zgłoszenie zostało usunięte.'
+                else:
+                    success_message = 'The request has been deleted.'
+                messages.success(request, success_message)
+                return redirect(f"{reverse('contact:user_requests')}?lang={lang}")
+
+            form_prefix = prefix or f"message-{message.id}"
+            form = UserMessageUpdateForm(
+                request.POST,
+                instance=message,
+                prefix=form_prefix,
+            )
+            if form.is_valid():
+                form.save()
+                if lang == 'pl':
+                    success_message = 'Zgłoszenie zostało zaktualizowane.'
+                else:
+                    success_message = 'The request has been updated.'
+                messages.success(request, success_message)
+                return redirect(f"{reverse('contact:user_requests')}?lang={lang}")
+            forms_map[message.id] = form
+            active_message_id = message.id
+        else:
+            if lang == 'pl':
+                error_message = 'Nie można było zaktualizować zgłoszenia.'
+            else:
+                error_message = 'The request could not be updated.'
+            messages.error(request, error_message)
+
+    entries = []
+    if lang == 'pl':
+        company_labels = {value: label for value, label in ContactForm.COMPANY_CHOICES}
+    else:
+        company_labels = {
+            'firma1': 'Company 1',
+            'firma2': 'Company 2',
+            'firma3': 'Company 3',
+            'inna': 'Other',
+        }
+
+    for message in messages_qs:
+        status_meta = status_lookup.get(
+            message.status,
+            {'label': message.status, 'badge': 'badge--info'},
+        )
+        entries.append(
+            {
+                'message': message,
+                'form': forms_map[message.id],
+                'status_label': status_meta['label'],
+                'status_badge': status_meta['badge'],
+                'status_value': message.status,
+                'summary': Truncator(message.message).chars(140),
+                'company_label': company_labels.get(message.company, message.company),
+                'is_active': message.id == active_message_id,
+            }
+        )
+
+    if lang == 'pl':
+        empty_state_title = 'Brak zapisanych zgłoszeń'
+        empty_state_text = 'Wypełnij formularz kontaktowy, aby dodać swoje pierwsze zgłoszenie.'
+        update_hint = 'Możesz edytować lub usunąć swoje zgłoszenie w dowolnym momencie. Pamiętaj o zapisaniu zmian.'
+    else:
+        empty_state_title = 'No requests yet'
+        empty_state_text = 'Fill in the contact form to add your first request.'
+        update_hint = 'You can edit or delete your request at any time. Remember to save the changes.'
+
+    context = {
+        'lang': lang,
+        'entries': entries,
+        'has_messages': bool(entries),
+        'empty_state_title': empty_state_title,
+        'empty_state_text': empty_state_text,
+        'update_hint': update_hint,
+        'active_message_id': active_message_id,
+    }
+    return render(request, 'contact/user_requests.html', context)
+
+
 @require_http_methods(['GET'])
 def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     if not request.session.get('logged_in'):
@@ -316,6 +434,28 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
         return JsonResponse(data)
 
     return JsonResponse({'errors': form.errors}, status=400)
+
+
+def _store_message_for_user(request: HttpRequest, message_id: int) -> None:
+    raw_ids = request.session.get('user_message_ids', [])
+    try:
+        stored_ids = [int(pk) for pk in raw_ids]
+    except (TypeError, ValueError):
+        stored_ids = []
+    if message_id not in stored_ids:
+        stored_ids.append(message_id)
+        request.session['user_message_ids'] = stored_ids
+
+
+def _get_user_message_ids(request: HttpRequest) -> list[int]:
+    raw_ids = request.session.get('user_message_ids', [])
+    message_ids: list[int] = []
+    for pk in raw_ids:
+        try:
+            message_ids.append(int(pk))
+        except (TypeError, ValueError):
+            continue
+    return message_ids
 
 
 def _panel_redirect_url(
