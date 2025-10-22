@@ -162,6 +162,40 @@ SMTP_PORT = EMAIL_PORT
 SMTP_USER = EMAIL_HOST_USER
 SMTP_PASS = EMAIL_HOST_PASSWORD
 
+# Получатели нотификаций по компаниям. Заполните реальные почты на месте примеров.
+COMPANY_NOTIFICATION_RECIPIENTS = {
+    # Для фирмы 1 отправка сотруднику, менеджеру и дополнительному контакту
+    "firma1": [
+        "employee_firma1@example.com",  # ← укажите e-mail сотрудника фирмы 1
+        "manager_firma1@example.com",   # ← укажите e-mail менеджера фирмы 1
+        "other_firma1@example.com",     # ← укажите e-mail дополнительного контакта фирмы 1
+    ],
+    # Для фирмы 2
+    "firma2": [
+        "employee_firma2@example.com",
+        "manager_firma2@example.com",
+        "other_firma2@example.com",
+    ],
+    # Для фирмы 3
+    "firma3": [
+        "employee_firma3@example.com",
+        "manager_firma3@example.com",
+        "other_firma3@example.com",
+    ],
+    # Общий список по умолчанию для всех остальных компаний (например, "inna")
+    "default": [
+        "employee_default@example.com",
+        "manager_default@example.com",
+        "other_default@example.com",
+    ],
+}
+
+# Ссылка, которая будет добавляться в письма-уведомления для сотрудников фирм
+COMPANY_NOTIFICATION_LINK = os.environ.get(
+    "COMPANY_NOTIFICATION_LINK",
+    "http://localhost:8000/contact/panel/",
+)
+
 # --- Other ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
