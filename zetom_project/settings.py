@@ -162,6 +162,40 @@ SMTP_PORT = EMAIL_PORT
 SMTP_USER = EMAIL_HOST_USER
 SMTP_PASS = EMAIL_HOST_PASSWORD
 
+# Получатели нотификаций по компаниям. Заполните реальные почты на месте примеров.
+COMPANY_NOTIFICATION_RECIPIENTS = {
+    # Для фирмы 1 отправка сотруднику, менеджеру и дополнительному контакту
+    "firma1": [
+        "tymirapps@gmai.com",
+        "ilitovko660@gmail.com",
+        "volkovnikita1977@gmail.com",
+    ],
+    # Для фирмы 2
+    "firma2": [
+        "tymirapps@gmai.com",
+        "ilitovko660@gmail.com",
+        "volkovnikita1977@gmail.com",
+    ],
+    # Для фирмы 3
+    "firma3": [
+        "tymirapps@gmai.com",
+        "ilitovko660@gmail.com",
+        "volkovnikita1977@gmail.com",
+    ],
+    # Общий список по умолчанию для всех остальных компаний (например, "inna")
+    "default": [
+        "tymirapps@gmai.com",
+        "ilitovko660@gmail.com",
+        "volkovnikita1977@gmail.com",
+    ],
+}
+
+# Ссылка, которая будет добавляться в письма-уведомления для сотрудников фирм
+COMPANY_NOTIFICATION_LINK = os.environ.get(
+    "COMPANY_NOTIFICATION_LINK",
+    "http://localhost:8000/contact/panel/",
+)
+
 # --- Other ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

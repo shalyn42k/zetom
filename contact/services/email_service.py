@@ -30,6 +30,40 @@ def send_contact_email(recipient: str, message: ContactMessage) -> None:
     _send_plain_email(to_email=recipient, subject=subject, body=body)
 
 
+def send_company_notification(message: ContactMessage, *, link: str | None = None) -> None:
+    recipients_config = getattr(settings, "COMPANY_NOTIFICATION_RECIPIENTS", {})
+    if not recipients_config:
+        return
+
+    company_key = (message.company or "").strip()
+    recipients = recipients_config.get(company_key) or recipients_config.get("default") or []
+
+    notification_link = link or getattr(settings, "COMPANY_NOTIFICATION_LINK", "")
+    subject = "Новая заявка для проверки"
+    body = (
+        "Заявка пришла, прошу проверить по этой ссылке: {link}\n\n"
+        "Базовая информация:\n"
+        "Имя: {first}\n"
+        "Фамилия: {last}\n"
+        "Телефон: {phone}\n"
+        "Email: {email}\n"
+        "Компания: {company}\n\n"
+        "Сообщение:\n{content}"
+    ).format(
+        link=notification_link,
+        first=message.first_name,
+        last=message.last_name,
+        phone=message.phone,
+        email=message.email,
+        company=message.company,
+        content=message.message,
+    )
+
+    for email in recipients:
+        if email:
+            _send_plain_email(to_email=email, subject=subject, body=body)
+
+
 def send_email_with_attachment(*, to_email: str, subject: str, body: str, attachment: IO[bytes] | None, filename: str | None) -> None:
     msg = MIMEMultipart()
     msg['From'] = settings.SMTP_USER
