@@ -16,21 +16,9 @@ def add_message(*, first_name: str, last_name: str, phone: str, email: str, comp
     )
 
 
-def mark_messages_new(message_ids: Iterable[int]) -> None:
+def update_messages_status(message_ids: Iterable[int], *, status: str) -> None:
     ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
-        status=ContactMessage.STATUS_NEW
-    )
-
-
-def mark_messages_in_progress(message_ids: Iterable[int]) -> None:
-    ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
-        status=ContactMessage.STATUS_IN_PROGRESS
-    )
-
-
-def mark_messages_ready(message_ids: Iterable[int]) -> None:
-    ContactMessage.objects.filter(id__in=message_ids, is_deleted=False).update(
-        status=ContactMessage.STATUS_READY
+        status=status
     )
 
 

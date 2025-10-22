@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Iterable
+from typing import Callable, Iterable
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -420,58 +420,68 @@ def _build_filter_form(
 
 
 def _handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
-    if action == MessageBulkActionForm.ACTION_MARK_NEW:
-        message_service.mark_messages_new(ids)
-        text = (
-            'Zaznaczone wiadomości oznaczono jako nowe.'
-            if lang == 'pl'
-            else 'Selected messages marked as new.'
-        )
-    elif action == MessageBulkActionForm.ACTION_MARK_IN_PROGRESS:
-        message_service.mark_messages_in_progress(ids)
-        text = (
-            'Zaznaczone wiadomości oznaczono jako w trakcie.'
-            if lang == 'pl'
-            else 'Selected messages marked as in progress.'
-        )
-    elif action == MessageBulkActionForm.ACTION_MARK_READY:
-        message_service.mark_messages_ready(ids)
-        text = (
-            'Zaznaczone wiadomości oznaczono jako gotowe.'
-            if lang == 'pl'
-            else 'Selected messages marked as ready.'
-        )
-    else:
+    status_actions: dict[str, tuple[str, str, str]] = {
+        MessageBulkActionForm.ACTION_MARK_NEW: (
+            ContactMessage.STATUS_NEW,
+            'Zaznaczone wiadomości oznaczono jako nowe.',
+            'Selected messages marked as new.',
+        ),
+        MessageBulkActionForm.ACTION_MARK_IN_PROGRESS: (
+            ContactMessage.STATUS_IN_PROGRESS,
+            'Zaznaczone wiadomości oznaczono jako w trakcie.',
+            'Selected messages marked as in progress.',
+        ),
+        MessageBulkActionForm.ACTION_MARK_READY: (
+            ContactMessage.STATUS_READY,
+            'Zaznaczone wiadomości oznaczono jako gotowe.',
+            'Selected messages marked as ready.',
+        ),
+    }
+
+    success_message: str | None = None
+
+    if action in status_actions:
+        status, message_pl, message_en = status_actions[action]
+        message_service.update_messages_status(ids, status=status)
+        success_message = message_pl if lang == 'pl' else message_en
+    elif action == MessageBulkActionForm.ACTION_DELETE:
         message_service.delete_messages(ids)
-        text = (
+        success_message = (
             'Zaznaczone wiadomości przeniesiono do kosza.'
             if lang == 'pl'
             else 'Selected messages moved to trash.'
         )
 
+    if success_message:
+        messages.success(request, success_message)
+
 
 def _handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
-    if action == TrashActionForm.ACTION_RESTORE:
-        message_service.restore_messages(ids)
-        text = (
-            'Wybrane wiadomości przywrócono.'
-            if lang == 'pl'
-            else 'Selected messages restored.'
-        )
-    elif action == TrashActionForm.ACTION_DELETE:
-        message_service.purge_messages(ids)
-        text = (
-            'Wybrane wiadomości usunięto bezpowrotnie.'
-            if lang == 'pl'
-            else 'Selected messages permanently deleted.'
-        )
-    else:
-        message_service.purge_messages()
-        text = (
-            'Kosz opróżniono.'
-            if lang == 'pl'
-            else 'Trash emptied.'
-        )
+    action_handlers: dict[str, tuple[Callable[[Iterable[int]], None], str, str]] = {
+        TrashActionForm.ACTION_RESTORE: (
+            message_service.restore_messages,
+            'Wybrane wiadomości przywrócono.',
+            'Selected messages restored.',
+        ),
+        TrashActionForm.ACTION_DELETE: (
+            lambda message_ids: message_service.purge_messages(message_ids),
+            'Wybrane wiadomości usunięto bezpowrotnie.',
+            'Selected messages permanently deleted.',
+        ),
+        TrashActionForm.ACTION_EMPTY: (
+            lambda _message_ids: message_service.purge_messages(),
+            'Kosz opróżniono.',
+            'Trash emptied.',
+        ),
+    }
+
+    handler = action_handlers.get(action)
+    if not handler:
+        return
+
+    func, message_pl, message_en = handler
+    func(ids)
+    messages.success(request, message_pl if lang == 'pl' else message_en)
 
 
 def _localise_action_choices(form: MessageBulkActionForm, lang: str) -> None:
