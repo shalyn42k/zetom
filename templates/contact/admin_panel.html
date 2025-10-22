@@ -219,6 +219,24 @@
                     <textarea name="final_response" rows="4" class="form-input"></textarea>
                 </label>
             </div>
+             <section class="request-modal__history"
+                     data-request-history
+                     data-empty-message="{% if lang == 'pl' %}Klient nie wprowadził jeszcze żadnych zmian.{% else %}The client has not made any edits yet.{% endif %}"
+                     data-timestamp-label="{% if lang == 'pl' %}Zmieniono{% else %}Changed{% endif %}"
+                     data-previous-label="{% if lang == 'pl' %}Poprzednio{% else %}Previous{% endif %}"
+                     data-current-label="{% if lang == 'pl' %}Aktualnie{% else %}Current{% endif %}"
+                     data-count-label="{% if lang == 'pl' %}Liczba pól{% else %}Fields changed{% endif %}"
+                     data-more-label="{% if lang == 'pl' %}W historii zapisano dodatkowo {count} wcześniejsze zmiany.{% else %}{count} earlier edits are stored in the history.{% endif %}">
+                <div class="request-modal__history-header">
+                    <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client edits{% endif %}</h3>
+                    <p>{% if lang == 'pl' %}Historia zmian naniesionych przez użytkownika po wysłaniu zgłoszenia.{% else %}A log of adjustments performed by the client after submitting the request.{% endif %}</p>
+                </div>
+                <div class="request-history" data-request-history-empty>
+                    <p>{% if lang == 'pl' %}Klient nie wprowadził jeszcze żadnych zmian.{% else %}The client has not made any edits yet.{% endif %}</p>
+                </div>
+                <ol class="request-history__list" data-request-history-list hidden></ol>
+                <p class="request-history__more" data-request-history-more hidden></p>
+            </section>
             <div class="form-error" data-request-errors hidden></div>
             <div class="form-success" data-request-feedback hidden></div>
             <div class="modal__actions">

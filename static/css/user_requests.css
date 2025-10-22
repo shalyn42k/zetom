@@ -30,18 +30,22 @@
 
 .requests-carousel {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 16px;
     align-items: center;
+    justify-items: center;
 }
 
 .requests-track {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(260px, 1fr);
+    display: flex;
     gap: 20px;
+    width: min(90vw, 520px);
+    max-width: 520px;
+    margin: 0 auto;
     overflow: hidden;
     scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    padding: 4px 0;
 }
 
 .request-card {
@@ -56,12 +60,20 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    flex: 0 0 100%;
+    max-width: 520px;
+    scroll-snap-align: center;
 }
 
 .request-card:focus-visible,
 .request-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 24px 44px rgba(19, 69, 38, 0.22);
+}
+
+.request-card.is-active {
+    border-color: rgba(27, 109, 52, 0.35);
+    box-shadow: 0 24px 48px rgba(19, 69, 38, 0.24);
 }
 
 .request-card__header {

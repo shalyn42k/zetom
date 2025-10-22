@@ -86,6 +86,12 @@
             }
         };
 
+        const setActiveCard = (index) => {
+            cards.forEach((card, cardIndex) => {
+                card.classList.toggle('is-active', cardIndex === index);
+            });
+        };
+
         const scrollToIndex = (index) => {
             if (!track) {
                 return;
@@ -98,6 +104,7 @@
             track.scrollTo({ left: offset, behavior: 'smooth' });
             currentIndex = index;
             updateButtons();
+            setActiveCard(index);
         };
 
         const refreshCards = () => {
@@ -108,6 +115,7 @@
                 currentIndex = cards.length - 1;
             }
             updateButtons();
+            setActiveCard(currentIndex);
         };
 
         const showError = (message) => {
@@ -371,6 +379,7 @@
                 card.addEventListener('click', () => {
                     currentIndex = index;
                     updateButtons();
+                    setActiveCard(index);
                     fetchDetails(card);
                 });
                 card.addEventListener('keydown', (event) => {
@@ -378,6 +387,7 @@
                         event.preventDefault();
                         currentIndex = index;
                         updateButtons();
+                        setActiveCard(index);
                         fetchDetails(card);
                     }
                 });
@@ -386,6 +396,7 @@
 
         attachCardHandlers();
         updateButtons();
+        setActiveCard(currentIndex);
 
         if (prevButton) {
             prevButton.addEventListener('click', () => {
