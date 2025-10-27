@@ -1,19 +1,39 @@
-from collections.abc import Iterable
+from __future__ import annotations
 
+from typing import Iterable, Sequence
+
+from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
 from django.db.models import QuerySet
 
-from ..models import ContactMessage
+from ..models import ContactAttachment, ContactMessage
 
 
-def add_message(*, first_name: str, last_name: str, phone: str, email: str, company: str, message: str) -> ContactMessage:
-    return ContactMessage.objects.create(
-        first_name=first_name,
-        last_name=last_name,
-        phone=phone,
-        email=email,
-        company=company,
-        message=message,
-    )
+def add_message(
+    *,
+    first_name: str,
+    last_name: str,
+    phone: str,
+    email: str,
+    company: str,
+    message: str,
+    attachments: Sequence | None = None,
+) -> tuple[ContactMessage, str]:
+    files: list[UploadedFile] = list(attachments or [])
+    with transaction.atomic():
+        contact_message = ContactMessage.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            email=email,
+            company=company,
+            message=message,
+        )
+        token = contact_message.initialise_access_token()
+        contact_message.save(update_fields=["access_token_hash"])
+        if files:
+            _create_attachments(contact_message, files)
+    return contact_message, token
 
 
 def update_messages_status(message_ids: Iterable[int], *, status: str) -> None:
@@ -54,6 +74,12 @@ def purge_messages(message_ids: Iterable[int] | None = None) -> None:
     queryset.delete()
 
 
+def add_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> None:
+    if not files:
+        return
+    _create_attachments(message, files)
+
+
 def _resolve_ordering(sort_by: str | None) -> list[str]:
     if sort_by == "oldest":
         return ["created_at"]
@@ -62,3 +88,14 @@ def _resolve_ordering(sort_by: str | None) -> list[str]:
     if sort_by == "company":
         return ["company", "-created_at"]
     return ["-created_at"]
+
+
+def _create_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> None:
+    for uploaded in files:
+        ContactAttachment.objects.create(
+            message=message,
+            file=uploaded,
+            original_name=getattr(uploaded, "name", ""),
+            content_type=getattr(uploaded, "content_type", ""),
+            size=getattr(uploaded, "size", 0) or 0,
+        )

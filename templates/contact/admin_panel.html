@@ -219,6 +219,21 @@
                     <textarea name="final_response" rows="4" class="form-input"></textarea>
                 </label>
             </div>
+            <section class="request-modal__attachments">
+                <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
+                <ul class="attachment-list" data-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
+            </section>
+            <section class="request-modal__access">
+                <h3>{% if lang == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
+                <p class="request-modal__token">
+                    <strong>{% if lang == 'pl' %}Hash tokenu:{% else %}Token hash:{% endif %}</strong>
+                    <span data-request-token-hash>—</span>
+                </p>
+                <p class="request-modal__access-status">
+                    <strong>{% if lang == 'pl' %}Dostęp aktywny:{% else %}Access enabled:{% endif %}</strong>
+                    <span data-request-access-enabled>—</span>
+                </p>
+            </section>
             <div class="form-error" data-request-errors hidden></div>
             <div class="form-success" data-request-feedback hidden></div>
             <div class="modal__actions">

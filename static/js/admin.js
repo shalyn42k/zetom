@@ -393,6 +393,10 @@
         const createdElement = $('[data-request-created]', requestModal);
         const errorBox = $('[data-request-errors]', requestModal);
         const feedbackBox = $('[data-request-feedback]', requestModal);
+        const attachmentsList = $('[data-request-attachments]', requestModal);
+        const attachmentsEmptyMessage = attachmentsList ? attachmentsList.dataset.empty || '' : '';
+        const tokenHashElement = $('[data-request-token-hash]', requestModal);
+        const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
         const closeElements = $$('[data-request-close]', requestModal);
         const statusMap = (() => {
@@ -524,6 +528,55 @@
             }
         };
 
+        const renderAttachments = (items) => {
+            if (!attachmentsList) {
+                return;
+            }
+            attachmentsList.innerHTML = '';
+            if (!items || !items.length) {
+                if (attachmentsEmptyMessage) {
+                    const emptyItem = document.createElement('li');
+                    emptyItem.className = 'attachment-list__empty';
+                    emptyItem.textContent = attachmentsEmptyMessage;
+                    attachmentsList.appendChild(emptyItem);
+                }
+                return;
+            }
+            items.forEach((item) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'attachment-list__item';
+                const link = document.createElement('a');
+                link.href = item.url || '#';
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = item.name || 'attachment';
+                if (item.size) {
+                    const sizeKb = (Number(item.size) / 1024).toFixed(1);
+                    const sizeSpan = document.createElement('span');
+                    sizeSpan.className = 'attachment-list__meta';
+                    sizeSpan.textContent = `${sizeKb} KB`;
+                    listItem.append(link, sizeSpan);
+                } else {
+                    listItem.appendChild(link);
+                }
+                attachmentsList.appendChild(listItem);
+            });
+        };
+
+        const setAccessInfo = (data) => {
+            if (tokenHashElement) {
+                tokenHashElement.textContent = data.access_token_hash || '—';
+            }
+            if (accessEnabledElement) {
+                const enabled = Boolean(data.access_enabled);
+                if (language === 'pl') {
+                    accessEnabledElement.textContent = enabled ? 'Tak' : 'Nie';
+                } else {
+                    accessEnabledElement.textContent = enabled ? 'Yes' : 'No';
+                }
+            }
+        };
+
         const populateForm = (data) => {
             if (!form) {
                 return;
@@ -540,6 +593,8 @@
                     field.value = value ?? '';
                 }
             });
+            renderAttachments(data.attachments || []);
+            setAccessInfo(data);
         };
 
         const setHeader = (id, createdAt) => {
@@ -637,6 +692,8 @@
                 .then((data) => {
                     updateRowDisplay(data);
                     showError('');
+                    renderAttachments(data.attachments || []);
+                    setAccessInfo(data);
                 })
                 .catch((error) => {
                     if (error && error.errors) {

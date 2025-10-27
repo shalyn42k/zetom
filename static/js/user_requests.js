@@ -57,6 +57,9 @@
         const finalResponseElement = modal.querySelector('[data-user-request-final-response]');
         const closeElements = Array.from(modal.querySelectorAll('[data-user-request-close]'));
         const deleteButton = modal.querySelector('[data-user-request-delete]');
+        const attachmentsList = modal.querySelector('[data-user-request-attachments]');
+        const attachmentsEmptyMessage = attachmentsList ? attachmentsList.dataset.empty || '' : '';
+        const attachmentsField = form ? form.querySelector('input[name="attachments"]') : null;
 
         let cards = track ? Array.from(track.querySelectorAll('[data-request-card]')) : [];
         let currentIndex = 0;
@@ -141,6 +144,40 @@
             }
         };
 
+        const renderAttachments = (items) => {
+            if (!attachmentsList) {
+                return;
+            }
+            attachmentsList.innerHTML = '';
+            if (!items || !items.length) {
+                if (attachmentsEmptyMessage) {
+                    const emptyItem = document.createElement('li');
+                    emptyItem.className = 'attachment-list__empty';
+                    emptyItem.textContent = attachmentsEmptyMessage;
+                    attachmentsList.appendChild(emptyItem);
+                }
+                return;
+            }
+            items.forEach((item) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'attachment-list__item';
+                const link = document.createElement('a');
+                link.href = item.url || '#';
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = item.name || 'attachment';
+                listItem.appendChild(link);
+                if (item.size) {
+                    const meta = document.createElement('span');
+                    meta.className = 'attachment-list__meta';
+                    const sizeKb = (Number(item.size) / 1024).toFixed(1);
+                    meta.textContent = `${sizeKb} KB`;
+                    listItem.appendChild(meta);
+                }
+                attachmentsList.appendChild(listItem);
+            });
+        };
+
         const populateForm = (data) => {
             if (!form) {
                 return;
@@ -159,6 +196,7 @@
             });
             setFinalText(finalChangesElement, data.final_changes);
             setFinalText(finalResponseElement, data.final_response);
+            renderAttachments(data.attachments || []);
         };
 
         const setModalHeader = (data) => {
@@ -189,6 +227,10 @@
                 currentCard = null;
                 currentId = null;
                 showError('');
+                renderAttachments([]);
+                if (attachmentsField) {
+                    attachmentsField.value = '';
+                }
             }
         };
 

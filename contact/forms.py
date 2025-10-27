@@ -1,7 +1,57 @@
 from __future__ import annotations
 
 from django import forms
+from django.conf import settings
+
 from .models import ContactMessage
+
+
+class MultiFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultiFileInput(attrs={"multiple": True})
+
+    def clean(self, data, initial=None):
+        if data in self.empty_values:
+            return []
+        files = data
+        if not isinstance(files, (list, tuple)):
+            files = [files]
+        cleaned_files = []
+        errors = []
+        for file in files:
+            try:
+                cleaned_files.append(super().clean(file, initial))
+            except forms.ValidationError as exc:  # pragma: no cover - delegated validation
+                errors.extend(exc.error_list)
+        if errors:
+            raise forms.ValidationError(errors)
+        return cleaned_files
+
+
+def _validate_attachments(files: list, language: str | None = None) -> list:
+    max_size = getattr(settings, "ATTACH_MAX_SIZE_MB", 25) * 1024 * 1024
+    allowed_types = [ctype.strip() for ctype in getattr(settings, "ATTACH_ALLOWED_TYPES", []) if ctype.strip()]
+    errors: list[str] = []
+    for uploaded in files:
+        size = getattr(uploaded, "size", 0) or 0
+        if size > max_size:
+            limit = getattr(settings, "ATTACH_MAX_SIZE_MB", 25)
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} przekracza limit {limit} MB.")
+            else:
+                errors.append(f"File {uploaded.name} exceeds the {limit} MB limit.")
+        content_type = getattr(uploaded, "content_type", "") or ""
+        if allowed_types and content_type and content_type not in allowed_types:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolony typ ({content_type}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden type ({content_type}).")
+    if errors:
+        raise forms.ValidationError(errors)
+    return files
 
 
 class ContactForm(forms.ModelForm):
@@ -29,6 +79,8 @@ class ContactForm(forms.ModelForm):
         ),
     )
 
+    attachments = MultipleFileField(required=False)
+
     def __init__(self, *args, language: str | None = None, **kwargs):
         self.language = language
         super().__init__(*args, **kwargs)
@@ -38,6 +90,7 @@ class ContactForm(forms.ModelForm):
             else "Please confirm you are not a bot."
         )
         self.fields["bot_check"].error_messages["required"] = message
+        self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
         model = ContactMessage
@@ -74,6 +127,10 @@ class ContactForm(forms.ModelForm):
             )
             raise forms.ValidationError(message)
         return bot_check
+
+    def clean_attachments(self) -> list:
+        files = self.cleaned_data.get("attachments") or []
+        return _validate_attachments(files, self.language)
 
 
 class LoginForm(forms.Form):
@@ -363,6 +420,8 @@ class MessageUpdateForm(forms.ModelForm):
 
 
 class UserMessageUpdateForm(forms.ModelForm):
+    attachments = MultipleFileField(required=False)
+
     class Meta:
         model = ContactMessage
         fields = [
@@ -385,3 +444,69 @@ class UserMessageUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["company"].choices = ContactForm.COMPANY_CHOICES
+        self.fields["attachments"].widget.attrs.update({"class": "form-input"})
+
+    def clean_attachments(self) -> list:
+        files = self.cleaned_data.get("attachments") or []
+        return _validate_attachments(files, None)
+
+
+class RequestAccessForm(forms.Form):
+    request_id = forms.CharField()
+    access_token = forms.CharField(strip=True)
+
+    def __init__(
+        self,
+        *args,
+        stored_ids: list[int] | None = None,
+        language: str | None = None,
+        **kwargs,
+    ) -> None:
+        self.language = language or "pl"
+        super().__init__(*args, **kwargs)
+        stored_ids = stored_ids or []
+        if stored_ids:
+            choices = [(str(message_id), f"#{message_id}") for message_id in stored_ids]
+            self.fields["request_id"] = forms.ChoiceField(choices=choices)
+            self.fields["request_id"].initial = str(stored_ids[0])
+        else:
+            self.fields["request_id"].widget = forms.NumberInput()
+
+        id_label = "Numer zgłoszenia" if self.language == "pl" else "Request number"
+        token_label = "Token dostępu" if self.language == "pl" else "Access token"
+
+        self.fields["request_id"].label = id_label
+        self.fields["request_id"].widget.attrs.update({"class": "form-input"})
+        self.fields["access_token"].label = token_label
+        self.fields["access_token"].widget.attrs.update({"class": "form-input"})
+
+    def clean_request_id(self) -> int:
+        raw_value = self.cleaned_data.get("request_id")
+        try:
+            message_id = int(raw_value)
+        except (TypeError, ValueError):
+            error = (
+                "Podaj poprawny numer zgłoszenia."
+                if self.language == "pl"
+                else "Enter a valid request number."
+            )
+            raise forms.ValidationError(error)
+        if message_id <= 0:
+            error = (
+                "Numer zgłoszenia musi być dodatni."
+                if self.language == "pl"
+                else "The request number must be positive."
+            )
+            raise forms.ValidationError(error)
+        return message_id
+
+    def clean_access_token(self) -> str:
+        value = (self.cleaned_data.get("access_token") or "").strip()
+        if not value:
+            error = (
+                "Podaj token dostępu z wiadomości e-mail."
+                if self.language == "pl"
+                else "Enter the access token from your e-mail."
+            )
+            raise forms.ValidationError(error)
+        return value

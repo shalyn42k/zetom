@@ -16,20 +16,25 @@ from ..models import ContactMessage
 logger = logging.getLogger(__name__)
 
 
-def send_contact_email(recipient: str, message: ContactMessage) -> None:
+def send_contact_email(recipient: str, message: ContactMessage, *, access_token: str) -> None:
     subject = 'Nowa wiadomość z formularza kontaktowego'
     body = (
         'Imię i nazwisko: {first} {last}\n'
         'Telefon: {phone}\n'
         'E-mail: {email}\n'
         'Firma: {company}\n'
-        'Wiadomość: {content}'
+        'Numer zgłoszenia: #{id}\n'
+        'Token dostępu: {token}\n\n'
+        'Wiadomość: {content}\n\n'
+        'Zachowaj ten token, aby móc ponownie podejrzeć lub edytować zgłoszenie.'
     ).format(
         first=message.first_name,
         last=message.last_name,
         phone=message.phone,
         email=message.email,
         company=message.company,
+        id=message.id,
+        token=access_token,
         content=message.message,
     )
     _send_plain_email(to_email=recipient, subject=subject, body=body)
