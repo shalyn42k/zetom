@@ -12,11 +12,11 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from ..models import Request
+from ..models import ContactMessage
 
 
 def build_messages_pdf(
-    messages: Iterable[Request],
+    messages: Iterable[ContactMessage],
     *,
     fields: list[str],
     language: str,
@@ -251,20 +251,20 @@ def _field_labels(language: str) -> dict[str, str]:
 def _status_labels(language: str) -> dict[str, str]:
     if language == "pl":
         return {
-            Request.STATUS_NEW: "Nowe",
-            Request.STATUS_IN_PROGRESS: "W trakcie",
-            Request.STATUS_READY: "Gotowe",
+            ContactMessage.STATUS_NEW: "Nowe",
+            ContactMessage.STATUS_IN_PROGRESS: "W trakcie",
+            ContactMessage.STATUS_READY: "Gotowe",
         }
     return {
-        Request.STATUS_NEW: "New",
-        Request.STATUS_IN_PROGRESS: "In progress",
-        Request.STATUS_READY: "Ready",
+        ContactMessage.STATUS_NEW: "New",
+        ContactMessage.STATUS_IN_PROGRESS: "In progress",
+        ContactMessage.STATUS_READY: "Ready",
     }
 
 
 def _field_value(
     field: str,
-    message: Request,
+    message: ContactMessage,
     status_labels: dict[str, str],
 ) -> str:
     if field == "created_at":

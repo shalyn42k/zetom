@@ -206,25 +206,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
-LOGIN_URL = 'contact:staff-login'
-LOGIN_REDIRECT_URL = 'contact:staff-request-list'
+LOGIN_URL = 'contact:login'
 
 CONTACT_FORM_THROTTLE_SECONDS = int(os.getenv('CONTACT_FORM_THROTTLE_SECONDS', '30'))
 SMTP_RETRY_ATTEMPTS = int(os.getenv('SMTP_RETRY_ATTEMPTS', '2'))
 SMTP_TIMEOUT = int(os.getenv('SMTP_TIMEOUT', '30'))
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-ATTACH_MAX_SIZE_MB = int(os.getenv('ATTACH_MAX_SIZE_MB', '25'))
-ATTACH_ALLOWED_TYPES = [
-    item.strip()
-    for item in os.getenv(
-        'ATTACH_ALLOWED_TYPES',
-        'application/pdf,image/jpeg,image/png,text/plain',
-    ).split(',')
-    if item.strip()
-]
-ALLOW_PUBLIC_EDITS = os.getenv('ALLOW_PUBLIC_EDITS', 'false').lower() in ('1', 'true', 'yes', 'on')
-REQUEST_TOKEN_LENGTH = int(os.getenv('REQUEST_TOKEN_LENGTH', '40'))
-PUBLIC_EDIT_RATE_LIMIT_SECONDS = int(os.getenv('PUBLIC_EDIT_RATE_LIMIT_SECONDS', '60'))
