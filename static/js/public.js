@@ -12,8 +12,21 @@
         if (form) {
             const botCheckbox = form.querySelector('[data-bot-check]');
             const submitButton = form.querySelector('[data-form-submit]');
+            const submitContainer = form.querySelector('[data-submit-container]');
+            const submitTooltip = form.querySelector('[data-submit-tooltip]');
             const botError = form.querySelector('[data-bot-error]');
             const requiredMessage = form.dataset.botRequiredMessage || '';
+            const cooldownStorageKey = form.dataset.submitCooldownStorage || 'contactFormCooldownEndsAt';
+            const parsedCooldownSeconds = Number.parseInt(
+                form.dataset.submitCooldownSeconds || '',
+                10,
+            );
+            const cooldownSeconds = Number.isNaN(parsedCooldownSeconds)
+                ? 0
+                : Math.max(parsedCooldownSeconds, 0);
+            const cooldownMessageTemplate =
+                form.dataset.submitCooldownMessage ||
+                'Please wait {seconds} s before sending again.';
             const reviewModal = form.querySelector('[data-review-modal]');
             const reviewFieldsContainer = reviewModal
                 ? reviewModal.querySelector('[data-review-fields]')
@@ -24,6 +37,119 @@
                 : [];
             let restoreFocusTo = null;
             let reviewHideTimer = null;
+            let cooldownInterval = null;
+            let cooldownEndTime = null;
+            let isCooldownActive = false;
+
+            const setCooldownUiState = (active) => {
+                if (submitContainer) {
+                    if (active) {
+                        submitContainer.setAttribute('data-cooldown-active', 'true');
+                    } else {
+                        submitContainer.removeAttribute('data-cooldown-active');
+                    }
+                }
+                if (submitTooltip) {
+                    submitTooltip.hidden = !active;
+                    submitTooltip.setAttribute('aria-hidden', active ? 'false' : 'true');
+                    if (!active) {
+                        submitTooltip.textContent = '';
+                    }
+                }
+            };
+
+            const clearCooldownInterval = () => {
+                if (cooldownInterval) {
+                    window.clearInterval(cooldownInterval);
+                    cooldownInterval = null;
+                }
+            };
+
+            const stopCooldown = () => {
+                clearCooldownInterval();
+                isCooldownActive = false;
+                cooldownEndTime = null;
+                setCooldownUiState(false);
+                try {
+                    window.sessionStorage.removeItem(cooldownStorageKey);
+                } catch (error) {
+                    // Ignore storage errors (e.g. private browsing restrictions)
+                }
+                updateSubmitState();
+            };
+
+            const updateCooldownMessage = () => {
+                if (!isCooldownActive || !cooldownEndTime) {
+                    return;
+                }
+                const remainingMs = cooldownEndTime - Date.now();
+                if (remainingMs <= 0) {
+                    stopCooldown();
+                    return;
+                }
+                const remainingSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+                if (submitTooltip && cooldownMessageTemplate) {
+                    submitTooltip.textContent = cooldownMessageTemplate.replace(
+                        '{seconds}',
+                        String(remainingSeconds),
+                    );
+                }
+            };
+
+            const activateCooldownUntil = (endTimestamp) => {
+                if (!cooldownSeconds || !Number.isFinite(endTimestamp)) {
+                    return;
+                }
+                cooldownEndTime = endTimestamp;
+                isCooldownActive = true;
+                setCooldownUiState(true);
+                updateSubmitState();
+                updateCooldownMessage();
+                clearCooldownInterval();
+                cooldownInterval = window.setInterval(updateCooldownMessage, 1000);
+                try {
+                    window.sessionStorage.setItem(
+                        cooldownStorageKey,
+                        String(endTimestamp),
+                    );
+                } catch (error) {
+                    // Ignore storage errors (e.g. private browsing restrictions)
+                }
+            };
+
+            const startCooldown = (durationSeconds) => {
+                if (!cooldownSeconds || durationSeconds <= 0) {
+                    return;
+                }
+                const endTimestamp = Date.now() + durationSeconds * 1000;
+                activateCooldownUntil(endTimestamp);
+            };
+
+            const restoreCooldownFromStorage = () => {
+                if (!cooldownSeconds) {
+                    return;
+                }
+                try {
+                    const storedValue = window.sessionStorage.getItem(
+                        cooldownStorageKey,
+                    );
+                    if (!storedValue) {
+                        return;
+                    }
+                    const storedTimestamp = Number.parseInt(storedValue, 10);
+                    if (Number.isNaN(storedTimestamp)) {
+                        window.sessionStorage.removeItem(cooldownStorageKey);
+                        return;
+                    }
+                    if (storedTimestamp <= Date.now()) {
+                        window.sessionStorage.removeItem(cooldownStorageKey);
+                        return;
+                    }
+                    activateCooldownUntil(storedTimestamp);
+                } catch (error) {
+                    // Ignore storage errors (e.g. private browsing restrictions)
+                }
+            };
 
             const getFieldLabel = (field) => {
                 if (!field) {
@@ -202,14 +328,17 @@
             };
 
             const updateSubmitState = () => {
-                if (!submitButton) {
-                    return;
-                }
                 const isChecked = botCheckbox ? botCheckbox.checked : true;
-                submitButton.disabled = !isChecked;
+                if (submitButton) {
+                    submitButton.disabled = !isChecked || isCooldownActive;
+                }
+                if (reviewOpenButton) {
+                    reviewOpenButton.disabled = isCooldownActive;
+                }
             };
 
             updateSubmitState();
+            restoreCooldownFromStorage();
 
             if (botCheckbox) {
                 botCheckbox.addEventListener('change', () => {
@@ -232,6 +361,9 @@
 
                 if (submitButton) {
                     submitButton.disabled = true;
+                }
+                if (!isCooldownActive && cooldownSeconds) {
+                    startCooldown(cooldownSeconds);
                 }
                 closeReviewModal();
             });

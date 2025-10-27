@@ -109,7 +109,10 @@
                   action="{% url 'contact:index' %}?lang={{ lang }}"
                   class="contact-form"
                   data-contact-form
-                  data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}">
+                  data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
+                  data-submit-cooldown-seconds="{{ throttle_seconds }}"
+                  data-submit-cooldown-message="{% if lang == 'pl' %}Odczekaj {seconds} s przed ponownym wysłaniem.{% else %}Please wait {seconds} s before sending again.{% endif %}"
+                  data-submit-cooldown-storage="contactFormCooldownEndsAt">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
                     <div class="form-error">{{ form.non_field_errors.0 }}</div>
@@ -146,8 +149,9 @@
                         {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
-                <div class="form-actions">
+                <div class="form-actions" data-submit-container>
                     <button type="button" class="button button--primary" data-review-open>{% if lang == 'pl' %}Wyślij{% else %}Send{% endif %}</button>
+                    <div class="submit-tooltip" data-submit-tooltip aria-live="polite" hidden></div>
                 </div>
                 <div class="modal review-modal" data-review-modal hidden aria-hidden="true">
                     <div class="modal__backdrop" data-review-close></div>

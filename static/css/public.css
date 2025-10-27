@@ -237,10 +237,27 @@ a:focus {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.button[disabled],
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    box-shadow: none;
+    transform: none;
+}
+
 .button--primary {
     background: linear-gradient(135deg, var(--green), var(--green-dark));
     color: white;
     box-shadow: 0 14px 35px rgba(18, 77, 45, 0.32);
+}
+
+.button--primary[disabled],
+.button--primary:disabled {
+    background: linear-gradient(
+        135deg,
+        rgba(47, 168, 79, 0.65),
+        rgba(27, 109, 52, 0.65)
+    );
 }
 
 .button--primary:hover,
@@ -357,6 +374,7 @@ a:focus {
 }
 
 .form-actions {
+    position: relative;
     display: flex;
     gap: 12px;
     justify-content: flex-start;
@@ -366,6 +384,27 @@ a:focus {
 
 .form-actions .button {
     min-width: 140px;
+}
+
+.submit-tooltip {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    transform: translateY(-8px);
+    max-width: 320px;
+    color: var(--form-error);
+    font-size: 0.85rem;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.form-actions[data-cooldown-active]:hover .submit-tooltip,
+.form-actions[data-cooldown-active] .button:focus-visible + .submit-tooltip,
+.form-actions[data-cooldown-active] .button:focus + .submit-tooltip {
+    opacity: 1;
+    transform: translateY(-14px);
 }
 
 .form-checkbox-group {

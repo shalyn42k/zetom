@@ -118,6 +118,7 @@ def index(request: HttpRequest) -> HttpResponse:
         'form': form,
         'lang': lang,
         'success_message': success_message,
+        'throttle_seconds': throttle_seconds,
     }
     return render(request, 'contact/index.html', context)
 
