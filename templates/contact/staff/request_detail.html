@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Request #{{ request_obj.pk }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <header class="flex" style="justify-content: space-between; align-items: center;">
+        <div>
+            <a href="{% url 'contact:staff-request-list' %}">← Back to list</a>
+            <h1>Request #{{ request_obj.pk }}</h1>
+        </div>
+        <nav>
+            <a href="{% url 'contact:staff-logout' %}">Log out</a>
+        </nav>
+    </header>
+
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="notice {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <article>
+        <h2>Summary</h2>
+        <dl>
+            <dt>Submitted</dt>
+            <dd>{{ request_obj.created_at|date:"Y-m-d H:i" }}</dd>
+            <dt>Requester</dt>
+            <dd>{{ request_obj.first_name }} {{ request_obj.last_name }} ({{ request_obj.email }})</dd>
+            <dt>Phone</dt>
+            <dd>{{ request_obj.phone }}</dd>
+            <dt>Company</dt>
+            <dd>{{ request_obj.company }}</dd>
+            <dt>Status</dt>
+            <dd>{{ request_obj.get_status_display }}</dd>
+            <dt>Department</dt>
+            <dd>{% if request_obj.department %}{{ request_obj.department.name }}{% else %}Unassigned{% endif %}</dd>
+            <dt>Message</dt>
+            <dd>{{ request_obj.message|linebreaks }}</dd>
+        </dl>
+    </article>
+
+    <section>
+        <h2>Attachments</h2>
+        <ul>
+            {% for attachment in attachments %}
+                <li>
+                    <a href="{% url 'contact:attachment-download' attachment.pk %}" rel="noreferrer">{{ attachment.original_name }}</a>
+                    <small>({{ attachment.size|filesizeformat }})</small>
+                </li>
+            {% empty %}
+                <li>No attachments yet.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h2>Update</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update">
+            {{ update_form.non_field_errors }}
+            <label>Status {{ update_form.status }} {{ update_form.status.errors }}</label>
+            {% if update_form.department %}
+            <label>Department {{ update_form.department }} {{ update_form.department.errors }}</label>
+            {% endif %}
+            <label>Final response {{ update_form.final_response }} {{ update_form.final_response.errors }}</label>
+            <label>Final notes {{ update_form.final_changes }} {{ update_form.final_changes.errors }}</label>
+            <label>Public link enabled {{ update_form.access_enabled }} {{ update_form.access_enabled.errors }}</label>
+            <label>Upload files {{ update_form.attachments }} {{ update_form.attachments.errors }}</label>
+            <button type="submit">Save changes</button>
+        </form>
+        <form method="post" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset_access">
+            <button type="submit" class="secondary">Reset access link</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>Activity</h2>
+        <ul>
+            {% for activity in activities %}
+                <li>
+                    <strong>{{ activity.created_at|date:"Y-m-d H:i" }}</strong> — {{ activity.get_type_display }}
+                    {% if activity.message %}<div>{{ activity.message }}</div>{% endif %}
+                </li>
+            {% empty %}
+                <li>No activity yet.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</main>
+</body>
+</html>

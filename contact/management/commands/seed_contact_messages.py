@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 
-from contact.models import ContactMessage
+from contact.models import Request
 
 try:
     from faker import Faker
@@ -34,11 +34,11 @@ def get_status_choices(model):
     except Exception:
         pass
     # если choices нет — подставим базовый набор
-    return ["new", "in_progress", "done"]
+    return ["new", "in_progress", "ready"]
 
 
 class Command(BaseCommand):
-    help = "Seed ContactMessage with fake data."
+    help = "Seed Request with fake data."
 
     def add_arguments(self, parser):
         parser.add_argument("--count", type=int, default=1000, help="Сколько записей создать")
@@ -56,21 +56,21 @@ class Command(BaseCommand):
         chunk_size = opt["chunk"]
         fake = Faker(opt["locale"])
         forced_status = (opt["status"] or "").strip() or None
-        statuses = get_status_choices(ContactMessage)
+        statuses = get_status_choices(Request)
 
         if opt["clean"]:
-            self.stdout.write("Очищаю таблицу ContactMessage…")
-            ContactMessage.objects.all().delete()
+            self.stdout.write("Очищаю таблицу Request…")
+            Request.objects.all().delete()
 
         objs = []
         now = timezone.now()
 
         # какие поля реально есть
-        has_status = has_field(ContactMessage, "status")
-        has_is_deleted = has_field(ContactMessage, "is_deleted")
-        has_created_at = has_field(ContactMessage, "created_at")
-        has_phone = has_field(ContactMessage, "phone")
-        has_company = has_field(ContactMessage, "company")
+        has_status = has_field(Request, "status")
+        has_is_deleted = has_field(Request, "is_deleted")
+        has_created_at = has_field(Request, "created_at")
+        has_phone = has_field(Request, "phone")
+        has_company = has_field(Request, "company")
 
         for _ in range(count):
             data = {
@@ -94,15 +94,15 @@ class Command(BaseCommand):
             if has_created_at:
                 data["created_at"] = now - timedelta(days=fake.random_int(min=0, max=90))
 
-            objs.append(ContactMessage(**data))
+            objs.append(Request(**data))
 
             if len(objs) >= chunk_size:
                 with transaction.atomic():
-                    ContactMessage.objects.bulk_create(objs, batch_size=chunk_size)
+                    Request.objects.bulk_create(objs, batch_size=chunk_size)
                 objs = []  # вместо clear()
 
         if objs:
             with transaction.atomic():
-                ContactMessage.objects.bulk_create(objs, batch_size=chunk_size)
+                Request.objects.bulk_create(objs, batch_size=chunk_size)
 
         self.stdout.write(self.style.SUCCESS("Готово: добавлено {} записей".format(count)))

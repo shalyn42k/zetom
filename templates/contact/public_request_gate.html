@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Access request #{{ request_obj.pk }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <article>
+        <h1>Access request #{{ request_obj.pk }}</h1>
+        <p>Enter the access password provided in your confirmation message.</p>
+        <form method="post" action="{% url 'contact:public-access-gate' request_obj.pk %}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label>Request ID {{ form.request_id }} {{ form.request_id.errors }}</label>
+            <label>Access password {{ form.access_token }} {{ form.access_token.errors }}</label>
+            <button type="submit">Continue</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>

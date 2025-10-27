@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Staff sign in</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <article>
+        <h1 class="text-center">Staff access</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label>
+                Email or username
+                {{ form.username }}
+                {{ form.username.errors }}
+            </label>
+            <label>
+                Password
+                {{ form.password }}
+                {{ form.password.errors }}
+            </label>
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="contrast">Sign in</button>
+        </form>
+    </article>
+</main>
+</body>
+</html>
