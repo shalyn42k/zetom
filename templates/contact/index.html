@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="site-header">
-    <a href="{% url 'contact:staff-login' %}?lang={{ lang }}"
+    <a href="{% url 'contact:login' %}?lang={{ lang }}"
        class="site-branding site-branding--link"
        aria-label="{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -24,6 +24,7 @@
         <a href="#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
@@ -78,17 +79,6 @@
             </div>
         {% endif %}
 
-        {% if success_info %}
-            <div class="alert alert-success" role="status">
-                <p class="mb-2">{% if lang == 'pl' %}Numer zgłoszenia: <strong>#{{ success_info.id }}</strong>{% else %}Request ID: <strong>#{{ success_info.id }}</strong>{% endif %}</p>
-                {% if success_info.token %}
-                    <p class="mb-2">{% if lang == 'pl' %}Zachowaj hasło dostępu:{% else %}Save this access password:{% endif %} <code>{{ success_info.token }}</code></p>
-                    <p>{% if lang == 'pl' %}Możesz otworzyć zgłoszenie{% else %}You can open the request{% endif %}
-                        <a href="{% url 'contact:public-request' success_info.id %}?access={{ success_info.token }}" rel="noreferrer noopener">{% if lang == 'pl' %}tymczasowym odnośnikiem{% else %}using this one-time link{% endif %}</a>.</p>
-                {% endif %}
-            </div>
-        {% endif %}
-
         <div class="contact-section">
             <aside class="contact-card">
                 <h3>{% if lang == 'pl' %}Dane kontaktowe{% else %}Contact details{% endif %}</h3>
@@ -117,7 +107,6 @@
 
             <form method="post"
                   action="{% url 'contact:index' %}?lang={{ lang }}"
-                  enctype="multipart/form-data"
                   class="contact-form"
                   data-contact-form
                   data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
@@ -158,12 +147,6 @@
                         <label for="{{ form.message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</label>
                         {{ form.message }}
                         {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="form-field" style="grid-column: 1 / -1;">
-                        <label class="form-label">{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</label>
-                        {{ form.attachments }}
-                        <p class="form-help">{% if lang == 'pl' %}Maks. 25 MB łącznie. Dozwolone PDF, JPG, PNG, TXT.{% else %}Up to 25 MB total. Allowed types: PDF, JPG, PNG, TXT.{% endif %}</p>
-                        {% if form.attachments.errors %}<div class="form-error">{{ form.attachments.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
                 <div class="form-actions" data-submit-container>
@@ -234,22 +217,6 @@
             </article>
         </div>
     </section>
-
-    {% if activity_feed %}
-    <section class="section" id="updates">
-        <div class="section-header">
-            <h2 class="section-title">{% if lang == 'pl' %}Aktualizacje zgłoszeń{% else %}Recent request updates{% endif %}</h2>
-        </div>
-        <ul class="timeline">
-            {% for item in activity_feed %}
-                <li class="timeline-item">
-                    <span class="timeline-date">{{ item.created_at|date:"Y-m-d H:i" }}</span>
-                    <p class="timeline-text">{{ item.message|default:item.get_type_display }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    </section>
-    {% endif %}
 </main>
 
 {% if success_message %}
@@ -284,7 +251,7 @@
             </div>
             <div>
                 <strong>{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</strong><br>
-                <a href="{% url 'contact:staff-login' %}?lang={{ lang }}">{% if lang == 'pl' %}Zaloguj się{% else %}Log in{% endif %}</a>
+                <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Zaloguj się{% else %}Log in{% endif %}</a>
             </div>
         </div>
     </div>

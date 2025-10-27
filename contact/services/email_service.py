@@ -11,12 +11,12 @@ from typing import IO
 
 from django.conf import settings
 
-from ..models import Request
+from ..models import ContactMessage
 
 logger = logging.getLogger(__name__)
 
 
-def send_contact_email(recipient: str, message: Request) -> None:
+def send_contact_email(recipient: str, message: ContactMessage) -> None:
     subject = 'Nowa wiadomość z formularza kontaktowego'
     body = (
         'Imię i nazwisko: {first} {last}\n'
@@ -35,7 +35,7 @@ def send_contact_email(recipient: str, message: Request) -> None:
     _send_plain_email(to_email=recipient, subject=subject, body=body)
 
 
-def send_company_notification(message: Request, *, link: str | None = None) -> None:
+def send_company_notification(message: ContactMessage, *, link: str | None = None) -> None:
     recipients_config = getattr(settings, "COMPANY_NOTIFICATION_RECIPIENTS", {})
     if not recipients_config:
         return
