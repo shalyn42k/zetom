@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if lang == 'pl' %}Dostęp do zgłoszenia{% else %}Request access{% endif %} · ZETOM Katowice</title>
+    <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+</head>
+<body class="portal-page">
+<header class="site-header">
+    <a href="{% url 'contact:index' %}?lang={{ lang }}"
+       class="site-branding site-branding--link">
+        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+        <div>
+            <h1 class="site-title">ZETOM Katowice</h1>
+            <p class="site-subtitle">{% if lang == 'pl' %}Badania • Certyfikacja • Kontrola techniczna{% else %}Testing • Certification • Technical inspections{% endif %}</p>
+        </div>
+    </a>
+    <nav class="site-nav">
+        <a href="{% url 'contact:index' %}?lang={{ lang }}">{% if lang == 'pl' %}Strona główna{% else %}Homepage{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Nowa wiadomość{% else %}New request{% endif %}</a>
+        <a href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
+        <a href="{% url 'contact:login' %}?lang={{ lang }}">{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</a>
+    </nav>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:panel' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:panel' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+    </div>
+</header>
+<main class="portal-content">
+    <section class="portal-card">
+        <h2>{% if lang == 'pl' %}Dostęp do zgłoszenia{% else %}Access your request{% endif %}</h2>
+        <p>
+            {% if lang == 'pl' %}
+                Wpisz numer zgłoszenia oraz unikalny token z wiadomości e-mail.
+                Jeżeli korzystasz z tego urządzenia już wcześniej, numer zgłoszenia został wypełniony automatycznie.
+            {% else %}
+                Enter the request number and the unique token you received by e-mail.
+                If you have used this device before the request number is pre-filled for you.
+            {% endif %}
+        </p>
+        {% if messages %}
+            <div class="message-list">
+                {% for msg in messages %}
+                    <div class="alert {% if 'success' in msg.tags %}alert-success{% elif 'error' in msg.tags or 'warning' in msg.tags %}alert-error{% else %}alert-success{% endif %}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <form method="post" class="portal-form">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="{{ form.request_id.id_for_label }}" class="form-label">{{ form.request_id.label }}</label>
+                {{ form.request_id }}
+                {% if stored_ids %}
+                    <p class="form-help">
+                        {% if lang == 'pl' %}Zapisane zgłoszenia: {% else %}Saved requests:{% endif %}
+                        {% for saved in stored_ids %}#{{ saved }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </p>
+                {% endif %}
+                {% if form.request_id.errors %}<div class="form-error">{{ form.request_id.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.access_token.id_for_label }}" class="form-label">{{ form.access_token.label }}</label>
+                {{ form.access_token }}
+                {% if form.access_token.errors %}<div class="form-error">{{ form.access_token.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="portal-actions">
+                <button type="submit" class="button button--primary">{% if lang == 'pl' %}Otwórz zgłoszenie{% else %}Open request{% endif %}</button>
+                <a class="button button--ghost" href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
+            </div>
+        </form>
+        <footer class="portal-footnote">
+            <p>
+                {% if lang == 'pl' %}
+                    Token został wysłany na adres e-mail podany w formularzu kontaktowym. Jeśli go nie otrzymałeś, sprawdź folder spam.
+                {% else %}
+                    The access token was sent to the e-mail address supplied in the contact form. Check your spam folder if you cannot find it.
+                {% endif %}
+            </p>
+        </footer>
+    </section>
+</main>
+</body>
+</html>

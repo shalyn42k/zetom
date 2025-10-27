@@ -108,6 +108,7 @@
             <form method="post"
                   action="{% url 'contact:index' %}?lang={{ lang }}"
                   class="contact-form"
+                  enctype="multipart/form-data"
                   data-contact-form
                   data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
                   data-submit-cooldown-seconds="{{ throttle_seconds }}"
@@ -147,6 +148,28 @@
                         <label for="{{ form.message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</label>
                         {{ form.message }}
                         {% if form.message.errors %}<div class="form-error">{{ form.message.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field form-field--file" style="grid-column: 1 / -1;">
+                        <label for="{{ form.attachments.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</label>
+                        {{ form.attachments }}
+                        <p class="form-help">
+                            {% if lang == 'pl' %}
+                                Maksymalnie {{ max_attachment_size }} MB na plik. Dozwolone typy:
+                                {% if allowed_attachment_types %}
+                                    {{ allowed_attachment_types|join:', ' }}.
+                                {% else %}
+                                    application/pdf, image/jpeg, image/png, text/plain.
+                                {% endif %}
+                            {% else %}
+                                Up to {{ max_attachment_size }} MB per file. Allowed types:
+                                {% if allowed_attachment_types %}
+                                    {{ allowed_attachment_types|join:', ' }}.
+                                {% else %}
+                                    application/pdf, image/jpeg, image/png, text/plain.
+                                {% endif %}
+                            {% endif %}
+                        </p>
+                        {% if form.attachments.errors %}<div class="form-error">{{ form.attachments.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
                 <div class="form-actions" data-submit-container>

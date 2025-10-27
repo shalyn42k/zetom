@@ -124,6 +124,8 @@ USE_TZ = True
 
 # --- Static / Media ---
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 if DEBUG:
     # DEV: источники статики, без STATIC_ROOT!
@@ -211,3 +213,8 @@ LOGIN_URL = 'contact:login'
 CONTACT_FORM_THROTTLE_SECONDS = int(os.getenv('CONTACT_FORM_THROTTLE_SECONDS', '30'))
 SMTP_RETRY_ATTEMPTS = int(os.getenv('SMTP_RETRY_ATTEMPTS', '2'))
 SMTP_TIMEOUT = int(os.getenv('SMTP_TIMEOUT', '30'))
+ATTACH_MAX_SIZE_MB = int(os.getenv('ATTACH_MAX_SIZE_MB', '25'))
+ATTACH_ALLOWED_TYPES = os.getenv(
+    'ATTACH_ALLOWED_TYPES',
+    'application/pdf,image/jpeg,image/png,text/plain',
+).split(',')

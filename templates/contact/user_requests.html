@@ -95,7 +95,7 @@
         <div class="user-request-modal__status">
             <span class="badge" data-user-request-status-badge></span>
         </div>
-        <form method="post" class="user-request-modal__form" data-user-request-form>
+        <form method="post" class="user-request-modal__form" data-user-request-form enctype="multipart/form-data">
             {% csrf_token %}
             <div class="user-request-modal__grid">
                 <label class="user-request-modal__field">
@@ -126,7 +126,32 @@
                     <span class="form-label">{% if lang == 'pl' %}Treść zgłoszenia{% else %}Request message{% endif %}</span>
                     <textarea name="message" rows="6" class="form-input" required></textarea>
                 </label>
+                <label class="user-request-modal__field user-request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Dodaj załączniki{% else %}Add attachments{% endif %}</span>
+                    <input type="file" name="attachments" class="form-input" multiple>
+                    <small class="form-help">
+                        {% if lang == 'pl' %}
+                            Maksymalnie {{  max_attachment_size|default:25 }} MB na plik. Dozwolone typy:
+                            {% if allowed_attachment_types %}
+                                {{ allowed_attachment_types|join:', ' }}.
+                            {% else %}
+                                application/pdf, image/jpeg, image/png, text/plain.
+                            {% endif %}
+                        {% else %}
+                            Up to {{ max_attachment_size|default:25 }} MB per file. Allowed types:
+                            {% if allowed_attachment_types %}
+                                {{ allowed_attachment_types|join:', ' }}.
+                            {% else %}
+                                application/pdf, image/jpeg, image/png, text/plain.
+                            {% endif %}
+                        {% endif %}
+                    </small>
+                </label>
             </div>
+            <section class="user-request-modal__attachments">
+                <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
+                <ul class="attachment-list" data-user-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
+            </section>
             <section class="user-request-modal__final">
                 <h3>{% if lang == 'pl' %}Finalne informacje{% else %}Final information{% endif %}</h3>
                 <div class="user-request-modal__final-grid">
