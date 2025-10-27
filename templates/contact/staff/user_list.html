@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Staff users</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <header class="flex" style="justify-content: space-between; align-items: center;">
+        <h1>Staff users</h1>
+        <nav>
+            <a href="{% url 'contact:staff-request-list' %}">Back to requests</a>
+            <a href="{% url 'contact:staff-logout' %}">Log out</a>
+        </nav>
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notice {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for record in records %}
+            {% with user=record.user form=record.form %}
+            <tr>
+                <td>{{ user.get_username }}</td>
+                <td>{% if user.staff_profile %}{{ user.staff_profile.get_role_display }}{% else %}—{% endif %}</td>
+                <td>{% if user.staff_profile and user.staff_profile.department %}{{ user.staff_profile.department.name }}{% else %}—{% endif %}</td>
+                <td>
+                    <details>
+                        <summary>Edit</summary>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_id" value="{{ user.pk }}">
+                            {{ form.role.label_tag }}
+                            {{ form.role }}
+                            {{ form.role.errors }}
+                            {{ form.department.label_tag }}
+                            {{ form.department }}
+                            {{ form.department.errors }}
+                            <button type="submit">Save</button>
+                        </form>
+                    </details>
+                </td>
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr><td colspan="4">No users.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
