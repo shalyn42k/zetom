@@ -34,11 +34,11 @@ class ContactMessage(models.Model):
         (STATUS_READY, "ready"),
     ]
 
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=200)
     phone = models.CharField(max_length=20)
     email = models.EmailField()
     company = models.CharField(max_length=50, db_index=True)
+    company_name = models.CharField(max_length=150, blank=True)
     message = models.TextField()
     final_changes = models.TextField(blank=True)
     final_response = models.TextField(blank=True)
@@ -54,7 +54,7 @@ class ContactMessage(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.first_name} {self.last_name} ({self.email})"
+        return f"{self.full_name} ({self.email})"
 
     def initialise_access_token(self) -> str:
         """Create and store a hashed access token, returning the raw token."""
@@ -97,3 +97,67 @@ class ContactAttachment(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - representation helper
         return f"Attachment({self.original_name})"
+
+
+class AdminActivityLog(models.Model):
+    ACTION_STATUS_CHANGE = "status_change"
+    ACTION_DELETE = "delete"
+    ACTION_RESTORE = "restore"
+    ACTION_PURGE = "purge"
+    ACTION_EMAIL = "email"
+    ACTION_ROLLBACK = "rollback"
+
+    ACTION_CHOICES = [
+        (ACTION_STATUS_CHANGE, "status_change"),
+        (ACTION_DELETE, "delete"),
+        (ACTION_RESTORE, "restore"),
+        (ACTION_PURGE, "purge"),
+        (ACTION_EMAIL, "email"),
+        (ACTION_ROLLBACK, "rollback"),
+    ]
+
+    message = models.ForeignKey(
+        ContactMessage,
+        related_name="admin_logs",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class ClientChangeLog(models.Model):
+    FIELD_FULL_NAME = "full_name"
+    FIELD_PHONE = "phone"
+    FIELD_EMAIL = "email"
+    FIELD_COMPANY = "company"
+    FIELD_COMPANY_NAME = "company_name"
+    FIELD_MESSAGE = "message"
+
+    FIELD_CHOICES = [
+        (FIELD_FULL_NAME, "full_name"),
+        (FIELD_PHONE, "phone"),
+        (FIELD_EMAIL, "email"),
+        (FIELD_COMPANY, "company"),
+        (FIELD_COMPANY_NAME, "company_name"),
+        (FIELD_MESSAGE, "message"),
+    ]
+
+    message = models.ForeignKey(
+        ContactMessage,
+        related_name="client_logs",
+        on_delete=models.CASCADE,
+    )
+    field = models.CharField(max_length=32, choices=FIELD_CHOICES)
+    previous_value = models.TextField(blank=True)
+    new_value = models.TextField(blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    is_reverted = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -16,12 +17,54 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
-from ..models import ContactMessage
+from ..models import AdminActivityLog, ClientChangeLog, ContactMessage
 from ..services import messages as message_service
+from ..services.activity_log import log_action
 from ..services.email_service import send_email_with_attachment
 from ..services.pdf_service import build_messages_pdf
 from ..utils import get_language
 from . import helpers
+
+
+def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
+    status_options = helpers.status_options(language)
+    status_lookup = {item['value']: item for item in status_options}
+    company_labels = helpers.company_labels(language)
+    status_info = status_lookup.get(
+        message.status,
+        {'label': message.status, 'badge': 'badge--info'},
+    )
+    logs = ClientChangeLog.objects.filter(message=message).order_by('-changed_at', '-id')
+    return {
+        'id': message.id,
+        'full_name': message.full_name,
+        'phone': message.phone,
+        'email': message.email,
+        'company': message.company,
+        'company_name': message.company_name,
+        'company_label': company_labels.get(message.company, message.company),
+        'message': message.message,
+        'status': message.status,
+        'status_label': status_info['label'],
+        'status_badge': status_info['badge'],
+        'created_at': timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M'),
+        'final_changes': message.final_changes,
+        'final_response': message.final_response,
+        'access_token_hash': message.access_token_hash,
+        'access_enabled': message.access_enabled,
+        'attachments': [helpers.serialise_attachment(att) for att in message.attachments.all()],
+        'client_logs': [
+            {
+                'id': log.id,
+                'field': log.field,
+                'previous_value': log.previous_value,
+                'new_value': log.new_value,
+                'changed_at': timezone.localtime(log.changed_at).strftime('%Y-%m-%d %H:%M'),
+                'is_reverted': log.is_reverted,
+            }
+            for log in logs
+        ],
+    }
 
 
 @require_http_methods(["GET", "POST"])
@@ -242,6 +285,10 @@ def _handle_email_form(
             attachment=file,
             filename=file.name if file else None,
         )
+        log_action(
+            AdminActivityLog.ACTION_EMAIL,
+            description=f"Manual email sent to {form.cleaned_data['to_email']}",
+        )
         return form, redirect(
             helpers.panel_redirect_url(
                 lang,
@@ -260,28 +307,7 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     language = get_language(request)
-    created_at = timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M')
-    status_options = helpers.status_options(language)
-    status_labels = {item['value']: item['label'] for item in status_options}
-
-    data = {
-        'id': message.id,
-        'first_name': message.first_name,
-        'last_name': message.last_name,
-        'phone': message.phone,
-        'email': message.email,
-        'company': message.company,
-        'message': message.message,
-        'status': message.status,
-        'status_label': status_labels.get(message.status, message.status),
-        'created_at': created_at,
-        'final_changes': message.final_changes,
-        'final_response': message.final_response,
-        'access_token_hash': message.access_token_hash,
-        'access_enabled': message.access_enabled,
-        'attachments': [helpers.serialise_attachment(att) for att in message.attachments.all()],
-    }
-    return JsonResponse(data)
+    return JsonResponse(_serialise_admin_message(message, language))
 
 
 @require_POST
@@ -294,30 +320,37 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     form = MessageUpdateForm(request.POST, instance=message)
     if form.is_valid():
         updated_message = form.save()
-        status_options = helpers.status_options(language)
-        status_lookup = {item['value']: item for item in status_options}
-        status_info = status_lookup.get(
-            updated_message.status,
-            {'label': updated_message.status, 'badge': 'badge--info'},
-        )
-        data = {
-            'id': updated_message.id,
-            'first_name': updated_message.first_name,
-            'last_name': updated_message.last_name,
-            'phone': updated_message.phone,
-            'email': updated_message.email,
-            'company': updated_message.company,
-            'message': updated_message.message,
-            'status': updated_message.status,
-            'status_label': status_info['label'],
-            'status_badge': status_info['badge'],
-            'created_at': timezone.localtime(updated_message.created_at).strftime('%Y-%m-%d %H:%M'),
-            'final_changes': updated_message.final_changes,
-            'final_response': updated_message.final_response,
-            'access_token_hash': updated_message.access_token_hash,
-            'access_enabled': updated_message.access_enabled,
-            'attachments': [helpers.serialise_attachment(att) for att in updated_message.attachments.all()],
-        }
-        return JsonResponse(data)
+        return JsonResponse(_serialise_admin_message(updated_message, language))
 
     return JsonResponse({'errors': form.errors}, status=400)
+
+
+@require_POST
+def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -> JsonResponse:
+    if not request.session.get('logged_in'):
+        return JsonResponse({'error': 'unauthorized'}, status=403)
+
+    message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    with transaction.atomic():
+        log_entry = get_object_or_404(
+            ClientChangeLog.objects.select_for_update(),
+            pk=log_id,
+            message=message,
+            is_reverted=False,
+        )
+
+        field_name = log_entry.field
+        setattr(message, field_name, log_entry.previous_value)
+        message.save(update_fields=[field_name])
+
+        log_entry.is_reverted = True
+        log_entry.save(update_fields=['is_reverted'])
+
+    log_action(
+        AdminActivityLog.ACTION_ROLLBACK,
+        message_id=message.id,
+        description=f"Rolled back field {field_name}",
+    )
+
+    language = get_language(request)
+    return JsonResponse(_serialise_admin_message(message, language))

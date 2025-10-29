@@ -7,6 +7,256 @@
         }
     };
 
+    const initRequestsModal = () => {
+        const trigger = document.querySelector('[data-open-user-requests]');
+        const modal = document.querySelector('[data-user-request-modal]');
+        if (!trigger || !modal || !window.ZetomRequestModal) {
+            return;
+        }
+
+        const { RequestModalController, getCsrfToken } = window.ZetomRequestModal;
+
+        const detailTemplate = modal.dataset.detailTemplate || '';
+        const updateTemplate = modal.dataset.updateTemplate || '';
+        const statusMap = JSON.parse(modal.dataset.statusMap || '{}');
+        const detailErrorMessage = modal.dataset.detailError || 'Unable to load request details.';
+        const updateErrorMessage = modal.dataset.updateError || 'Could not save changes.';
+        const lockedMessage = modal.dataset.lockedMessage || updateErrorMessage;
+        const language = modal.dataset.language || 'pl';
+        const restoreUrl = modal.dataset.restoreUrl || '';
+        const restoreSuccessMessage = modal.dataset.restoreSuccess || '';
+        const restoreErrorFallback = modal.dataset.restoreError || updateErrorMessage;
+        const deleteTemplate = modal.dataset.deleteTemplate || '';
+
+        let activeRequestId = modal.dataset.initialRequestId || '';
+        let initialState = modal.dataset.initialState || (activeRequestId ? 'active' : 'restore-options');
+        let initialRequestData = null;
+        if (modal.dataset.initialRequest) {
+            try {
+                initialRequestData = JSON.parse(modal.dataset.initialRequest);
+            } catch (error) {
+                initialRequestData = null;
+            }
+        }
+
+        const activeSection = modal.querySelector('[data-request-active-section]');
+        const restoreSection = modal.querySelector('[data-request-restore-section]');
+        const restoreOptions = modal.querySelector('[data-restore-options]');
+        const restoreForm = modal.querySelector('[data-restore-form]');
+        const restoreOpenButton = modal.querySelector('[data-open-restore-form]');
+        const restoreCancelButton = modal.querySelector('[data-cancel-restore]');
+        const restoreError = modal.querySelector('[data-restore-error]');
+        const restoreSubmit = restoreForm ? restoreForm.querySelector('[type="submit"]') : null;
+
+        let currentState = initialState;
+
+        const clearRestoreError = () => {
+            if (!restoreError) {
+                return;
+            }
+            restoreError.textContent = '';
+            restoreError.hidden = true;
+        };
+
+        const showRestoreError = (message) => {
+            if (!restoreError) {
+                return;
+            }
+            const content = (message || '').toString().trim();
+            restoreError.textContent = content;
+            restoreError.hidden = !content;
+        };
+
+        const setState = (state) => {
+            currentState = state;
+            if (state === 'active') {
+                if (activeSection) {
+                    activeSection.hidden = false;
+                }
+                if (restoreSection) {
+                    restoreSection.hidden = true;
+                }
+                return;
+            }
+
+            if (activeSection) {
+                activeSection.hidden = true;
+            }
+            if (!restoreSection) {
+                return;
+            }
+            restoreSection.hidden = false;
+
+            if (state === 'restore-form') {
+                if (restoreOptions) {
+                    restoreOptions.hidden = true;
+                }
+                if (restoreForm) {
+                    restoreForm.hidden = false;
+                    restoreForm.reset();
+                    clearRestoreError();
+                    const firstField = restoreForm.querySelector('input');
+                    if (firstField instanceof HTMLElement) {
+                        firstField.focus({ preventScroll: true });
+                    }
+                }
+                return;
+            }
+
+            if (restoreOptions) {
+                restoreOptions.hidden = false;
+            }
+            if (restoreForm) {
+                restoreForm.hidden = true;
+                restoreForm.reset();
+            }
+            clearRestoreError();
+        };
+
+        const controller = new RequestModalController(modal, {
+            statusMap,
+            detailTemplate,
+            updateTemplate,
+            deleteTemplate,
+            detailErrorMessage,
+            updateErrorMessage,
+            lockedMessage,
+            language,
+            allowDelete: false,
+            onClose() {
+                if (!activeRequestId) {
+                    setState('restore-options');
+                }
+            },
+        });
+
+        const openActiveRequest = (requestId) => {
+            if (!requestId) {
+                setState('restore-options');
+                controller.openShell();
+                return;
+            }
+            controller
+                .openForId(requestId)
+                .then((data) => {
+                    activeRequestId = String(data.id || '');
+                    modal.dataset.initialRequestId = activeRequestId;
+                    setState('active');
+                })
+                .catch(() => {
+                    activeRequestId = '';
+                    modal.dataset.initialRequestId = '';
+                    initialRequestData = null;
+                    setState('restore-options');
+                    controller.openShell();
+                });
+        };
+
+        const submitRestoreForm = () => {
+            if (!restoreForm || !restoreUrl) {
+                return;
+            }
+            const formData = new FormData(restoreForm);
+            const csrfToken = getCsrfToken ? getCsrfToken() : '';
+            if (restoreSubmit) {
+                restoreSubmit.disabled = true;
+            }
+            clearRestoreError();
+            fetch(restoreUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return response.json().then((data) => {
+                        throw data;
+                    });
+                })
+                .then((data) => {
+                    activeRequestId = String(data.message_id || '');
+                    modal.dataset.initialRequestId = activeRequestId;
+                    modal.dataset.initialState = 'active';
+                    initialRequestData = null;
+                    if (restoreForm) {
+                        restoreForm.reset();
+                    }
+                    controller
+                        .openForId(activeRequestId)
+                        .then(() => {
+                            setState('active');
+                            controller.setFeedback(data.message || restoreSuccessMessage, 'success');
+                        })
+                        .catch(() => {
+                            showRestoreError(restoreErrorFallback);
+                        });
+                })
+                .catch((error) => {
+                    if (error && error.errors) {
+                        const messages = Object.values(error.errors)
+                            .flat()
+                            .join(' ');
+                        showRestoreError(messages || restoreErrorFallback);
+                    } else {
+                        showRestoreError(restoreErrorFallback);
+                    }
+                })
+                .finally(() => {
+                    if (restoreSubmit) {
+                        restoreSubmit.disabled = false;
+                    }
+                });
+        };
+
+        trigger.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (activeRequestId) {
+                openActiveRequest(activeRequestId);
+                return;
+            }
+            if (initialRequestData && initialRequestData.id) {
+                controller.openWithData(initialRequestData).then(() => {
+                    activeRequestId = String(initialRequestData.id);
+                    modal.dataset.initialRequestId = activeRequestId;
+                    initialRequestData = null;
+                    setState('active');
+                });
+                return;
+            }
+            controller.openShell();
+            setState('restore-options');
+        });
+
+        if (restoreOpenButton) {
+            restoreOpenButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                setState('restore-form');
+            });
+        }
+
+        if (restoreCancelButton) {
+            restoreCancelButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                setState('restore-options');
+            });
+        }
+
+        if (restoreForm) {
+            restoreForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                submitRestoreForm();
+            });
+        }
+
+        // Ensure initial visibility matches state when the page loads
+        setState(currentState);
+    };
+
     ready(() => {
         const form = document.querySelector('[data-contact-form]');
         if (form) {
@@ -390,5 +640,7 @@
                 }
             });
         }
+
+        initRequestsModal();
     });
 })();

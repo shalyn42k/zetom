@@ -69,21 +69,25 @@ class Command(BaseCommand):
         has_status = has_field(ContactMessage, "status")
         has_is_deleted = has_field(ContactMessage, "is_deleted")
         has_created_at = has_field(ContactMessage, "created_at")
+        has_full_name = has_field(ContactMessage, "full_name")
         has_phone = has_field(ContactMessage, "phone")
         has_company = has_field(ContactMessage, "company")
+        has_company_name = has_field(ContactMessage, "company_name")
 
         for _ in range(count):
             data = {
-                "first_name": fake.first_name(),
-                "last_name": fake.last_name(),
                 "email": fake.email(),
                 "message": fake.paragraph(nb_sentences=5),
             }
+            if has_full_name:
+                data["full_name"] = fake.name()
             if has_phone:
                 # msisdn иногда длинный — ограничим
                 data["phone"] = (fake.msisdn() or "")[:15]
             if has_company:
                 data["company"] = fake.company()
+            if has_company_name:
+                data["company_name"] = fake.company()
             if has_status:
                 if forced_status:
                     data["status"] = forced_status

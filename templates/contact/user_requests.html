@@ -8,6 +8,7 @@
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_requests.css' %}">
+    <script src="{% static 'js/request_modal.js' %}" defer></script>
     <script src="{% static 'js/user_requests.js' %}" defer></script>
 </head>
 <body class="user-requests">
@@ -59,7 +60,7 @@
                                 <span class="request-card__id">#{{ request.id }}</span>
                                 <span class="badge {{ request.status_badge }}" data-card-status>{{ request.status_label }}</span>
                             </header>
-                            <p class="request-card__meta">{{ request.created_at }} · {{ request.company_label }}</p>
+                            <p class="request-card__meta">{{ request.created_at }} · {{ request.company_label }}{% if request.company_name %} — {{ request.company_name }}{% endif %}</p>
                             <p class="request-card__message">{{ request.message_preview|truncatechars:140 }}</p>
                             <footer class="request-card__footer">
                                 <span class="request-card__hint">{% if lang == 'pl' %}Kliknij, aby zobaczyć szczegóły{% else %}Click to view details{% endif %}</span>
@@ -85,6 +86,7 @@
      data-delete-template="{% url 'contact:user_delete_message' 0 %}"
      data-detail-error="{{ detail_error_message|escape }}"
      data-update-error="{{ update_error_message|escape }}"
+     data-locked-message="{% if lang == 'pl' %}Zgłoszenie jest już w trakcie obsługi i nie można go edytować.{% else %}This request is being processed and can no longer be edited.{% endif %}"
      data-delete-confirm="{{ delete_confirm_message|escape }}"
      data-language="{{ lang }}">
     <div class="modal__backdrop" data-user-request-close></div>
@@ -98,13 +100,9 @@
         <form method="post" class="user-request-modal__form" data-user-request-form enctype="multipart/form-data">
             {% csrf_token %}
             <div class="user-request-modal__grid">
-                <label class="user-request-modal__field">
-                    <span class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
-                    <input type="text" name="first_name" class="form-input" required>
-                </label>
-                <label class="user-request-modal__field">
-                    <span class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
-                    <input type="text" name="last_name" class="form-input" required>
+                <label class="user-request-modal__field user-request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
+                    <input type="text" name="full_name" class="form-input" required>
                 </label>
                 <label class="user-request-modal__field">
                     <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
@@ -121,6 +119,10 @@
                             <option value="{{ option.value }}">{{ option.label }}</option>
                         {% endfor %}
                     </select>
+                </label>
+                <label class="user-request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
+                    <input type="text" name="company_name" class="form-input">
                 </label>
                 <label class="user-request-modal__field user-request-modal__field--full">
                     <span class="form-label">{% if lang == 'pl' %}Treść zgłoszenia{% else %}Request message{% endif %}</span>

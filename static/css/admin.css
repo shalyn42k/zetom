@@ -858,6 +858,53 @@ body[data-theme='dark'] .panel-email .form-submit {
     box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.16);
 }
 
+.request-modal__client-log {
+    margin-top: 24px;
+    display: grid;
+    gap: 12px;
+}
+
+.client-log {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.client-log__item {
+    border: 1px solid var(--input-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: var(--surface);
+    display: grid;
+    gap: 8px;
+}
+
+.client-log__header {
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.client-log__values {
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.client-log__values .client-log__from {
+    color: var(--text-muted);
+}
+
+.client-log__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.client-log__empty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
 @media (max-width: 900px) {
     .panel-filters {
         flex-direction: column;

@@ -395,6 +395,8 @@
         const feedbackBox = $('[data-request-feedback]', requestModal);
         const attachmentsList = $('[data-request-attachments]', requestModal);
         const attachmentsEmptyMessage = attachmentsList ? attachmentsList.dataset.empty || '' : '';
+        const clientLogList = $('[data-request-client-log]', requestModal);
+        const clientLogEmptyMessage = clientLogList ? clientLogList.dataset.empty || '' : '';
         const tokenHashElement = $('[data-request-token-hash]', requestModal);
         const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
@@ -411,13 +413,33 @@
         const updateErrorMessage = requestModal.dataset.updateError || '';
         const detailTemplate = requestModal.dataset.detailTemplate || '';
         const updateTemplate = requestModal.dataset.updateTemplate || '';
+        const rollbackTemplate = requestModal.dataset.rollbackTemplate || '';
         const language = requestModal.dataset.language || 'pl';
+        const fieldLabels = language === 'pl'
+            ? {
+                  full_name: 'Imię i nazwisko',
+                  phone: 'Telefon',
+                  email: 'E-mail',
+                  company: 'Firma',
+                  company_name: 'Nazwa firmy',
+                  message: 'Treść zgłoszenia',
+              }
+            : {
+                  full_name: 'Full name',
+                  phone: 'Phone',
+                  email: 'E-mail',
+                  company: 'Company',
+                  company_name: 'Company name',
+                  message: 'Message',
+              };
 
         let currentRow = null;
         let currentId = null;
         let isBusy = false;
 
         const buildUrl = (template, id) => template.replace(/0(?!.*0)/, String(id));
+        const buildRollbackUrl = (template, messageId, logId) =>
+            template.replace(/0/, String(messageId)).replace(/0/, String(logId));
 
         const toggleModal = (shouldOpen) => {
             if (!requestModal) {
@@ -476,7 +498,7 @@
             }
             const customerCell = $('[data-cell="customer"]', currentRow);
             if (customerCell) {
-                customerCell.textContent = `${data.first_name} ${data.last_name}`.trim();
+                customerCell.textContent = data.full_name || '';
             }
             const phoneElement = $('[data-cell-phone]', currentRow);
             if (phoneElement) {
@@ -495,6 +517,10 @@
             const companyCell = $('[data-cell="company"]', currentRow);
             if (companyCell) {
                 companyCell.textContent = data.company;
+            }
+            const companyNameCell = $('[data-cell="company-name"]', currentRow);
+            if (companyNameCell) {
+                companyNameCell.textContent = data.company_name || '';
             }
             const messageCell = $('[data-cell="message"]', currentRow);
             if (messageCell) {
@@ -563,6 +589,55 @@
             });
         };
 
+        const renderClientLog = (entries) => {
+            if (!clientLogList) {
+                return;
+            }
+            clientLogList.innerHTML = '';
+            if (!entries || !entries.length) {
+                if (clientLogEmptyMessage) {
+                    const emptyItem = document.createElement('li');
+                    emptyItem.className = 'client-log__empty';
+                    emptyItem.textContent = clientLogEmptyMessage;
+                    clientLogList.appendChild(emptyItem);
+                }
+                return;
+            }
+            entries.forEach((entry) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'client-log__item';
+                const header = document.createElement('div');
+                header.className = 'client-log__header';
+                const fieldLabel = fieldLabels[entry.field] || entry.field;
+                header.textContent = `${fieldLabel} · ${entry.changed_at}`;
+                const values = document.createElement('div');
+                values.className = 'client-log__values';
+                const previous = escapeHtml(entry.previous_value || '');
+                const current = escapeHtml(entry.new_value || '');
+                values.innerHTML = `<span class="client-log__from">${previous || '—'}</span> → <span class="client-log__to">${current || '—'}</span>`;
+                listItem.append(header, values);
+                const actions = document.createElement('div');
+                actions.className = 'client-log__actions';
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'button button--ghost button--compact';
+                button.dataset.logId = String(entry.id);
+                button.dataset.logField = entry.field;
+                button.dataset.logRollback = 'true';
+                button.textContent = entry.is_reverted
+                    ? language === 'pl'
+                        ? 'Przywrócono'
+                        : 'Reverted'
+                    : language === 'pl'
+                        ? 'Przywróć'
+                        : 'Rollback';
+                button.disabled = Boolean(entry.is_reverted);
+                actions.appendChild(button);
+                listItem.appendChild(actions);
+                clientLogList.appendChild(listItem);
+            });
+        };
+
         const setAccessInfo = (data) => {
             if (tokenHashElement) {
                 tokenHashElement.textContent = data.access_token_hash || '—';
@@ -595,6 +670,9 @@
             });
             renderAttachments(data.attachments || []);
             setAccessInfo(data);
+            if (data.client_logs) {
+                renderClientLog(data.client_logs);
+            }
         };
 
         const setHeader = (id, createdAt) => {
@@ -691,9 +769,9 @@
                 })
                 .then((data) => {
                     updateRowDisplay(data);
+                    populateForm(data);
+                    setHeader(data.id, data.created_at);
                     showError('');
-                    renderAttachments(data.attachments || []);
-                    setAccessInfo(data);
                 })
                 .catch((error) => {
                     if (error && error.errors) {
@@ -710,10 +788,68 @@
                 });
         };
 
+        const rollbackChange = (logId, trigger) => {
+            if (!rollbackTemplate || !currentId) {
+                return;
+            }
+            const url = buildRollbackUrl(rollbackTemplate, currentId, logId);
+            if (!url) {
+                return;
+            }
+            const csrfToken = getCsrfToken();
+            isBusy = true;
+            showError('');
+            clearFeedback();
+            if (trigger) {
+                trigger.disabled = true;
+            }
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(String(response.status));
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    updateRowDisplay(data);
+                    populateForm(data);
+                    setHeader(data.id, data.created_at);
+                })
+                .catch(() => {
+                    alert(updateErrorMessage || 'Unable to revert change.');
+                    if (trigger) {
+                        trigger.disabled = false;
+                    }
+                })
+                .finally(() => {
+                    isBusy = false;
+                });
+        };
+
         if (form) {
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
                 submitUpdate();
+            });
+        }
+
+        if (clientLogList) {
+            clientLogList.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLButtonElement) || target.dataset.logRollback !== 'true') {
+                    return;
+                }
+                const logId = target.dataset.logId;
+                if (!logId) {
+                    return;
+                }
+                rollbackChange(logId, target);
             });
         }
 

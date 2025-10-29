@@ -373,6 +373,10 @@ a:focus {
     font-size: 0.9rem;
 }
 
+.form-error[data-variant="success"] {
+    color: var(--green-dark);
+}
+
 .attachment-list {
     list-style: none;
     padding: 0;

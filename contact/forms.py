@@ -146,19 +146,26 @@ class ContactForm(forms.ModelForm):
 
     class Meta:
         model = ContactMessage
-        fields = ["first_name", "last_name", "phone", "email", "company", "message"]
+        fields = [
+            "full_name",
+            "phone",
+            "email",
+            "company",
+            "company_name",
+            "message",
+        ]
         widgets = {
-            "first_name": forms.TextInput(
-                attrs={"class": "form-input", "data-review-source": "first_name"}
-            ),
-            "last_name": forms.TextInput(
-                attrs={"class": "form-input", "data-review-source": "last_name"}
+            "full_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "full_name"}
             ),
             "phone": forms.TextInput(
                 attrs={"class": "form-input", "data-review-source": "phone"}
             ),
             "email": forms.EmailInput(
                 attrs={"class": "form-input", "data-review-source": "email"}
+            ),
+            "company_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "company_name"}
             ),
             "message": forms.Textarea(
                 attrs={
@@ -355,6 +362,7 @@ class DownloadMessagesForm(forms.Form):
     FIELD_PHONE = "phone"
     FIELD_EMAIL = "email"
     FIELD_COMPANY = "company"
+    FIELD_COMPANY_NAME = "company_name"
     FIELD_MESSAGE = "message"
     FIELD_STATUS = "status"
 
@@ -364,6 +372,7 @@ class DownloadMessagesForm(forms.Form):
         (FIELD_PHONE, "Phone"),
         (FIELD_EMAIL, "Email"),
         (FIELD_COMPANY, "Company"),
+        (FIELD_COMPANY_NAME, "Company name"),
         (FIELD_MESSAGE, "Message"),
         (FIELD_STATUS, "Status"),
     )
@@ -397,6 +406,7 @@ class DownloadMessagesForm(forms.Form):
                 self.FIELD_PHONE: "Telefon",
                 self.FIELD_EMAIL: "E-mail",
                 self.FIELD_COMPANY: "Firma",
+                self.FIELD_COMPANY_NAME: "Nazwa firmy",
                 self.FIELD_MESSAGE: "Wiadomość",
                 self.FIELD_STATUS: "Status",
             }
@@ -409,6 +419,7 @@ class DownloadMessagesForm(forms.Form):
                 self.FIELD_PHONE: "Phone",
                 self.FIELD_EMAIL: "Email",
                 self.FIELD_COMPANY: "Company",
+                self.FIELD_COMPANY_NAME: "Company name",
                 self.FIELD_MESSAGE: "Message",
                 self.FIELD_STATUS: "Status",
             }
@@ -443,22 +454,22 @@ class MessageUpdateForm(forms.ModelForm):
     class Meta:
         model = ContactMessage
         fields = [
-            "first_name",
-            "last_name",
+            "full_name",
             "phone",
             "email",
             "company",
+            "company_name",
             "message",
             "status",
             "final_changes",
             "final_response",
         ]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
+            "full_name": forms.TextInput(attrs={"class": "form-input"}),
             "phone": forms.TextInput(attrs={"class": "form-input"}),
             "email": forms.EmailInput(attrs={"class": "form-input"}),
             "company": forms.Select(attrs={"class": "form-input"}),
+            "company_name": forms.TextInput(attrs={"class": "form-input"}),
             "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-input"}),
             "final_changes": forms.Textarea(attrs={"rows": 4, "class": "form-input"}),
@@ -477,19 +488,19 @@ class UserMessageUpdateForm(forms.ModelForm):
     class Meta:
         model = ContactMessage
         fields = [
-            "first_name",
-            "last_name",
+            "full_name",
             "phone",
             "email",
             "company",
+            "company_name",
             "message",
         ]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
+            "full_name": forms.TextInput(attrs={"class": "form-input"}),
             "phone": forms.TextInput(attrs={"class": "form-input"}),
             "email": forms.EmailInput(attrs={"class": "form-input"}),
             "company": forms.Select(attrs={"class": "form-input"}),
+            "company_name": forms.TextInput(attrs={"class": "form-input"}),
             "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
         }
 

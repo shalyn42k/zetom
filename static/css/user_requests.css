@@ -246,6 +246,36 @@
     justify-content: flex-end;
 }
 
+.user-request-modal__restore {
+    display: grid;
+    gap: 24px;
+}
+
+.user-request-modal__restore-options {
+    display: grid;
+    gap: 16px;
+}
+
+.user-request-modal__restore-options .modal__intro {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.user-request-modal__restore-form {
+    display: grid;
+    gap: 20px;
+}
+
+.user-request-modal__grid--restore {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px 20px;
+}
+
+.user-request-modal__restore .modal__actions {
+    justify-content: flex-start;
+}
+
 .form-error[hidden] {
     display: none !important;
 }

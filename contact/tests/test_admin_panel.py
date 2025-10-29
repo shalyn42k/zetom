@@ -11,11 +11,11 @@ from contact.models import ContactMessage
 class AdminPanelTests(TestCase):
     def setUp(self) -> None:
         self.message = ContactMessage.objects.create(
-            first_name='Jane',
-            last_name='Doe',
+            full_name='Jane Doe',
             phone='+48123123123',
             email='jane@example.com',
             company='firma1',
+            company_name='JD Consulting',
             message='Need help',
         )
         session = self.client.session

@@ -11,22 +11,22 @@ from ..models import ContactAttachment, ContactMessage
 
 def add_message(
     *,
-    first_name: str,
-    last_name: str,
+    full_name: str,
     phone: str,
     email: str,
     company: str,
+    company_name: str,
     message: str,
     attachments: Sequence | None = None,
 ) -> tuple[ContactMessage, str]:
     files: list[UploadedFile] = list(attachments or [])
     with transaction.atomic():
         contact_message = ContactMessage.objects.create(
-            first_name=first_name,
-            last_name=last_name,
+            full_name=full_name,
             phone=phone,
             email=email,
             company=company,
+            company_name=company_name,
             message=message,
         )
         token = contact_message.initialise_access_token()

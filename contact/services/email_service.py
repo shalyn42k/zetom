@@ -25,21 +25,22 @@ def send_contact_email(recipient: str, message: ContactMessage, *, access_token:
         else '—'
     )
     body = (
-        'Imię i nazwisko: {first} {last}\n'
+        'Imię i nazwisko: {full_name}\n'
         'Telefon: {phone}\n'
         'E-mail: {email}\n'
         'Firma: {company}\n'
+        'Nazwa firmy: {company_name}\n'
         'Numer zgłoszenia: #{id}\n'
         'Token dostępu: {token}\n'
         'Token ważny do: {expires}\n\n'
         'Wiadomość: {content}\n\n'
         'Zachowaj ten token, aby móc ponownie podejrzeć lub edytować zgłoszenie.'
     ).format(
-        first=message.first_name,
-        last=message.last_name,
+        full_name=message.full_name,
         phone=message.phone,
         email=message.email,
         company=message.company,
+        company_name=message.company_name or '—',
         id=message.id,
         token=access_token,
         expires=expires_at,
@@ -61,19 +62,19 @@ def send_company_notification(message: ContactMessage, *, link: str | None = Non
     body = (
         "Заявка пришла, прошу проверить по этой ссылке: {link}\n\n"
         "Базовая информация:\n"
-        "Имя: {first}\n"
-        "Фамилия: {last}\n"
+        "ФИО: {full_name}\n"
         "Телефон: {phone}\n"
         "Email: {email}\n"
-        "Компания: {company}\n\n"
+        "Компания (kod): {company}\n"
+        "Название компании: {company_name}\n\n"
         "Сообщение:\n{content}"
     ).format(
         link=notification_link,
-        first=message.first_name,
-        last=message.last_name,
+        full_name=message.full_name,
         phone=message.phone,
         email=message.email,
         company=message.company,
+        company_name=message.company_name or '—',
         content=message.message,
     )
 
