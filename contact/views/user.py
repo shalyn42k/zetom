@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.db.models import Q
 
 from ..forms import RequestAccessForm, UserMessageUpdateForm
-from ..models import ContactMessage
+from ..models import ClientChangeLog, ContactMessage
 from ..services import messages as message_service
 from ..utils import get_language
 from . import helpers
@@ -67,6 +67,51 @@ def access_portal(request: HttpRequest) -> HttpResponse:
     return render(request, 'contact/request_portal.html', context)
 
 
+@require_POST
+def restore_access(request: HttpRequest) -> JsonResponse:
+    language = get_language(request)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        payload = request.POST
+    form = RequestAccessForm(payload, language=language)
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors}, status=400)
+
+    message_id = form.cleaned_data['request_id']
+    token = form.cleaned_data['access_token']
+    message = ContactMessage.objects.filter(id=message_id, is_deleted=False).first()
+    if not message or not message.access_enabled:
+        error = (
+            'Nie znaleziono zgłoszenia o podanym numerze.'
+            if language == 'pl'
+            else 'No request with this number could be found.'
+        )
+        return JsonResponse({'errors': {'request_id': [error]}}, status=400)
+    if message.is_access_token_expired:
+        error = (
+            'Token wygasł. Poproś o nowy dostęp.'
+            if language == 'pl'
+            else 'The access token has expired. Please request new access.'
+        )
+        return JsonResponse({'errors': {'access_token': [error]}}, status=400)
+    if not message.verify_access_token(token):
+        error = (
+            'Token nie pasuje do zgłoszenia.'
+            if language == 'pl'
+            else 'The token does not match this request.'
+        )
+        return JsonResponse({'errors': {'access_token': [error]}}, status=400)
+
+    helpers.remember_user_message(request, message.id)
+    success_message = (
+        'Dostęp przywrócono. Możesz kontynuować edycję zgłoszenia.'
+        if language == 'pl'
+        else 'Access restored. You can continue working on your request.'
+    )
+    return JsonResponse({'success': True, 'message_id': message.id, 'message': success_message})
+
+
 @require_http_methods(["GET"])
 def user_requests(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
@@ -97,6 +142,7 @@ def user_requests(request: HttpRequest) -> HttpResponse:
                 'status_label': status_info['label'],
                 'status_badge': status_info['badge'],
                 'company_label': company_labels.get(message.company, message.company),
+                'company_name': message.company_name,
                 'message_preview': message.message,
             }
         )
@@ -146,27 +192,7 @@ def user_message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
         .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
     )
     language = get_language(request)
-    status_options = helpers.status_options(language)
-    status_lookup = {item['value']: item for item in status_options}
-    company_labels = helpers.company_labels(language)
-
-    data = {
-        'id': message.id,
-        'first_name': message.first_name,
-        'last_name': message.last_name,
-        'phone': message.phone,
-        'email': message.email,
-        'company': message.company,
-        'company_label': company_labels.get(message.company, message.company),
-        'message': message.message,
-        'status': message.status,
-        'status_label': status_lookup.get(message.status, {}).get('label', message.status),
-        'status_badge': status_lookup.get(message.status, {}).get('badge', 'badge--info'),
-        'created_at': timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M'),
-        'final_changes': message.final_changes,
-        'final_response': message.final_response,
-        'attachments': [helpers.serialise_attachment(att) for att in message.attachments.all()],
-    }
+    data = helpers.serialise_client_message(message, language=language)
     return JsonResponse(data)
 
 
@@ -179,37 +205,42 @@ def user_update_message(request: HttpRequest, message_id: int) -> JsonResponse:
         ContactMessage.objects.filter(pk=message_id, is_deleted=False, access_enabled=True)
         .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
     )
+    if message.status != ContactMessage.STATUS_NEW:
+        return JsonResponse({'error': 'locked'}, status=403)
     language = get_language(request)
     form = UserMessageUpdateForm(request.POST, request.FILES, instance=message)
     if form.is_valid():
+        tracked_fields = {
+            ClientChangeLog.FIELD_FULL_NAME,
+            ClientChangeLog.FIELD_PHONE,
+            ClientChangeLog.FIELD_EMAIL,
+            ClientChangeLog.FIELD_COMPANY,
+            ClientChangeLog.FIELD_COMPANY_NAME,
+            ClientChangeLog.FIELD_MESSAGE,
+        }
+        changed_fields = [field for field in form.changed_data if field in tracked_fields]
+        before_values = {field: getattr(message, field) for field in changed_fields}
         updated_message = form.save()
         attachments = form.cleaned_data.get('attachments') or []
         if attachments:
             message_service.add_attachments(updated_message, attachments)
-        status_options = helpers.status_options(language)
-        status_lookup = {item['value']: item for item in status_options}
-        company_labels = helpers.company_labels(language)
-        status_info = status_lookup.get(
-            updated_message.status,
-            {'label': updated_message.status, 'badge': 'badge--info'},
-        )
-        data = {
-            'id': updated_message.id,
-            'first_name': updated_message.first_name,
-            'last_name': updated_message.last_name,
-            'phone': updated_message.phone,
-            'email': updated_message.email,
-            'company': updated_message.company,
-            'company_label': company_labels.get(updated_message.company, updated_message.company),
-            'message': updated_message.message,
-            'status': updated_message.status,
-            'status_label': status_info['label'],
-            'status_badge': status_info['badge'],
-            'created_at': timezone.localtime(updated_message.created_at).strftime('%Y-%m-%d %H:%M'),
-            'final_changes': updated_message.final_changes,
-            'final_response': updated_message.final_response,
-            'attachments': [helpers.serialise_attachment(att) for att in updated_message.attachments.all()],
-        }
+        log_entries: list[ClientChangeLog] = []
+        for field in changed_fields:
+            previous = before_values.get(field, '') or ''
+            current = getattr(updated_message, field) or ''
+            if str(previous) == str(current):
+                continue
+            log_entries.append(
+                ClientChangeLog(
+                    message=updated_message,
+                    field=field,
+                    previous_value=str(previous),
+                    new_value=str(current),
+                )
+            )
+        if log_entries:
+            ClientChangeLog.objects.bulk_create(log_entries)
+        data = helpers.serialise_client_message(updated_message, language=language)
         return JsonResponse(data)
 
     return JsonResponse({'errors': form.errors}, status=400)
@@ -221,6 +252,8 @@ def user_delete_message(request: HttpRequest, message_id: int) -> JsonResponse:
         return JsonResponse({'error': 'not_found'}, status=404)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    if message.status != ContactMessage.STATUS_NEW:
+        return JsonResponse({'error': 'locked'}, status=403)
     message.is_deleted = True
     message.save(update_fields=['is_deleted'])
     helpers.remove_user_message(request, message_id)

@@ -7,6 +7,8 @@
     <title>{% if lang == 'pl' %}ZETOM Katowice – Badania i certyfikacja{% else %}ZETOM Katowice – Testing & Certification{% endif %}</title>
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_requests.css' %}">
+    <script src="{% static 'js/request_modal.js' %}" defer></script>
     <script src="{% static 'js/public.js' %}" defer></script>
 </head>
 <body>
@@ -24,7 +26,12 @@
         <a href="#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}</a>
+        <a href="#"
+           data-open-user-requests
+           aria-haspopup="dialog"
+           role="button">
+            {% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}
+        </a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
@@ -71,9 +78,11 @@
             <div class="message-list">
                 {% for msg in messages %}
                     {% with tags=msg.tags %}
-                        <div class="alert {% if 'success' in tags %}alert-success{% elif 'error' in tags or 'warning' in tags %}alert-error{% else %}alert-success{% endif %}">
-                            {{ msg }}
-                        </div>
+                        {% if 'admin' not in tags %}
+                            <div class="alert {% if 'success' in tags %}alert-success{% elif 'error' in tags or 'warning' in tags %}alert-error{% else %}alert-success{% endif %}">
+                                {{ msg }}
+                            </div>
+                        {% endif %}
                     {% endwith %}
                 {% endfor %}
             </div>
@@ -120,14 +129,9 @@
                 {% endif %}
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="{{ form.first_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</label>
-                        {{ form.first_name }}
-                        {% if form.first_name.errors %}<div class="form-error">{{ form.first_name.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="form-field">
-                        <label for="{{ form.last_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</label>
-                        {{ form.last_name }}
-                        {% if form.last_name.errors %}<div class="form-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+                        <label for="{{ form.full_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</label>
+                        {{ form.full_name }}
+                        {% if form.full_name.errors %}<div class="form-error">{{ form.full_name.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="form-field">
                         <label for="{{ form.phone.id_for_label }}" class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</label>
@@ -143,6 +147,11 @@
                         <label for="{{ form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</label>
                         {{ form.company }}
                         {% if form.company.errors %}<div class="form-error">{{ form.company.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.company_name.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</label>
+                        {{ form.company_name }}
+                        {% if form.company_name.errors %}<div class="form-error">{{ form.company_name.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="form-field" style="grid-column: 1 / -1;">
                         <label for="{{ form.message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</label>
@@ -239,8 +248,165 @@
                 </ul>
             </article>
         </div>
-    </section>
+</section>
 </main>
+<div class="modal"
+     data-user-request-modal
+     aria-hidden="true"
+     data-language="{{ lang }}"
+     data-status-map="{{ status_meta_json|escapejs }}"
+     data-detail-template="{% url 'contact:user_message_detail' 0 %}"
+     data-update-template="{% url 'contact:user_update_message' 0 %}"
+     data-delete-template=""
+     data-detail-error="{{ detail_error_message|escape }}"
+     data-update-error="{{ update_error_message|escape }}"
+     data-locked-message="{{ locked_message|escape }}"
+     data-initial-request-id="{{ active_request_id|default:'' }}"
+     data-initial-state="{% if has_active_request %}active{% else %}restore-options{% endif %}"
+     data-initial-request="{{ active_request_json|escapejs }}"
+     data-restore-url="{% url 'contact:restore_access' %}"
+     data-restore-success="{{ restore_success_message|escape }}"
+     data-restore-error="{{ restore_error_message|escape }}">
+    <div class="modal__backdrop" data-user-request-close></div>
+    <div class="modal__dialog user-request-modal user-request-modal--public" role="dialog" aria-modal="true" aria-labelledby="user-request-title">
+        <button type="button" class="modal__close" data-user-request-close aria-label="{% if lang == 'pl' %}Zamknij okno{% else %}Close window{% endif %}">×</button>
+        <div class="user-request-modal__restore" data-request-restore-section {% if has_active_request %}hidden{% endif %}>
+            <div class="user-request-modal__restore-options" data-restore-options>
+                <h2 class="modal__title">{% if lang == 'pl' %}Uzyskaj dostęp do zgłoszenia{% else %}Access your request{% endif %}</h2>
+                <p class="modal__intro">
+                    {% if lang == 'pl' %}
+                        Jeśli masz numer zgłoszenia i token dostępu z wiadomości e-mail, możesz odzyskać dostęp do zgłoszenia.
+                    {% else %}
+                        If you have the request ID and the access token from our e-mail, you can restore access to your request.
+                    {% endif %}
+                </p>
+                <div class="modal__actions">
+                    <button type="button" class="button button--primary" data-open-restore-form>
+                        {% if lang == 'pl' %}Przywróć zgłoszenie{% else %}Restore request{% endif %}
+                    </button>
+                    <a class="button button--ghost" href="#contact">
+                        {% if lang == 'pl' %}Utwórz nowe zgłoszenie{% else %}Create new request{% endif %}
+                    </a>
+                </div>
+            </div>
+            <form method="post" class="user-request-modal__restore-form" data-restore-form hidden>
+                {% csrf_token %}
+                <h2 class="modal__title">{% if lang == 'pl' %}Przywracanie zgłoszenia{% else %}Restore your request{% endif %}</h2>
+                <p class="modal__intro">
+                    {% if lang == 'pl' %}
+                        Podaj numer zgłoszenia i token wysłany na Twój adres e-mail, aby odzyskać dostęp.
+                    {% else %}
+                        Enter the request ID and the access token sent to your e-mail to restore access.
+                    {% endif %}
+                </p>
+                <div class="user-request-modal__grid user-request-modal__grid--restore">
+                    <label class="user-request-modal__field">
+                        <span class="form-label">{% if lang == 'pl' %}Numer zgłoszenia{% else %}Request ID{% endif %}</span>
+                        <input type="text" name="request_id" class="form-input" required>
+                    </label>
+                    <label class="user-request-modal__field">
+                        <span class="form-label">Token</span>
+                        <input type="text" name="access_token" class="form-input" required>
+                    </label>
+                </div>
+                <div class="form-error" data-restore-error hidden></div>
+                <div class="modal__actions">
+                    <button type="button" class="button button--ghost" data-cancel-restore>{% if lang == 'pl' %}Anuluj{% else %}Cancel{% endif %}</button>
+                    <button type="submit" class="button button--primary">{% if lang == 'pl' %}Przywróć dostęp{% else %}Restore access{% endif %}</button>
+                </div>
+            </form>
+        </div>
+        <div class="user-request-modal__content" data-request-active-section {% if not has_active_request %}hidden{% endif %}>
+            <h2 class="modal__title" id="user-request-title" data-user-request-title>{% if lang == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
+            <p class="modal__subtitle" data-user-request-created></p>
+            <div class="user-request-modal__status">
+                <span class="badge" data-user-request-status-badge></span>
+            </div>
+            <form method="post" class="user-request-modal__form" data-user-request-form enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="user-request-modal__grid">
+                    <label class="user-request-modal__field user-request-modal__field--full">
+                        <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
+                        <input type="text" name="full_name" class="form-input" required>
+                    </label>
+                    <label class="user-request-modal__field">
+                        <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
+                        <input type="text" name="phone" class="form-input" required>
+                    </label>
+                    <label class="user-request-modal__field">
+                        <span class="form-label">E-mail</span>
+                        <input type="email" name="email" class="form-input" required>
+                    </label>
+                    <label class="user-request-modal__field">
+                        <span class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
+                        <select name="company" class="form-input" required>
+                            {% for option in company_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="user-request-modal__field">
+                        <span class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
+                        <input type="text" name="company_name" class="form-input">
+                    </label>
+                    <label class="user-request-modal__field user-request-modal__field--full">
+                        <span class="form-label">{% if lang == 'pl' %}Treść zgłoszenia{% else %}Request message{% endif %}</span>
+                        <textarea name="message" rows="6" class="form-input" required></textarea>
+                    </label>
+                    <label class="user-request-modal__field user-request-modal__field--full">
+                        <span class="form-label">{% if lang == 'pl' %}Dodaj załączniki{% else %}Add attachments{% endif %}</span>
+                        <input type="file" name="attachments" class="form-input" multiple>
+                        <small class="form-help">
+                            {% if lang == 'pl' %}
+                                Maksymalnie {{ max_attachment_size }} MB na plik. Dozwolone typy:
+                                {% if allowed_attachment_types %}
+                                    {{ allowed_attachment_types|join:', ' }}.
+                                {% else %}
+                                    application/pdf, image/jpeg, image/png, text/plain.
+                                {% endif %}
+                            {% else %}
+                                Up to {{ max_attachment_size }} MB per file. Allowed types:
+                                {% if allowed_attachment_types %}
+                                    {{ allowed_attachment_types|join:', ' }}.
+                                {% else %}
+                                    application/pdf, image/jpeg, image/png, text/plain.
+                                {% endif %}
+                            {% endif %}
+                        </small>
+                    </label>
+                </div>
+                <section class="user-request-modal__attachments">
+                    <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
+                    <ul class="attachment-list" data-user-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
+                </section>
+                <section class="user-request-modal__final">
+                    <h3>{% if lang == 'pl' %}Finalne informacje{% else %}Final information{% endif %}</h3>
+                    <div class="user-request-modal__final-grid">
+                        <article>
+                            <h4>{% if lang == 'pl' %}Wprowadzone zmiany{% else %}Final changes{% endif %}</h4>
+                            <p data-user-request-final-changes
+                               data-empty="{% if lang == 'pl' %}Brak dodatkowych zmian.{% else %}No additional changes yet.{% endif %}">
+                                {% if lang == 'pl' %}Brak dodatkowych zmian.{% else %}No additional changes yet.{% endif %}
+                            </p>
+                        </article>
+                        <article>
+                            <h4>{% if lang == 'pl' %}Odpowiedź zespołu{% else %}Team response{% endif %}</h4>
+                            <p data-user-request-final-response
+                               data-empty="{% if lang == 'pl' %}Odpowiedź pojawi się tutaj.{% else %}The response will appear here.{% endif %}">
+                                {% if lang == 'pl' %}Odpowiedź pojawi się tutaj.{% else %}The response will appear here.{% endif %}
+                            </p>
+                        </article>
+                    </div>
+                </section>
+                <div class="form-error" data-user-request-error hidden></div>
+                <div class="modal__actions user-request-modal__actions">
+                    <button type="button" class="button button--ghost" data-user-request-close>{% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}</button>
+                    <button type="submit" class="button button--primary" data-user-request-save>{% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {% if success_message %}
 <div class="modal" data-success-modal aria-hidden="true">

@@ -7,18 +7,6 @@
         }
     };
 
-    const buildUrl = (template, id) => template.replace(/0(?!.*0)/, String(id));
-
-    const getCsrfToken = () => {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='));
-        if (!cookieValue) {
-            return '';
-        }
-        return decodeURIComponent(cookieValue.split('=')[1]);
-    };
-
     const truncate = (text, maxLength) => {
         if (!text) {
             return '';
@@ -32,9 +20,11 @@
     ready(() => {
         const section = document.querySelector('[data-requests-section]');
         const modal = document.querySelector('[data-user-request-modal]');
-        if (!section || !modal) {
+        if (!section || !modal || !window.ZetomRequestModal) {
             return;
         }
+
+        const { RequestModalController } = window.ZetomRequestModal;
 
         const track = section.querySelector('[data-carousel-track]');
         const prevButton = section.querySelector('[data-carousel-prev]');
@@ -47,29 +37,28 @@
         const updateErrorMessage = modal.dataset.updateError || 'Could not save changes.';
         const deleteConfirmMessage = modal.dataset.deleteConfirm || 'Are you sure?';
         const language = modal.dataset.language || 'pl';
-
-        const form = modal.querySelector('[data-user-request-form]');
-        const errorBox = modal.querySelector('[data-user-request-error]');
-        const statusBadge = modal.querySelector('[data-user-request-status-badge]');
-        const titleElement = modal.querySelector('[data-user-request-title]');
-        const createdElement = modal.querySelector('[data-user-request-created]');
-        const finalChangesElement = modal.querySelector('[data-user-request-final-changes]');
-        const finalResponseElement = modal.querySelector('[data-user-request-final-response]');
-        const closeElements = Array.from(modal.querySelectorAll('[data-user-request-close]'));
-        const deleteButton = modal.querySelector('[data-user-request-delete]');
-        const attachmentsList = modal.querySelector('[data-user-request-attachments]');
-        const attachmentsEmptyMessage = attachmentsList ? attachmentsList.dataset.empty || '' : '';
-        const attachmentsField = form ? form.querySelector('input[name="attachments"]') : null;
-
-        let cards = track ? Array.from(track.querySelectorAll('[data-request-card]')) : [];
-        let currentIndex = 0;
-        let currentCard = null;
-        let currentId = null;
-        let isBusy = false;
+        const lockedMessage = modal.dataset.lockedMessage || updateErrorMessage;
 
         const emptyMessage = section.dataset.emptyMessage || '';
         const emptyActionLabel = section.dataset.emptyActionLabel || '';
         const emptyActionUrl = section.dataset.emptyActionUrl || '#';
+
+        const statusLookup = (status) => statusMap[status] || {};
+
+        let cards = track ? Array.from(track.querySelectorAll('[data-request-card]')) : [];
+        let currentIndex = 0;
+        let currentCard = null;
+
+        const setStatusBadge = (target, statusKey, fallbackLabel) => {
+            if (!target) {
+                return;
+            }
+            const info = statusLookup(statusKey);
+            const label = info.label || fallbackLabel || statusKey || '';
+            const badgeClass = info.badge || 'badge--info';
+            target.className = `badge ${badgeClass}`.trim();
+            target.textContent = label;
+        };
 
         const updateButtons = () => {
             if (!cards.length) {
@@ -113,127 +102,6 @@
             updateButtons();
         };
 
-        const showError = (message) => {
-            if (!errorBox) {
-                return;
-            }
-            errorBox.textContent = message;
-            errorBox.hidden = !message;
-        };
-
-        const setStatusBadge = (target, statusKey, fallbackLabel) => {
-            if (!target) {
-                return;
-            }
-            const info = statusMap[statusKey] || {};
-            const label = info.label || fallbackLabel || statusKey || '';
-            const badgeClass = info.badge || 'badge--info';
-            target.className = `badge ${badgeClass}`.trim();
-            target.textContent = label;
-        };
-
-        const setFinalText = (element, value) => {
-            if (!element) {
-                return;
-            }
-            const content = (value || '').trim();
-            if (content) {
-                element.textContent = content;
-            } else {
-                element.textContent = element.dataset.empty || '';
-            }
-        };
-
-        const renderAttachments = (items) => {
-            if (!attachmentsList) {
-                return;
-            }
-            attachmentsList.innerHTML = '';
-            if (!items || !items.length) {
-                if (attachmentsEmptyMessage) {
-                    const emptyItem = document.createElement('li');
-                    emptyItem.className = 'attachment-list__empty';
-                    emptyItem.textContent = attachmentsEmptyMessage;
-                    attachmentsList.appendChild(emptyItem);
-                }
-                return;
-            }
-            items.forEach((item) => {
-                const listItem = document.createElement('li');
-                listItem.className = 'attachment-list__item';
-                const link = document.createElement('a');
-                link.href = item.url || '#';
-                link.target = '_blank';
-                link.rel = 'noopener';
-                link.textContent = item.name || 'attachment';
-                listItem.appendChild(link);
-                if (item.size) {
-                    const meta = document.createElement('span');
-                    meta.className = 'attachment-list__meta';
-                    const sizeKb = (Number(item.size) / 1024).toFixed(1);
-                    meta.textContent = `${sizeKb} KB`;
-                    listItem.appendChild(meta);
-                }
-                attachmentsList.appendChild(listItem);
-            });
-        };
-
-        const populateForm = (data) => {
-            if (!form) {
-                return;
-            }
-            form.reset();
-            Object.entries(data).forEach(([key, value]) => {
-                const field = form.elements.namedItem(key);
-                if (!field) {
-                    return;
-                }
-                if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-                    field.value = value ?? '';
-                } else if (field instanceof HTMLSelectElement) {
-                    field.value = value ?? '';
-                }
-            });
-            setFinalText(finalChangesElement, data.final_changes);
-            setFinalText(finalResponseElement, data.final_response);
-            renderAttachments(data.attachments || []);
-        };
-
-        const setModalHeader = (data) => {
-            if (titleElement) {
-                const prefix = language === 'pl' ? 'Zgłoszenie #' : 'Request #';
-                titleElement.textContent = data.id ? `${prefix}${data.id}` : prefix;
-            }
-            if (createdElement) {
-                const label = language === 'pl' ? 'Utworzone:' : 'Created:';
-                createdElement.textContent = data.created_at ? `${label} ${data.created_at}` : '';
-            }
-            setStatusBadge(statusBadge, data.status, data.status_label);
-        };
-
-        const toggleModal = (shouldOpen) => {
-            if (shouldOpen) {
-                modal.classList.add('is-visible');
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('has-open-modal');
-                const firstField = form ? form.querySelector('input, textarea, select') : null;
-                if (firstField instanceof HTMLElement) {
-                    firstField.focus({ preventScroll: true });
-                }
-            } else {
-                modal.classList.remove('is-visible');
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.classList.remove('has-open-modal');
-                currentCard = null;
-                currentId = null;
-                showError('');
-                renderAttachments([]);
-                if (attachmentsField) {
-                    attachmentsField.value = '';
-                }
-            }
-        };
-
         const openEmptyState = () => {
             if (section.querySelector('.requests-empty')) {
                 return;
@@ -263,7 +131,8 @@
             setStatusBadge(statusElement, data.status, data.status_label);
             const meta = card.querySelector('.request-card__meta');
             if (meta) {
-                meta.textContent = `${data.created_at} · ${data.company_label}`;
+                const extra = data.company_name ? ` — ${data.company_name}` : '';
+                meta.textContent = `${data.created_at} · ${data.company_label}${extra}`;
             }
             const message = card.querySelector('.request-card__message');
             if (message) {
@@ -271,156 +140,65 @@
             }
         };
 
-        const fetchDetails = (card) => {
-            if (!card || isBusy) {
-                return;
-            }
-            const id = card.dataset.requestId;
-            if (!id) {
-                return;
-            }
-            const url = buildUrl(detailTemplate, id);
-            if (!url) {
-                return;
-            }
-            isBusy = true;
-            showError('');
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(String(response.status));
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    currentCard = card;
-                    currentId = data.id;
-                    populateForm(data);
-                    setModalHeader(data);
-                    toggleModal(true);
-                })
-                .catch(() => {
-                    alert(detailErrorMessage);
-                })
-                .finally(() => {
-                    isBusy = false;
-                });
-        };
-
-        const submitUpdate = () => {
-            if (!form || !currentId) {
-                return;
-            }
-            const url = buildUrl(updateTemplate, currentId);
-            if (!url) {
-                return;
-            }
-            const formData = new FormData(form);
-            const csrfToken = formData.get('csrfmiddlewaretoken') || getCsrfToken();
-            isBusy = true;
-            showError('');
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken,
-                },
-                body: formData,
-            })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    return response.json().then((data) => {
-                        throw data;
-                    });
-                })
-                .then((data) => {
-                    if (currentCard) {
-                        updateCardDisplay(currentCard, data);
-                    }
-                    populateForm(data);
-                    setModalHeader(data);
-                    showError('');
-                })
-                .catch((error) => {
-                    if (error && error.errors) {
-                        const messages = Object.values(error.errors)
-                            .flat()
-                            .join(' ');
-                        showError(messages || updateErrorMessage);
-                    } else {
-                        showError(updateErrorMessage);
-                    }
-                })
-                .finally(() => {
-                    isBusy = false;
-                });
-        };
-
-        const deleteRequest = () => {
-            if (!currentId || !currentCard) {
-                return;
-            }
-            if (!window.confirm(deleteConfirmMessage)) {
-                return;
-            }
-            const url = buildUrl(deleteTemplate, currentId);
-            if (!url) {
-                return;
-            }
-            const csrfToken = getCsrfToken();
-            isBusy = true;
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken,
-                },
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(String(response.status));
-                    }
-                    return response.json();
-                })
-                .then(() => {
-                    currentCard.remove();
-                    toggleModal(false);
+        const controller = new RequestModalController(modal, {
+            statusMap,
+            detailTemplate,
+            updateTemplate,
+            deleteTemplate,
+            detailErrorMessage,
+            updateErrorMessage,
+            deleteConfirmMessage,
+            lockedMessage,
+            language,
+            onAfterUpdate(data) {
+                if (currentCard) {
+                    updateCardDisplay(currentCard, data);
+                }
+            },
+            onAfterDelete() {
+                if (!currentCard) {
                     refreshCards();
-                    if (!cards.length) {
-                        openEmptyState();
-                    } else if (track) {
-                        cards = Array.from(track.querySelectorAll('[data-request-card]'));
-                        const targetIndex = Math.min(currentIndex, cards.length - 1);
-                        scrollToIndex(targetIndex);
-                    }
-                })
-                .catch(() => {
-                    alert(updateErrorMessage);
-                })
-                .finally(() => {
-                    isBusy = false;
-                });
+                    return;
+                }
+                const removedCard = currentCard;
+                const removedIndex = cards.indexOf(removedCard);
+                removedCard.remove();
+                currentCard = null;
+                refreshCards();
+                if (!cards.length) {
+                    openEmptyState();
+                } else if (track) {
+                    const targetIndex = Math.min(removedIndex, cards.length - 1);
+                    scrollToIndex(targetIndex);
+                }
+            },
+            onClose() {
+                currentCard = null;
+            },
+        });
+
+        const openCard = (card, index) => {
+            const requestId = card.dataset.requestId;
+            if (!requestId) {
+                return;
+            }
+            currentCard = card;
+            currentIndex = index;
+            updateButtons();
+            controller.openForId(requestId).catch(() => {
+                currentCard = null;
+            });
         };
 
         const attachCardHandlers = () => {
             cards.forEach((card, index) => {
                 card.addEventListener('click', () => {
-                    currentIndex = index;
-                    updateButtons();
-                    fetchDetails(card);
+                    openCard(card, index);
                 });
                 card.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        currentIndex = index;
-                        updateButtons();
-                        fetchDetails(card);
+                        openCard(card, index);
                     }
                 });
             });
@@ -445,33 +223,13 @@
             });
         }
 
-        if (form) {
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                submitUpdate();
-            });
-        }
-
-        if (deleteButton) {
-            deleteButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                deleteRequest();
-            });
-        }
-
-        closeElements.forEach((element) => {
-            element.addEventListener('click', () => toggleModal(false));
+        // Update handlers if cards are dynamically removed
+        const observer = new MutationObserver(() => {
+            refreshCards();
+            attachCardHandlers();
         });
-
-        const modalBackdrop = modal.querySelector('.modal__backdrop');
-        if (modalBackdrop) {
-            modalBackdrop.addEventListener('click', () => toggleModal(false));
+        if (track) {
+            observer.observe(track, { childList: true });
         }
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
-                toggleModal(false);
-            }
-        });
     });
 })();

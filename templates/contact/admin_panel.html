@@ -163,6 +163,7 @@
      data-status-map="{{ status_meta_json|escapejs }}"
      data-detail-template="{% url 'contact:message_detail' 0 %}"
      data-update-template="{% url 'contact:update_message' 0 %}"
+     data-rollback-template="{% url 'contact:rollback_client_change' 0 0 %}"
      data-detail-error="{{ request_detail_error_message|escape }}"
      data-update-error="{{ request_update_error_message|escape }}"
      data-language="{{ lang }}">
@@ -174,13 +175,9 @@
         <form method="post" class="modal__form" data-request-form>
             {% csrf_token %}
             <div class="request-modal__grid">
-                <label class="request-modal__field">
-                    <span class="form-label">{% if lang == 'pl' %}Imię{% else %}First name{% endif %}</span>
-                    <input type="text" name="first_name" class="form-input" required>
-                </label>
-                <label class="request-modal__field">
-                    <span class="form-label">{% if lang == 'pl' %}Nazwisko{% else %}Last name{% endif %}</span>
-                    <input type="text" name="last_name" class="form-input" required>
+                <label class="request-modal__field request-modal__field--full">
+                    <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
+                    <input type="text" name="full_name" class="form-input" required>
                 </label>
                 <label class="request-modal__field">
                     <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
@@ -197,6 +194,10 @@
                             <option value="{{ option.value }}">{{ option.label }}</option>
                         {% endfor %}
                     </select>
+                </label>
+                <label class="request-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
+                    <input type="text" name="company_name" class="form-input">
                 </label>
                 <label class="request-modal__field">
                     <span class="form-label">{% if lang == 'pl' %}Status{% else %}Status{% endif %}</span>
@@ -222,6 +223,10 @@
             <section class="request-modal__attachments">
                 <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
                 <ul class="attachment-list" data-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
+            </section>
+            <section class="request-modal__client-log">
+                <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
+                <ul class="client-log" data-request-client-log data-empty="{% if lang == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
             </section>
             <section class="request-modal__access">
                 <h3>{% if lang == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
@@ -341,6 +346,7 @@
                         <th>{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</th>
                         <th>E-mail</th>
                         <th>{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</th>
                         <th>{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</th>
                         <th>{% if lang == 'pl' %}Status{% else %}Status{% endif %}</th>
                     </tr>
@@ -361,7 +367,7 @@
                             </td>
                             <td data-cell="id">#{{ message_item.id }}</td>
                             <td data-cell="created">{{ message_item.created_at|date:'Y-m-d H:i' }}</td>
-                            <td data-cell="customer">{{ message_item.first_name }} {{ message_item.last_name }}</td>
+                            <td data-cell="customer">{{ message_item.full_name }}</td>
                             <td data-cell="phone"><span class="table-phone" data-cell-phone>{{ message_item.phone }}</span></td>
                             <td data-cell="email">
                                 <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to={{ message_item.email|urlencode }}"
@@ -371,6 +377,7 @@
                                    rel="noopener noreferrer">{{ message_item.email }}</a>
                             </td>
                             <td data-cell="company">{{ message_item.company }}</td>
+                            <td data-cell="company-name">{{ message_item.company_name }}</td>
                             <td data-cell="message">{{ message_item.message|linebreaksbr }}</td>
                             <td data-cell="status">
                                 {% if message_item.status == message_item.STATUS_NEW %}
@@ -384,7 +391,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="9" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
+                            <td colspan="10" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
                         </tr>
                     {% endfor %}
                     </tbody>

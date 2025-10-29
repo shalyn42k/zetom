@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import math
 import smtplib
@@ -8,6 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
 from django.db import DatabaseError
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -15,6 +17,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from ..forms import ContactForm
+from ..models import ContactMessage
 from ..services import messages as message_service
 from ..services.email_service import (
     send_company_notification,
@@ -76,11 +79,11 @@ def index(request: HttpRequest) -> HttpResponse:
 
     if request.method == 'POST' and form_valid and not throttle_error:
         payload = {
-            "first_name": form.cleaned_data["first_name"],
-            "last_name": form.cleaned_data["last_name"],
+            "full_name": form.cleaned_data["full_name"],
             "phone": form.cleaned_data["phone"],
             "email": form.cleaned_data["email"],
             "company": form.cleaned_data["company"],
+            "company_name": form.cleaned_data["company_name"],
             "message": form.cleaned_data["message"],
         }
         attachments = form.cleaned_data.get("attachments") or []
@@ -139,6 +142,43 @@ def index(request: HttpRequest) -> HttpResponse:
         if content_type.strip()
     ]
 
+    stored_ids = helpers.get_user_message_ids(request)
+    active_request: ContactMessage | None = None
+    if stored_ids:
+        active_request = (
+            ContactMessage.objects.filter(
+                id__in=stored_ids,
+                is_deleted=False,
+                access_enabled=True,
+            )
+            .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
+            .prefetch_related('attachments')
+            .order_by('-created_at')
+            .first()
+        )
+
+    active_request_data: dict[str, object] | None = None
+    if active_request:
+        active_request_data = helpers.serialise_client_message(active_request, language=lang)
+
+    status_meta = {
+        item['value']: {'label': item['label'], 'badge': item['badge']}
+        for item in helpers.status_options(lang)
+    }
+
+    if lang == 'pl':
+        detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
+        update_error_message = 'Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie.'
+        locked_message = 'Zgłoszenie jest już w trakcie obsługi i nie można go edytować.'
+        restore_error_message = 'Nie udało się przywrócić dostępu. Sprawdź dane i spróbuj ponownie.'
+        restore_success_message = 'Dostęp przywrócono. Możesz kontynuować edycję zgłoszenia.'
+    else:
+        detail_error_message = 'Unable to load request details.'
+        update_error_message = 'Could not save changes. Please fix the errors and try again.'
+        locked_message = 'This request is being processed and can no longer be edited.'
+        restore_error_message = 'Could not restore access. Please check the details and try again.'
+        restore_success_message = 'Access restored. You can continue working on your request.'
+
     context = {
         'form': form,
         'lang': lang,
@@ -146,5 +186,15 @@ def index(request: HttpRequest) -> HttpResponse:
         'throttle_seconds': throttle_seconds,
         'max_attachment_size': getattr(settings, 'ATTACH_MAX_SIZE_MB', 25),
         'allowed_attachment_types': allowed_types,
+        'status_meta_json': json.dumps(status_meta),
+        'company_options': helpers.company_options(lang),
+        'active_request_json': json.dumps(active_request_data) if active_request_data else '',
+        'active_request_id': active_request_data['id'] if active_request_data else None,
+        'has_active_request': bool(active_request_data),
+        'detail_error_message': detail_error_message,
+        'update_error_message': update_error_message,
+        'locked_message': locked_message,
+        'restore_error_message': restore_error_message,
+        'restore_success_message': restore_success_message,
     }
     return render(request, 'contact/index.html', context)

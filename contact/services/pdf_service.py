@@ -272,14 +272,15 @@ def _field_value(
         fmt = "%Y-%m-%d %H:%M"
         return escape(timestamp.strftime(fmt))
     if field == "customer":
-        full_name = f"{message.first_name} {message.last_name}".strip()
-        return escape(full_name)
+        return escape(message.full_name)
     if field == "phone":
         return escape(message.phone)
     if field == "email":
         return escape(message.email)
     if field == "company":
         return escape(message.company)
+    if field == "company_name":
+        return escape(message.company_name)
     if field == "message":
         text = message.message.replace("\r\n", "\n").replace("\r", "\n")
         lines = [escape(line) for line in text.split("\n")]

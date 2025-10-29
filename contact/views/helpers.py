@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.http import HttpRequest
 from django.urls import reverse
+from django.utils import timezone
 
 from ..forms import (
     ContactForm,
@@ -13,8 +14,9 @@ from ..forms import (
     MessageFilterForm,
     TrashActionForm,
 )
-from ..models import ContactAttachment, ContactMessage
+from ..models import AdminActivityLog, ContactAttachment, ContactMessage
 from ..services import messages as message_service
+from ..services.activity_log import log_action, log_bulk_action
 
 
 def remember_user_message(request: HttpRequest, message_id: int) -> None:
@@ -160,6 +162,7 @@ def build_filter_form(
 
 
 def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
+    id_list = [int(value) for value in ids]
     status_actions: dict[str, tuple[str, str, str]] = {
         MessageBulkActionForm.ACTION_MARK_NEW: (
             ContactMessage.STATUS_NEW,
@@ -182,10 +185,20 @@ def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpReque
 
     if action in status_actions:
         status, message_pl, message_en = status_actions[action]
-        message_service.update_messages_status(ids, status=status)
+        message_service.update_messages_status(id_list, status=status)
+        log_bulk_action(
+            AdminActivityLog.ACTION_STATUS_CHANGE,
+            id_list,
+            description=f'Status updated to {status}',
+        )
         success_message = message_pl if lang == 'pl' else message_en
     elif action == MessageBulkActionForm.ACTION_DELETE:
-        message_service.delete_messages(ids)
+        message_service.delete_messages(id_list)
+        log_bulk_action(
+            AdminActivityLog.ACTION_DELETE,
+            id_list,
+            description='Moved to trash',
+        )
         success_message = (
             'Zaznaczone wiadomości przeniesiono do kosza.'
             if lang == 'pl'
@@ -193,7 +206,7 @@ def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpReque
         )
 
     if success_message:
-        messages.success(request, success_message)
+        messages.success(request, success_message, extra_tags='admin')
 
 
 def handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
@@ -215,13 +228,29 @@ def handle_trash_action(action: str, ids: Iterable[int], lang: str, request: Htt
         ),
     }
 
+    id_list = [int(value) for value in ids]
     handler = action_handlers.get(action)
     if not handler:
         return
 
     func, message_pl, message_en = handler
-    func(ids)
-    messages.success(request, message_pl if lang == 'pl' else message_en)
+    func(id_list)
+    if action == TrashActionForm.ACTION_RESTORE:
+        log_bulk_action(
+            AdminActivityLog.ACTION_RESTORE,
+            id_list,
+            description='Restored from trash',
+        )
+    elif action == TrashActionForm.ACTION_DELETE:
+        log_bulk_action(
+            AdminActivityLog.ACTION_PURGE,
+            id_list,
+            description='Permanently deleted',
+        )
+    elif action == TrashActionForm.ACTION_EMPTY:
+        log_action(AdminActivityLog.ACTION_PURGE, description='Emptied trash bin')
+
+    messages.success(request, message_pl if lang == 'pl' else message_en, extra_tags='admin')
 
 
 def localise_action_choices(form: MessageBulkActionForm, lang: str) -> None:
@@ -248,4 +277,38 @@ def serialise_attachment(attachment: ContactAttachment) -> dict[str, str | int]:
         'url': attachment.file.url,
         'content_type': attachment.content_type,
         'size': attachment.size,
+    }
+
+
+def serialise_client_message(
+    message: ContactMessage,
+    *,
+    language: str,
+) -> dict[str, object]:
+    status_choices = status_options(language)
+    status_lookup = {item['value']: item for item in status_choices}
+    company_lookup = company_labels(language)
+    status_info = status_lookup.get(
+        message.status,
+        {'label': message.status, 'badge': 'badge--info'},
+    )
+    created_at = timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M')
+    return {
+        'id': message.id,
+        'full_name': message.full_name,
+        'phone': message.phone,
+        'email': message.email,
+        'company': message.company,
+        'company_name': message.company_name,
+        'company_label': company_lookup.get(message.company, message.company),
+        'message': message.message,
+        'status': message.status,
+        'status_label': status_info.get('label', message.status),
+        'status_badge': status_info.get('badge', 'badge--info'),
+        'created_at': created_at,
+        'final_changes': message.final_changes,
+        'final_response': message.final_response,
+        'attachments': [serialise_attachment(att) for att in message.attachments.all()],
+        'is_editable': message.status == ContactMessage.STATUS_NEW,
+        'access_enabled': message.access_enabled,
     }

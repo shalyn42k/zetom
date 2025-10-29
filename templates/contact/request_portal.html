@@ -46,7 +46,9 @@
         {% if messages %}
             <div class="message-list">
                 {% for msg in messages %}
-                    <div class="alert {% if 'success' in msg.tags %}alert-success{% elif 'error' in msg.tags or 'warning' in msg.tags %}alert-error{% else %}alert-success{% endif %}">{{ msg }}</div>
+                    {% if 'admin' not in msg.tags %}
+                        <div class="alert {% if 'success' in msg.tags %}alert-success{% elif 'error' in msg.tags or 'warning' in msg.tags %}alert-error{% else %}alert-success{% endif %}">{{ msg }}</div>
+                    {% endif %}
                 {% endfor %}
             </div>
         {% endif %}
