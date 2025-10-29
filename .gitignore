@@ -20,6 +20,7 @@ ENV/
 # Django artifacts
 db.sqlite3
 *.sqlite3
+cache/
 media/
 staticfiles/
 

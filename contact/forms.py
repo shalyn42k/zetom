@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import shlex
+import subprocess
+from pathlib import Path
+
 from django import forms
 from django.conf import settings
 
@@ -31,9 +35,39 @@ class MultipleFileField(forms.FileField):
         return cleaned_files
 
 
+def _scan_attachment_for_malware(uploaded) -> str | None:
+    command = getattr(settings, 'ATTACH_SCAN_COMMAND', '')
+    if not command:
+        return None
+
+    args = shlex.split(command)
+    if not args:
+        return None
+
+    try:
+        process = subprocess.run(
+            args,
+            input=uploaded.read(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    finally:
+        try:
+            uploaded.seek(0)
+        except (AttributeError, OSError):  # pragma: no cover - best effort
+            pass
+
+    if process.returncode != 0:
+        output = process.stderr.decode() or process.stdout.decode()
+        return output.strip() or 'Attachment failed antivirus scanning.'
+    return None
+
+
 def _validate_attachments(files: list, language: str | None = None) -> list:
     max_size = getattr(settings, "ATTACH_MAX_SIZE_MB", 25) * 1024 * 1024
     allowed_types = [ctype.strip() for ctype in getattr(settings, "ATTACH_ALLOWED_TYPES", []) if ctype.strip()]
+    allowed_extensions = [ext.strip().lower() for ext in getattr(settings, "ATTACH_ALLOWED_EXTENSIONS", []) if ext.strip()]
     errors: list[str] = []
     for uploaded in files:
         size = getattr(uploaded, "size", 0) or 0
@@ -43,12 +77,30 @@ def _validate_attachments(files: list, language: str | None = None) -> list:
                 errors.append(f"Plik {uploaded.name} przekracza limit {limit} MB.")
             else:
                 errors.append(f"File {uploaded.name} exceeds the {limit} MB limit.")
+        if size == 0:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} jest pusty.")
+            else:
+                errors.append(f"File {uploaded.name} is empty.")
         content_type = getattr(uploaded, "content_type", "") or ""
         if allowed_types and content_type and content_type not in allowed_types:
             if language == "pl":
                 errors.append(f"Plik {uploaded.name} ma niedozwolony typ ({content_type}).")
             else:
                 errors.append(f"File {uploaded.name} has a forbidden type ({content_type}).")
+        extension = Path(getattr(uploaded, "name", "") or "").suffix.lower()
+        if allowed_extensions and extension and extension not in allowed_extensions:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolone rozszerzenie ({extension}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden extension ({extension}).")
+
+        scan_error = _scan_attachment_for_malware(uploaded)
+        if scan_error:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} nie przeszedł kontroli bezpieczeństwa: {scan_error}.")
+            else:
+                errors.append(f"File {uploaded.name} failed security checks: {scan_error}.")
     if errors:
         raise forms.ValidationError(errors)
     return files

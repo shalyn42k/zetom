@@ -64,71 +64,49 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
 
     if request.method == 'POST':
-        form_name = request.POST.get('form_name')
+        form_name = (request.POST.get('form_name') or '').strip()
         if form_name == 'bulk':
-            action_form = MessageBulkActionForm(request.POST, message_choices=choices)
-            helpers.localise_action_choices(action_form, lang)
-            if action_form.is_valid():
-                ids = [int(pk) for pk in action_form.cleaned_data['selected']]
-                helpers.handle_action(action_form.cleaned_data['action'], ids, lang, request)
-                return redirect(
-                    helpers.panel_redirect_url(
-                        lang,
-                        page_obj.number,
-                        sort_by=sort_by,
-                        company=company_filter,
-                    )
-                )
-        elif form_name == 'trash':
-            trash_form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
-            if trash_form.is_valid():
-                ids = [int(pk) for pk in trash_form.cleaned_data['selected']]
-                helpers.handle_trash_action(trash_form.cleaned_data['action'], ids, lang, request)
-                return redirect(
-                    helpers.panel_redirect_url(
-                        lang,
-                        page_obj.number,
-                        sort_by=sort_by,
-                        company=company_filter,
-                    )
-                )
-        elif form_name == 'download':
-            download_form = DownloadMessagesForm(
-                request.POST,
-                message_choices=download_choices,
-                language=lang,
+            action_form, response = _handle_bulk_form(
+                request,
+                lang,
+                choices,
+                page_obj,
+                sort_by,
+                company_filter,
             )
-            if download_form.is_valid():
-                ids = [int(pk) for pk in download_form.cleaned_data['messages']]
-                fields = download_form.cleaned_data['fields']
-                selected_messages = message_service.get_messages(
-                    sort_by=sort_by,
-                    company=company_filter,
-                ).filter(id__in=ids)
-                pdf_bytes = build_messages_pdf(selected_messages, fields=fields, language=lang)
-                filename = timezone.localtime().strftime('requests_%Y%m%d_%H%M%S.pdf')
-                response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            if response:
+                return response
+        elif form_name == 'trash':
+            trash_form, response = _handle_trash_form(
+                request,
+                lang,
+                deleted_choices,
+                page_obj,
+                sort_by,
+                company_filter,
+            )
+            if response:
+                return response
+        elif form_name == 'download':
+            download_form, response = _handle_download_form(
+                request,
+                lang,
+                download_choices,
+                sort_by,
+                company_filter,
+            )
+            if response:
                 return response
         else:
-            email_form = EmailForm(request.POST, request.FILES)
-            if email_form.is_valid():
-                file = request.FILES.get('attachment')
-                send_email_with_attachment(
-                    to_email=email_form.cleaned_data['to_email'],
-                    subject=email_form.cleaned_data['subject'],
-                    body=email_form.cleaned_data['body'],
-                    attachment=file,
-                    filename=file.name if file else None,
-                )
-                return redirect(
-                    helpers.panel_redirect_url(
-                        lang,
-                        page_obj.number,
-                        sort_by=sort_by,
-                        company=company_filter,
-                    )
-                )
+            email_form, response = _handle_email_form(
+                request,
+                lang,
+                page_obj,
+                sort_by,
+                company_filter,
+            )
+            if response:
+                return response
 
     download_fields_total = len(download_form.fields['fields'].choices)
     selected_download_ids: list[str] = []
@@ -171,6 +149,108 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'request_update_error_message': update_error_message,
     }
     return render(request, 'contact/admin_panel.html', context)
+
+
+def _handle_bulk_form(
+    request: HttpRequest,
+    lang: str,
+    choices: list[tuple[str, str]],
+    page_obj,
+    sort_by: str | None,
+    company_filter: str | None,
+):
+    form = MessageBulkActionForm(request.POST, message_choices=choices)
+    helpers.localise_action_choices(form, lang)
+    if form.is_valid():
+        ids = [int(pk) for pk in form.cleaned_data['selected']]
+        helpers.handle_action(form.cleaned_data['action'], ids, lang, request)
+        return form, redirect(
+            helpers.panel_redirect_url(
+                lang,
+                page_obj.number,
+                sort_by=sort_by,
+                company=company_filter,
+            )
+        )
+    return form, None
+
+
+def _handle_trash_form(
+    request: HttpRequest,
+    lang: str,
+    deleted_choices: list[tuple[str, str]],
+    page_obj,
+    sort_by: str | None,
+    company_filter: str | None,
+):
+    form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
+    if form.is_valid():
+        ids = [int(pk) for pk in form.cleaned_data['selected']]
+        helpers.handle_trash_action(form.cleaned_data['action'], ids, lang, request)
+        return form, redirect(
+            helpers.panel_redirect_url(
+                lang,
+                page_obj.number,
+                sort_by=sort_by,
+                company=company_filter,
+            )
+        )
+    return form, None
+
+
+def _handle_download_form(
+    request: HttpRequest,
+    lang: str,
+    download_choices: list[tuple[str, str]],
+    sort_by: str | None,
+    company_filter: str | None,
+):
+    form = DownloadMessagesForm(
+        request.POST,
+        message_choices=download_choices,
+        language=lang,
+    )
+    if form.is_valid():
+        ids = [int(pk) for pk in form.cleaned_data['messages']]
+        fields = form.cleaned_data['fields']
+        selected_messages = message_service.get_messages(
+            sort_by=sort_by,
+            company=company_filter,
+        ).filter(id__in=ids)
+        pdf_bytes = build_messages_pdf(selected_messages, fields=fields, language=lang)
+        filename = timezone.localtime().strftime('requests_%Y%m%d_%H%M%S.pdf')
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return form, response
+    return form, None
+
+
+def _handle_email_form(
+    request: HttpRequest,
+    lang: str,
+    page_obj,
+    sort_by: str | None,
+    company_filter: str | None,
+):
+    form = EmailForm(request.POST, request.FILES or None)
+    if form.is_valid():
+        file = request.FILES.get('attachment')
+        send_email_with_attachment(
+            to_email=form.cleaned_data['to_email'],
+            subject=form.cleaned_data['subject'],
+            body=form.cleaned_data['body'],
+            attachment=file,
+            filename=file.name if file else None,
+        )
+        return form, redirect(
+            helpers.panel_redirect_url(
+                lang,
+                page_obj.number,
+                sort_by=sort_by,
+                company=company_filter,
+            )
+        )
+    return form, None
 
 
 @require_http_methods(["GET"])

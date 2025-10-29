@@ -1,11 +1,13 @@
+import json
 import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SESSION_COOKIE_AGE = 60  # Сессия живет max 1 мин, даже если не del.
+SESSION_COOKIE_AGE = max(1800, int(os.getenv('SESSION_COOKIE_AGE', '3600')))
 SESSION_SAVE_EVERY_REQUEST = False  # Не обновлять expiration на каждый запрос.
 SESSION_COOKIE_SECURE = True  # Только HTTPS.
 SESSION_COOKIE_HTTPONLY = True  # Защита от JS-доступа.
@@ -44,6 +46,23 @@ if render_hostname:
         csrf_trusted.append(csrf_origin)
 
 CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(csrf_trusted))
+
+# --- Cache ---
+default_cache_backend = os.getenv(
+    'DJANGO_CACHE_BACKEND', 'django.core.cache.backends.filebased.FileBasedCache'
+)
+default_cache_location = os.getenv('DJANGO_CACHE_LOCATION', str(BASE_DIR / 'cache'))
+
+CACHES = {
+    'default': {
+        'BACKEND': default_cache_backend,
+        'LOCATION': default_cache_location,
+    }
+}
+
+if default_cache_backend.endswith('FileBasedCache'):
+    os.makedirs(default_cache_location, exist_ok=True)
+
 
 # --- Apps ---
 INSTALLED_APPS = [
@@ -124,8 +143,28 @@ USE_TZ = True
 
 # --- Static / Media ---
 STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+media_root_env = os.getenv('MEDIA_ROOT')
+MEDIA_ROOT = Path(media_root_env) if media_root_env else BASE_DIR / 'media'
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
+
+default_file_storage = os.getenv(
+    'DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage'
+)
+
+STORAGES = {
+    'default': {
+        'BACKEND': default_file_storage,
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+
+if default_file_storage == 'django.core.files.storage.FileSystemStorage':
+    STORAGES['default']['OPTIONS'] = {'location': str(MEDIA_ROOT)}
+
+DEFAULT_FILE_STORAGE = STORAGES['default']['BACKEND']
 
 if DEBUG:
     # DEV: источники статики, без STATIC_ROOT!
@@ -138,7 +177,9 @@ else:
 
     # Подключаем WhiteNoise
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STORAGES['staticfiles'] = {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    }
 
 # --- Security (prod) ---
 if not DEBUG:
@@ -169,33 +210,34 @@ SMTP_PORT = EMAIL_PORT
 SMTP_USER = EMAIL_HOST_USER
 SMTP_PASS = EMAIL_HOST_PASSWORD
 
-# Получатели нотификаций по компаниям. Заполните реальные почты на месте примеров.
-COMPANY_NOTIFICATION_RECIPIENTS = {
-    # Для фирмы 1 отправка сотруднику, менеджеру и дополнительному контакту
-    "firma1": [
-        "tymirdanylov1@gmail.com",
-        "ilitovko660@gmail.com",
-        "volkovnikita1977@gmail.com",
-    ],
-    # Для фирмы 2
-    "firma2": [
-        "tymirdanylov1@gmail.com",
-        "ilitovko660@gmail.com",
-        "volkovnikita1977@gmail.com",
-    ],
-    # Для фирмы 3
-    "firma3": [
-        "tymirdanylov1@gmail.com",
-        "ilitovko660@gmail.com",
-        "volkovnikita1977@gmail.com",
-    ],
-    # Общий список по умолчанию для всех остальных компаний (например, "inna")
-    "default": [
-        "tymirdanylov1@gmail.com",
-        "ilitovko660@gmail.com",
-        "volkovnikita1977@gmail.com",
-    ],
-}
+def _load_company_notification_recipients() -> dict[str, list[str]]:
+    raw_value = os.getenv('COMPANY_NOTIFICATION_RECIPIENTS', '').strip()
+    if not raw_value:
+        return {}
+    try:
+        parsed = json.loads(raw_value)
+    except json.JSONDecodeError as exc:
+        raise ImproperlyConfigured(
+            'COMPANY_NOTIFICATION_RECIPIENTS must contain valid JSON data.'
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise ImproperlyConfigured('COMPANY_NOTIFICATION_RECIPIENTS must be a JSON object.')
+
+    recipients: dict[str, list[str]] = {}
+    for key, value in parsed.items():
+        if isinstance(value, str):
+            emails = [item.strip() for item in value.split(',') if item and item.strip()]
+        elif isinstance(value, (list, tuple, set)):
+            emails = [str(item).strip() for item in value if str(item).strip()]
+        else:
+            raise ImproperlyConfigured(
+                'COMPANY_NOTIFICATION_RECIPIENTS values must be lists or comma separated strings.'
+            )
+        recipients[str(key).strip()] = emails
+    return recipients
+
+
+COMPANY_NOTIFICATION_RECIPIENTS = _load_company_notification_recipients()
 
 # Ссылка, которая будет добавляться в письма-уведомления для сотрудников фирм
 COMPANY_NOTIFICATION_LINK = os.environ.get(
@@ -211,6 +253,8 @@ DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
 LOGIN_URL = 'contact:login'
 
 CONTACT_FORM_THROTTLE_SECONDS = int(os.getenv('CONTACT_FORM_THROTTLE_SECONDS', '30'))
+CONTACT_FORM_RATE_LIMIT_PREFIX = os.getenv('CONTACT_FORM_RATE_LIMIT_PREFIX', 'contact_form')
+CONTACT_ACCESS_TOKEN_TTL_HOURS = int(os.getenv('CONTACT_ACCESS_TOKEN_TTL_HOURS', '72'))
 SMTP_RETRY_ATTEMPTS = int(os.getenv('SMTP_RETRY_ATTEMPTS', '2'))
 SMTP_TIMEOUT = int(os.getenv('SMTP_TIMEOUT', '30'))
 ATTACH_MAX_SIZE_MB = int(os.getenv('ATTACH_MAX_SIZE_MB', '25'))
@@ -218,3 +262,50 @@ ATTACH_ALLOWED_TYPES = os.getenv(
     'ATTACH_ALLOWED_TYPES',
     'application/pdf,image/jpeg,image/png,text/plain',
 ).split(',')
+ATTACH_ALLOWED_EXTENSIONS = [
+    ext.strip().lower()
+    for ext in os.getenv('ATTACH_ALLOWED_EXTENSIONS', '.pdf,.png,.jpg,.jpeg,.txt').split(',')
+    if ext.strip()
+]
+ATTACH_SCAN_COMMAND = os.getenv('ATTACH_SCAN_COMMAND', '').strip()
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+SENTRY_TRACES_SAMPLE_RATE = float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.0'))
+
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImproperlyConfigured('sentry-sdk must be installed to enable Sentry monitoring.') from exc
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        send_default_pii=False,
+    )
+
+
+def _validate_environment_configuration() -> None:
+    if DEBUG:
+        return
+
+    required_vars = {
+        'DJANGO_SECRET_KEY': SECRET_KEY,
+        'SMTP_SERVER': EMAIL_HOST,
+        'SMTP_USER': EMAIL_HOST_USER,
+        'SMTP_PASS': EMAIL_HOST_PASSWORD,
+    }
+    missing = [name for name, value in required_vars.items() if not value]
+    if missing:
+        raise ImproperlyConfigured(
+            f"Missing required environment configuration: {', '.join(sorted(missing))}"
+        )
+    if SECRET_KEY == 'dev-insecure-key-change-me':
+        raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set in production.')
+    if not COMPANY_NOTIFICATION_RECIPIENTS:
+        raise ImproperlyConfigured('COMPANY_NOTIFICATION_RECIPIENTS must be configured in production.')
+
+
+_validate_environment_configuration()
