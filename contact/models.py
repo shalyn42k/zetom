@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import secrets
 
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
@@ -35,7 +38,7 @@ class ContactMessage(models.Model):
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     email = models.EmailField()
-    company = models.CharField(max_length=50)
+    company = models.CharField(max_length=50, db_index=True)
     message = models.TextField()
     final_changes = models.TextField(blank=True)
     final_response = models.TextField(blank=True)
@@ -45,6 +48,7 @@ class ContactMessage(models.Model):
     is_deleted = models.BooleanField(default=False, db_index=True)
     access_token_hash = models.CharField(max_length=128, blank=True)
     access_enabled = models.BooleanField(default=True)
+    access_token_expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -57,12 +61,23 @@ class ContactMessage(models.Model):
 
         token = _generate_access_token()
         self.access_token_hash = make_password(token)
+        ttl_hours = max(1, getattr(settings, 'CONTACT_ACCESS_TOKEN_TTL_HOURS', 72))
+        self.access_token_expires_at = timezone.now() + timedelta(hours=ttl_hours)
         return token
 
     def verify_access_token(self, token: str) -> bool:
         if not token or not self.access_token_hash:
             return False
+        if self.is_access_token_expired:
+            return False
         return check_password(token, self.access_token_hash)
+
+    @property
+    def is_access_token_expired(self) -> bool:
+        expires_at = self.access_token_expires_at
+        if not expires_at:
+            return False
+        return timezone.now() > expires_at
 
 
 class ContactAttachment(models.Model):

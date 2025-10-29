@@ -30,7 +30,7 @@ def add_message(
             message=message,
         )
         token = contact_message.initialise_access_token()
-        contact_message.save(update_fields=["access_token_hash"])
+        contact_message.save(update_fields=["access_token_hash", "access_token_expires_at"])
         if files:
             _create_attachments(contact_message, files)
     return contact_message, token
@@ -47,7 +47,7 @@ def delete_messages(message_ids: Iterable[int]) -> None:
 
 
 def get_messages(*, sort_by: str | None = None, company: str | None = None) -> QuerySet[ContactMessage]:
-    queryset = ContactMessage.objects.filter(is_deleted=False)
+    queryset = ContactMessage.objects.filter(is_deleted=False).prefetch_related('attachments')
 
     if company and company != "all":
         queryset = queryset.filter(company=company)
@@ -60,7 +60,7 @@ def get_messages(*, sort_by: str | None = None, company: str | None = None) -> Q
 
 
 def get_deleted_messages() -> QuerySet[ContactMessage]:
-    return ContactMessage.objects.filter(is_deleted=True)
+    return ContactMessage.objects.filter(is_deleted=True).prefetch_related('attachments')
 
 
 def restore_messages(message_ids: Iterable[int]) -> None:

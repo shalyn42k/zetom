@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
+from django.db.models import Q
 
 from ..forms import RequestAccessForm, UserMessageUpdateForm
 from ..models import ContactMessage
@@ -34,6 +35,13 @@ def access_portal(request: HttpRequest) -> HttpResponse:
                 else 'No request with this number could be found.'
             )
             form.add_error('request_id', error)
+        elif message.is_access_token_expired:
+            error = (
+                'Token wygasł. Poproś o nowy dostęp.'
+                if lang == 'pl'
+                else 'The access token has expired. Please request new access.'
+            )
+            form.add_error('access_token', error)
         elif not message.verify_access_token(token):
             error = (
                 'Token nie pasuje do zgłoszenia.'
@@ -65,6 +73,7 @@ def user_requests(request: HttpRequest) -> HttpResponse:
     stored_ids = helpers.get_user_message_ids(request)
     queryset = (
         ContactMessage.objects.filter(id__in=stored_ids, is_deleted=False, access_enabled=True)
+        .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
         .order_by('-created_at')
     )
 
@@ -132,7 +141,10 @@ def user_message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     if not helpers.user_can_access_message(request, message_id):
         return JsonResponse({'error': 'not_found'}, status=404)
 
-    message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False, access_enabled=True)
+    message = get_object_or_404(
+        ContactMessage.objects.filter(pk=message_id, is_deleted=False, access_enabled=True)
+        .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
+    )
     language = get_language(request)
     status_options = helpers.status_options(language)
     status_lookup = {item['value']: item for item in status_options}
@@ -163,7 +175,10 @@ def user_update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     if not helpers.user_can_access_message(request, message_id):
         return JsonResponse({'error': 'not_found'}, status=404)
 
-    message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False, access_enabled=True)
+    message = get_object_or_404(
+        ContactMessage.objects.filter(pk=message_id, is_deleted=False, access_enabled=True)
+        .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
+    )
     language = get_language(request)
     form = UserMessageUpdateForm(request.POST, request.FILES, instance=message)
     if form.is_valid():

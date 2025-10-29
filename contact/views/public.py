@@ -6,6 +6,8 @@ import smtplib
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.cache import cache
+from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -18,7 +20,7 @@ from ..services.email_service import (
     send_company_notification,
     send_contact_email,
 )
-from ..utils import get_language
+from ..utils import build_rate_limit_key, get_client_ip, get_language
 from . import helpers
 
 logger = logging.getLogger(__name__)
@@ -31,29 +33,46 @@ def index(request: HttpRequest) -> HttpResponse:
     success_message = request.session.pop('contact_success', None)
 
     throttle_seconds = getattr(settings, 'CONTACT_FORM_THROTTLE_SECONDS', 30)
+    throttle_prefix = getattr(settings, 'CONTACT_FORM_RATE_LIMIT_PREFIX', 'contact_form')
     form_valid = False
     throttle_error = False
     submission_timestamp: float | None = None
+    cache_keys: list[str] = []
 
     if request.method == 'POST':
-        form_valid = form.is_valid()
         submission_timestamp = timezone.now().timestamp()
-        last_submission_raw = request.session.get('contact_last_submission')
-        try:
-            last_submission_ts = float(last_submission_raw)
-        except (TypeError, ValueError):
-            last_submission_ts = None
+        client_identifier = get_client_ip(request) or request.session.session_key or 'anonymous'
+        ip_key = build_rate_limit_key(f'{throttle_prefix}:ip', client_identifier)
+        cache_keys.append(ip_key)
 
-        if last_submission_ts is not None and submission_timestamp is not None:
+        raw_email = (request.POST.get('email') or '').strip().lower()
+        email_key = build_rate_limit_key(f'{throttle_prefix}:email', raw_email) if raw_email else None
+        if email_key:
+            cache_keys.append(email_key)
+
+        remaining_durations: list[float] = []
+        for key in cache_keys:
+            last_submission_raw = cache.get(key)
+            if last_submission_raw is None:
+                continue
+            try:
+                last_submission_ts = float(last_submission_raw)
+            except (TypeError, ValueError):
+                continue
             elapsed = submission_timestamp - last_submission_ts
             if elapsed < throttle_seconds:
-                remaining_seconds = max(1, int(math.ceil(throttle_seconds - elapsed)))
-                if lang == 'pl':
-                    error_message = f'Proszę poczekać {remaining_seconds} s przed ponownym wysłaniem formularza.'
-                else:
-                    error_message = f'Please wait {remaining_seconds} s before submitting the form again.'
-                form.add_error(None, error_message)
-                throttle_error = True
+                remaining_durations.append(throttle_seconds - elapsed)
+
+        if remaining_durations:
+            remaining_seconds = max(1, int(math.ceil(max(remaining_durations))))
+            if lang == 'pl':
+                error_message = f'Proszę poczekać {remaining_seconds} s przed ponownym wysłaniem formularza.'
+            else:
+                error_message = f'Please wait {remaining_seconds} s before submitting the form again.'
+            form.add_error(None, error_message)
+            throttle_error = True
+
+        form_valid = form.is_valid()
 
     if request.method == 'POST' and form_valid and not throttle_error:
         payload = {
@@ -70,7 +89,7 @@ def index(request: HttpRequest) -> HttpResponse:
                 **payload,
                 attachments=attachments,
             )
-        except Exception:  # pragma: no cover - guarded by DB transaction
+        except DatabaseError:
             logger.exception('Failed to persist contact message')
             if lang == 'pl':
                 error_text = 'Nie udało się zapisać zgłoszenia. Spróbuj ponownie później.'
@@ -98,7 +117,8 @@ def index(request: HttpRequest) -> HttpResponse:
             else:
                 helpers.remember_user_message(request, message.id)
                 if submission_timestamp is not None:
-                    request.session['contact_last_submission'] = submission_timestamp
+                    for key in cache_keys:
+                        cache.set(key, submission_timestamp, throttle_seconds)
                 if lang == 'pl':
                     success_message = (
                         'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy. '

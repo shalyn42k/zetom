@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from typing import IO
 
 from django.conf import settings
+from django.utils import timezone
 
 from ..models import ContactMessage
 
@@ -18,13 +19,19 @@ logger = logging.getLogger(__name__)
 
 def send_contact_email(recipient: str, message: ContactMessage, *, access_token: str) -> None:
     subject = 'Nowa wiadomość z formularza kontaktowego'
+    expires_at = (
+        timezone.localtime(message.access_token_expires_at).strftime('%Y-%m-%d %H:%M')
+        if message.access_token_expires_at
+        else '—'
+    )
     body = (
         'Imię i nazwisko: {first} {last}\n'
         'Telefon: {phone}\n'
         'E-mail: {email}\n'
         'Firma: {company}\n'
         'Numer zgłoszenia: #{id}\n'
-        'Token dostępu: {token}\n\n'
+        'Token dostępu: {token}\n'
+        'Token ważny do: {expires}\n\n'
         'Wiadomość: {content}\n\n'
         'Zachowaj ten token, aby móc ponownie podejrzeć lub edytować zgłoszenie.'
     ).format(
@@ -35,6 +42,7 @@ def send_contact_email(recipient: str, message: ContactMessage, *, access_token:
         company=message.company,
         id=message.id,
         token=access_token,
+        expires=expires_at,
         content=message.message,
     )
     _send_plain_email(to_email=recipient, subject=subject, body=body)
