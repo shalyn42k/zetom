@@ -27,7 +27,6 @@
         <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="{% url 'contact:login' %}?lang={{ lang }}" class="is-active">{% if lang == 'pl' %}Panel admina{% else %}Admin panel{% endif %}</a>
     </nav>
     <div class="site-header__actions">
         <div class="lang-switcher">
@@ -74,19 +73,35 @@
 {% endif %}
 
         </div>
-        <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ back_url }}">
-            <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
-            {{ form.password }}
-            {% if form.password.errors %}
-                <div class="admin-login__error">{{ form.password.errors.0 }}</div>
-            {% endif %}
-            <div class="admin-login__actions">
-                <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
-                <a href="{{ back_url }}" class="admin-login__back">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
-            </div>
-        </form>
+<form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
+    {% csrf_token %}
+    <div class="form-field">
+        <label class="admin-login__label" for="{{ form.username.id_for_label }}">Login</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="admin-login__error">{{ form.username.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form-field">
+        <label class="admin-login__label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="admin-login__error">{{ form.password.errors.0 }}</div>{% endif %}
+    </div>
+    {% if form.non_field_errors %}
+        <div class="admin-login__error">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+    <div class="admin-login__actions">
+        <button type="submit" class="button button--primary">
+            {% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}
+        </button>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}" class="admin-login__back">
+            {% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}
+        </a>
+    </div>
+    <ul style="margin: 8px 0 0; padding-left: 20px;">
+        <li><strong>admin1</strong> → TajneHaslo123!</li>
+        <li><strong>admin2</strong> → SuperHaslo2025!</li>  
+        <li><strong>admin3</strong> → ZetomAdmin2025!</li>
+    </ul>
+</form>
     </section>
 </main>
 </body>
