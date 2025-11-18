@@ -1,9 +1,0 @@
-Django~=5.2
-Faker~=37.11.0
-dj-database-url
-gunicorn
-psycopg2-binary
-python-dotenv~=1.1.1
-reportlab~=4.0
-whitenoise
-sentry-sdk>=2.0.0
