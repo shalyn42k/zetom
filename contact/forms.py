@@ -1,7 +1,109 @@
 from __future__ import annotations
 
+import shlex
+import subprocess
+from pathlib import Path
+
 from django import forms
+from django.conf import settings
+
 from .models import ContactMessage
+
+
+class MultiFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultiFileInput(attrs={"multiple": True})
+
+    def clean(self, data, initial=None):
+        if data in self.empty_values:
+            return []
+        files = data
+        if not isinstance(files, (list, tuple)):
+            files = [files]
+        cleaned_files = []
+        errors = []
+        for file in files:
+            try:
+                cleaned_files.append(super().clean(file, initial))
+            except forms.ValidationError as exc:  # pragma: no cover - delegated validation
+                errors.extend(exc.error_list)
+        if errors:
+            raise forms.ValidationError(errors)
+        return cleaned_files
+
+
+def _scan_attachment_for_malware(uploaded) -> str | None:
+    command = getattr(settings, 'ATTACH_SCAN_COMMAND', '')
+    if not command:
+        return None
+
+    args = shlex.split(command)
+    if not args:
+        return None
+
+    try:
+        process = subprocess.run(
+            args,
+            input=uploaded.read(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    finally:
+        try:
+            uploaded.seek(0)
+        except (AttributeError, OSError):  # pragma: no cover - best effort
+            pass
+
+    if process.returncode != 0:
+        output = process.stderr.decode() or process.stdout.decode()
+        return output.strip() or 'Attachment failed antivirus scanning.'
+    return None
+
+
+def _validate_attachments(files: list, language: str | None = None) -> list:
+    max_size = getattr(settings, "ATTACH_MAX_SIZE_MB", 25) * 1024 * 1024
+    allowed_types = [ctype.strip() for ctype in getattr(settings, "ATTACH_ALLOWED_TYPES", []) if ctype.strip()]
+    allowed_extensions = [ext.strip().lower() for ext in getattr(settings, "ATTACH_ALLOWED_EXTENSIONS", []) if ext.strip()]
+    errors: list[str] = []
+    for uploaded in files:
+        size = getattr(uploaded, "size", 0) or 0
+        if size > max_size:
+            limit = getattr(settings, "ATTACH_MAX_SIZE_MB", 25)
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} przekracza limit {limit} MB.")
+            else:
+                errors.append(f"File {uploaded.name} exceeds the {limit} MB limit.")
+        if size == 0:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} jest pusty.")
+            else:
+                errors.append(f"File {uploaded.name} is empty.")
+        content_type = getattr(uploaded, "content_type", "") or ""
+        if allowed_types and content_type and content_type not in allowed_types:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolony typ ({content_type}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden type ({content_type}).")
+        extension = Path(getattr(uploaded, "name", "") or "").suffix.lower()
+        if allowed_extensions and extension and extension not in allowed_extensions:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolone rozszerzenie ({extension}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden extension ({extension}).")
+
+        scan_error = _scan_attachment_for_malware(uploaded)
+        if scan_error:
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} nie przeszedł kontroli bezpieczeństwa: {scan_error}.")
+            else:
+                errors.append(f"File {uploaded.name} failed security checks: {scan_error}.")
+    if errors:
+        raise forms.ValidationError(errors)
+    return files
 
 
 class ContactForm(forms.ModelForm):
@@ -29,6 +131,8 @@ class ContactForm(forms.ModelForm):
         ),
     )
 
+    attachments = MultipleFileField(required=False)
+
     def __init__(self, *args, language: str | None = None, **kwargs):
         self.language = language
         super().__init__(*args, **kwargs)
@@ -38,22 +142,30 @@ class ContactForm(forms.ModelForm):
             else "Please confirm you are not a bot."
         )
         self.fields["bot_check"].error_messages["required"] = message
+        self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
         model = ContactMessage
-        fields = ["first_name", "last_name", "phone", "email", "company", "message"]
+        fields = [
+            "full_name",
+            "phone",
+            "email",
+            "company",
+            "company_name",
+            "message",
+        ]
         widgets = {
-            "first_name": forms.TextInput(
-                attrs={"class": "form-input", "data-review-source": "first_name"}
-            ),
-            "last_name": forms.TextInput(
-                attrs={"class": "form-input", "data-review-source": "last_name"}
+            "full_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "full_name"}
             ),
             "phone": forms.TextInput(
                 attrs={"class": "form-input", "data-review-source": "phone"}
             ),
             "email": forms.EmailInput(
                 attrs={"class": "form-input", "data-review-source": "email"}
+            ),
+            "company_name": forms.TextInput(
+                attrs={"class": "form-input", "data-review-source": "company_name"}
             ),
             "message": forms.Textarea(
                 attrs={
@@ -75,11 +187,27 @@ class ContactForm(forms.ModelForm):
             raise forms.ValidationError(message)
         return bot_check
 
+    def clean_attachments(self) -> list:
+        files = self.cleaned_data.get("attachments") or []
+        return _validate_attachments(files, self.language)
 
-class LoginForm(forms.Form):
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-input login-input"})
+
+class AdminLoginForm(forms.Form):
+    username = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Login"}),
+        label="Login"
     )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "Hasło"}),
+        label="Hasło" if getattr(settings, 'DEFAULT_LANGUAGE', 'pl') == 'pl' else "Password"
+    )
+
+    def __init__(self, *args, language: str | None = None, **kwargs):
+        self.language = language or "pl"
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = "Login"
+        self.fields['password'].label = "Hasło" if self.language == "pl" else "Password"
 
 
 class MessageBulkActionForm(forms.Form):
@@ -246,6 +374,7 @@ class DownloadMessagesForm(forms.Form):
     FIELD_PHONE = "phone"
     FIELD_EMAIL = "email"
     FIELD_COMPANY = "company"
+    FIELD_COMPANY_NAME = "company_name"
     FIELD_MESSAGE = "message"
     FIELD_STATUS = "status"
 
@@ -255,6 +384,7 @@ class DownloadMessagesForm(forms.Form):
         (FIELD_PHONE, "Phone"),
         (FIELD_EMAIL, "Email"),
         (FIELD_COMPANY, "Company"),
+        (FIELD_COMPANY_NAME, "Company name"),
         (FIELD_MESSAGE, "Message"),
         (FIELD_STATUS, "Status"),
     )
@@ -288,6 +418,7 @@ class DownloadMessagesForm(forms.Form):
                 self.FIELD_PHONE: "Telefon",
                 self.FIELD_EMAIL: "E-mail",
                 self.FIELD_COMPANY: "Firma",
+                self.FIELD_COMPANY_NAME: "Nazwa firmy",
                 self.FIELD_MESSAGE: "Wiadomość",
                 self.FIELD_STATUS: "Status",
             }
@@ -300,6 +431,7 @@ class DownloadMessagesForm(forms.Form):
                 self.FIELD_PHONE: "Phone",
                 self.FIELD_EMAIL: "Email",
                 self.FIELD_COMPANY: "Company",
+                self.FIELD_COMPANY_NAME: "Company name",
                 self.FIELD_MESSAGE: "Message",
                 self.FIELD_STATUS: "Status",
             }
@@ -334,25 +466,122 @@ class MessageUpdateForm(forms.ModelForm):
     class Meta:
         model = ContactMessage
         fields = [
-            "first_name",
-            "last_name",
+            "full_name",
             "phone",
             "email",
             "company",
+            "company_name",
             "message",
             "status",
+            "final_changes",
+            "final_response",
         ]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-input"}),
-            "last_name": forms.TextInput(attrs={"class": "form-input"}),
+            "full_name": forms.TextInput(attrs={"class": "form-input"}),
             "phone": forms.TextInput(attrs={"class": "form-input"}),
             "email": forms.EmailInput(attrs={"class": "form-input"}),
             "company": forms.Select(attrs={"class": "form-input"}),
+            "company_name": forms.TextInput(attrs={"class": "form-input"}),
             "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-input"}),
+            "final_changes": forms.Textarea(attrs={"rows": 4, "class": "form-input"}),
+            "final_response": forms.Textarea(attrs={"rows": 4, "class": "form-input"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["company"].choices = ContactForm.COMPANY_CHOICES
         self.fields["status"].choices = ContactMessage.STATUS_CHOICES
+
+
+class UserMessageUpdateForm(forms.ModelForm):
+    attachments = MultipleFileField(required=False)
+
+    class Meta:
+        model = ContactMessage
+        fields = [
+            "full_name",
+            "phone",
+            "email",
+            "company",
+            "company_name",
+            "message",
+        ]
+        widgets = {
+            "full_name": forms.TextInput(attrs={"class": "form-input"}),
+            "phone": forms.TextInput(attrs={"class": "form-input"}),
+            "email": forms.EmailInput(attrs={"class": "form-input"}),
+            "company": forms.Select(attrs={"class": "form-input"}),
+            "company_name": forms.TextInput(attrs={"class": "form-input"}),
+            "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["company"].choices = ContactForm.COMPANY_CHOICES
+        self.fields["attachments"].widget.attrs.update({"class": "form-input"})
+
+    def clean_attachments(self) -> list:
+        files = self.cleaned_data.get("attachments") or []
+        return _validate_attachments(files, None)
+
+
+class RequestAccessForm(forms.Form):
+    request_id = forms.CharField()
+    access_token = forms.CharField(strip=True)
+
+    def __init__(
+        self,
+        *args,
+        stored_ids: list[int] | None = None,
+        language: str | None = None,
+        **kwargs,
+    ) -> None:
+        self.language = language or "pl"
+        super().__init__(*args, **kwargs)
+        stored_ids = stored_ids or []
+        if stored_ids:
+            choices = [(str(message_id), f"#{message_id}") for message_id in stored_ids]
+            self.fields["request_id"] = forms.ChoiceField(choices=choices)
+            self.fields["request_id"].initial = str(stored_ids[0])
+        else:
+            self.fields["request_id"].widget = forms.NumberInput()
+
+        id_label = "Numer zgłoszenia" if self.language == "pl" else "Request number"
+        token_label = "Token dostępu" if self.language == "pl" else "Access token"
+
+        self.fields["request_id"].label = id_label
+        self.fields["request_id"].widget.attrs.update({"class": "form-input"})
+        self.fields["access_token"].label = token_label
+        self.fields["access_token"].widget.attrs.update({"class": "form-input"})
+
+    def clean_request_id(self) -> int:
+        raw_value = self.cleaned_data.get("request_id")
+        try:
+            message_id = int(raw_value)
+        except (TypeError, ValueError):
+            error = (
+                "Podaj poprawny numer zgłoszenia."
+                if self.language == "pl"
+                else "Enter a valid request number."
+            )
+            raise forms.ValidationError(error)
+        if message_id <= 0:
+            error = (
+                "Numer zgłoszenia musi być dodatni."
+                if self.language == "pl"
+                else "The request number must be positive."
+            )
+            raise forms.ValidationError(error)
+        return message_id
+
+    def clean_access_token(self) -> str:
+        value = (self.cleaned_data.get("access_token") or "").strip()
+        if not value:
+            error = (
+                "Podaj token dostępu z wiadomości e-mail."
+                if self.language == "pl"
+                else "Enter the access token from your e-mail."
+            )
+            raise forms.ValidationError(error)
+        return value
