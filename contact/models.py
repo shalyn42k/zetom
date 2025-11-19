@@ -9,7 +9,6 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
 
-from .utils import decrypt_admin_secret, encrypt_admin_secret
 
 
 def _generate_access_token() -> str:
@@ -101,39 +100,33 @@ class ContactAttachment(models.Model):
         return f"Attachment({self.original_name})"
 
 
-class AdminUser(models.Model):
-    DEPARTMENT_COMPANY_1 = "firma1"
-    DEPARTMENT_COMPANY_2 = "firma2"
-    DEPARTMENT_COMPANY_3 = "firma3"
-    DEPARTMENT_OTHER = "inna"
+class Department(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name_pl = models.CharField(max_length=100)
+    name_en = models.CharField(max_length=100)
 
+    class Meta:
+        ordering = ["code"]
+
+    def __str__(self) -> str:  # pragma: no cover - representation helper
+        return f"Department({self.code})"
+
+
+class AdminUser(models.Model):
     LEVEL_ADMIN = "level1"
     LEVEL_DEPARTMENT = "level2"
     LEVEL_TESTER = "level3"
 
     LEVEL_CHOICES = [
-        (LEVEL_ADMIN, "Admin"),
-        (LEVEL_DEPARTMENT, "Department"),
-        (LEVEL_TESTER, "Tester"),
-    ]
-
-    DEPARTMENT_CHOICES = [
-        (DEPARTMENT_COMPANY_1, "Company 1"),
-        (DEPARTMENT_COMPANY_2, "Company 2"),
-        (DEPARTMENT_COMPANY_3, "Company 3"),
-        (DEPARTMENT_OTHER, "Other"),
+        (LEVEL_ADMIN, "level1"),
+        (LEVEL_DEPARTMENT, "level2"),
+        (LEVEL_TESTER, "level3"),
     ]
 
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=128)
-    password_ciphertext = models.TextField(blank=True)
-    level = models.CharField(max_length=16, choices=LEVEL_CHOICES)
-    department = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        choices=DEPARTMENT_CHOICES,
-    )
+    level_of_access = models.CharField(max_length=20, choices=LEVEL_CHOICES)
+    departments = models.ManyToManyField(Department, related_name="admins", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -141,19 +134,13 @@ class AdminUser(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:  # pragma: no cover - representation helper
-        return f"AdminUser({self.email}, {self.level})"
+        return f"AdminUser({self.email}, {self.level_of_access})"
 
-    def set_password_token(self, token: str) -> None:
-        self.password_hash = make_password(token)
-        self.password_ciphertext = encrypt_admin_secret(token)
+    def set_password(self, raw: str) -> None:
+        self.password_hash = make_password(raw)
 
-    def regenerate_token_hash(self) -> str:
-        token = _generate_access_token()
-        self.set_password_token(token)
-        return token
-
-    def reveal_plaintext_password(self) -> str | None:
-        return decrypt_admin_secret(self.password_ciphertext)
+    def check_password(self, raw: str) -> bool:
+        return check_password(raw, self.password_hash)
 
 class AdminActivityLog(models.Model):
     ACTION_STATUS_CHANGE = "status_change"

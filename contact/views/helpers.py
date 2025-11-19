@@ -80,19 +80,13 @@ def company_options(language: str) -> list[dict[str, str]]:
             'value': value,
             'label': labels.get(value, label),
         }
-        for value, label in ContactForm.COMPANY_CHOICES
+        for value, label in ContactForm.department_choices(language)
     ]
 
 
 def company_labels(language: str) -> dict[str, str]:
-    if language == 'pl':
-        return {value: label for value, label in ContactForm.COMPANY_CHOICES}
-    return {
-        'firma1': 'Company 1',
-        'firma2': 'Company 2',
-        'firma3': 'Company 3',
-        'inna': 'Other',
-    }
+    choices = ContactForm.department_choices(language)
+    return {value: label for value, label in choices}
 
 
 def status_options(language: str) -> list[dict[str, str]]:

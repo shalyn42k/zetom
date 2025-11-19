@@ -959,6 +959,20 @@
             emptyState.style.display = hasRows ? 'none' : 'block';
         };
 
+        const togglePasswordField = (levelValue, passwordCell, passwordInput) => {
+            const enablePassword = levelValue === 'level1';
+            if (passwordCell) {
+                passwordCell.style.display = enablePassword ? '' : 'none';
+            }
+            if (passwordInput) {
+                passwordInput.disabled = !enablePassword;
+                if (!enablePassword) {
+                    passwordInput.value = '';
+                    passwordInput.dataset.passwordDirty = 'false';
+                }
+            }
+        };
+
         const buildRow = (user) => {
             const row = document.createElement('div');
             row.className = 'settings-table__row';
@@ -1007,20 +1021,21 @@
                 }
                 levelSelect.appendChild(opt);
             });
+            levelSelect.addEventListener('change', (event) => {
+                const value = event.target.value;
+                togglePasswordField(value, passwordCell, passwordInput);
+            });
 
             const departmentSelect = document.createElement('select');
-            departmentSelect.dataset.settingsDepartment = 'true';
-            const departmentPlaceholder = document.createElement('option');
-            departmentPlaceholder.value = '';
-            departmentPlaceholder.textContent = '—';
-            departmentPlaceholder.disabled = false;
-            departmentPlaceholder.selected = !user.department;
-            departmentSelect.appendChild(departmentPlaceholder);
+            departmentSelect.dataset.settingsDepartments = 'true';
+            departmentSelect.multiple = true;
+            departmentSelect.size = Math.min(Math.max(departments.length, 2), 6);
+            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
             departments.forEach((department) => {
                 const option = document.createElement('option');
                 option.value = department.value;
                 option.textContent = department.label;
-                if (department.value === user.department) {
+                if (selectedDepartments.includes(department.value)) {
                     option.selected = true;
                 }
                 departmentSelect.appendChild(option);
@@ -1048,6 +1063,7 @@
                 departmentSelect,
                 deleteCell,
             );
+            togglePasswordField(user.level, passwordCell, passwordInput);
             return row;
         };
 
@@ -1077,15 +1093,22 @@
                 users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
                     user_id: row.dataset.userId || null,
                     email: row.querySelector('[data-settings-email]')?.value || '',
+                    level: row.querySelector('[data-settings-level]')?.value || '',
                     password: (() => {
+                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
+                        if (levelValue !== 'level1') return '';
                         const passwordInput = row.querySelector('[data-settings-password]');
                         const isDirty = passwordInput?.dataset.passwordDirty === 'true';
                         return isDirty ? passwordInput?.value || '' : '';
                     })(),
-                    password_changed:
-                        row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true',
-                    level: row.querySelector('[data-settings-level]')?.value || '',
-                    department: row.querySelector('[data-settings-department]')?.value || '',
+                    password_changed: (() => {
+                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
+                        if (levelValue !== 'level1') return false;
+                        return row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true';
+                    })(),
+                    departments: Array.from(
+                        row.querySelector('[data-settings-departments]')?.selectedOptions || [],
+                    ).map((option) => option.value),
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
                     is_new: row.dataset.isNew === 'true',
                 })),
