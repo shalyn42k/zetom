@@ -76,34 +76,15 @@
         <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ back_url }}">
-            {% if has_admin_accounts %}
-                <label class="admin-login__label" for="{{ form.email.id_for_label }}">E-mail</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                    <div class="admin-login__error">{{ form.email.errors.0 }}</div>
-                {% endif %}
-            {% endif %}
             <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
             {{ form.password }}
             {% if form.password.errors %}
                 <div class="admin-login__error">{{ form.password.errors.0 }}</div>
             {% endif %}
-            {% if form.non_field_errors %}
-                <div class="admin-login__error">{{ form.non_field_errors.0 }}</div>
-            {% endif %}
             <div class="admin-login__actions">
                 <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
                 <a href="{{ back_url }}" class="admin-login__back">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
             </div>
-            {% if has_admin_accounts %}
-                <p class="admin-login__hint">
-                    {% if lang == 'pl' %}
-                        Użyj tokenu wygenerowanego w ustawieniach, aby się zalogować.
-                    {% else %}
-                        Use the token generated in settings to sign in.
-                    {% endif %}
-                </p>
-            {% endif %}
         </form>
     </section>
 </main>

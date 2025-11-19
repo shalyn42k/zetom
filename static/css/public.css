@@ -609,12 +609,6 @@ a:focus {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 255, 245, 0.96));
 }
 
-.admin-login__hint {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin: 4px 0 0;
-}
-
 @media (max-width: 520px) {
     .admin-login-page__main {
         padding: 32px 16px;

@@ -7,7 +7,7 @@ from pathlib import Path
 from django import forms
 from django.conf import settings
 
-from .models import AdminUser, ContactMessage
+from .models import ContactMessage
 
 
 class MultiFileInput(forms.ClearableFileInput):
@@ -193,18 +193,9 @@ class ContactForm(forms.ModelForm):
 
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={"class": "form-input login-input"}),
-    )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={"class": "form-input login-input"})
     )
-
-    def __init__(self, *args, require_email: bool = True, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["email"].required = require_email
-
 
 
 class MessageBulkActionForm(forms.Form):
@@ -582,49 +573,3 @@ class RequestAccessForm(forms.Form):
             )
             raise forms.ValidationError(error)
         return value
-
-
-class AdminUserForm(forms.ModelForm):
-    form_name = forms.CharField(widget=forms.HiddenInput(), initial="admin_user")
-
-    class Meta:
-        model = AdminUser
-        fields = ["email", "level", "department"]
-
-    def __init__(self, *args, language: str | None = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        email_label = "Adres e-mail" if language == "pl" else "E-mail"
-        level_label = "Poziom dostępu" if language == "pl" else "Access level"
-        department_label = "Departament" if language == "pl" else "Department"
-        self.fields["email"].label = email_label
-        self.fields["level"].label = level_label
-        self.fields["department"].label = department_label
-        self.fields["email"].widget.attrs["class"] = "form-input"
-        self.fields["level"].widget.attrs["class"] = "form-input"
-        self.fields["department"].widget.attrs["class"] = "form-input"
-        self.language = language
-
-        department_choices = [(MessageFilterForm.COMPANY_ALL, "All")]
-        if language == "pl":
-            department_choices[0] = (MessageFilterForm.COMPANY_ALL, "Wszystkie")
-        department_choices.extend(ContactForm.COMPANY_CHOICES)
-        self.fields["department"].choices = department_choices
-        self.fields["department"].initial = MessageFilterForm.COMPANY_ALL
-
-    def clean_department(self) -> str:
-        department = self.cleaned_data.get("department") or MessageFilterForm.COMPANY_ALL
-        level = self.cleaned_data.get("level")
-        if level == AdminUser.LEVEL_2 and department == MessageFilterForm.COMPANY_ALL:
-            message = (
-                "Wybierz departament dla użytkownika poziomu 2."
-                if self.language == "pl"
-                else "Select a department for a level 2 user."
-            )
-            raise forms.ValidationError(message)
-        return department
-
-    def save_with_token(self) -> tuple[AdminUser, str]:
-        instance: AdminUser = super().save(commit=False)
-        token = instance.reset_token()
-        instance.save()
-        return instance, token
