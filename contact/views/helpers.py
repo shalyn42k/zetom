@@ -161,22 +161,8 @@ def build_filter_form(
     return MessageFilterForm(initial=initial_data, language=language)
 
 
-def handle_action(
-    action: str,
-    ids: Iterable[int],
-    lang: str,
-    request: HttpRequest,
-    *,
-    allowed_company: str | None = None,
-) -> None:
+def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
     id_list = [int(value) for value in ids]
-    if allowed_company and allowed_company != MessageFilterForm.COMPANY_ALL:
-        allowed_ids = set(
-            ContactMessage.objects.filter(id__in=id_list, company=allowed_company).values_list('id', flat=True)
-        )
-        id_list = [message_id for message_id in id_list if message_id in allowed_ids]
-        if not id_list:
-            return
     status_actions: dict[str, tuple[str, str, str]] = {
         MessageBulkActionForm.ACTION_MARK_NEW: (
             ContactMessage.STATUS_NEW,
@@ -223,14 +209,7 @@ def handle_action(
         messages.success(request, success_message, extra_tags='admin')
 
 
-def handle_trash_action(
-    action: str,
-    ids: Iterable[int],
-    lang: str,
-    request: HttpRequest,
-    *,
-    allowed_company: str | None = None,
-) -> None:
+def handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
     action_handlers: dict[str, tuple[Callable[[Iterable[int]], None], str, str]] = {
         TrashActionForm.ACTION_RESTORE: (
             message_service.restore_messages,
@@ -250,28 +229,12 @@ def handle_trash_action(
     }
 
     id_list = [int(value) for value in ids]
-    if allowed_company and allowed_company != MessageFilterForm.COMPANY_ALL:
-        allowed_ids = set(
-            ContactMessage.objects.filter(id__in=id_list, company=allowed_company).values_list('id', flat=True)
-        )
-        id_list = [message_id for message_id in id_list if message_id in allowed_ids]
-
     handler = action_handlers.get(action)
     if not handler:
         return
 
     func, message_pl, message_en = handler
-    if action == TrashActionForm.ACTION_EMPTY:
-        if allowed_company and allowed_company != MessageFilterForm.COMPANY_ALL:
-            allowed_ids = ContactMessage.objects.filter(
-                is_deleted=True,
-                company=allowed_company,
-            ).values_list('id', flat=True)
-            message_service.purge_messages(allowed_ids)
-        else:
-            message_service.purge_messages()
-    else:
-        func(id_list)
+    func(id_list)
     if action == TrashActionForm.ACTION_RESTORE:
         log_bulk_action(
             AdminActivityLog.ACTION_RESTORE,

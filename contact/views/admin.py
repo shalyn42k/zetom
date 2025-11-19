@@ -4,13 +4,12 @@ import json
 
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
 
 from ..forms import (
-    AdminUserForm,
     DownloadMessagesForm,
     EmailForm,
     MessageBulkActionForm,
@@ -18,7 +17,7 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
-from ..models import AdminActivityLog, AdminUser, ClientChangeLog, ContactMessage
+from ..models import AdminActivityLog, ClientChangeLog, ContactMessage
 from ..services import messages as message_service
 from ..services.activity_log import log_action
 from ..services.email_service import send_email_with_attachment
@@ -74,24 +73,13 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         return redirect('contact:login')
 
     lang = get_language(request)
-    user_level = request.session.get('user_level', AdminUser.LEVEL_1)
-    user_department = request.session.get('user_department') or MessageFilterForm.COMPANY_ALL
-    can_manage_requests = user_level in {AdminUser.LEVEL_1, AdminUser.LEVEL_2}
-    forced_company = None
-    if user_level == AdminUser.LEVEL_2 and user_department not in (None, MessageFilterForm.COMPANY_ALL):
-        forced_company = user_department
 
     filter_data = helpers.resolve_filter_data(request, lang)
     sort_by = filter_data["sort_by"]
     company_filter = filter_data["company"]
-    if forced_company:
-        company_filter = forced_company
-        filter_data["company"] = forced_company
 
     queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
     deleted_queryset = message_service.get_deleted_messages()
-    if forced_company:
-        deleted_queryset = deleted_queryset.filter(company=forced_company)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -117,33 +105,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         language=lang,
     )
     filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
-    if forced_company:
-        filter_form.fields['company'].widget.attrs['disabled'] = True
-    if not can_manage_requests:
-        filter_form.fields['sort_by'].widget.attrs['disabled'] = True
-        filter_form.fields['company'].widget.attrs['disabled'] = True
-
-    admin_user_form = AdminUserForm(language=lang)
 
     if request.method == 'POST':
         form_name = (request.POST.get('form_name') or '').strip()
-        if form_name == 'admin_user':
-            if user_level != AdminUser.LEVEL_1:
-                return HttpResponseForbidden('settings')
-            admin_user_form = AdminUserForm(request.POST, language=lang)
-            if admin_user_form.is_valid():
-                new_user, token = admin_user_form.save_with_token()
-                request.session['new_admin_email'] = new_user.email
-                request.session['new_admin_token'] = token
-                redirect_url = helpers.panel_redirect_url(
-                    lang,
-                    page_obj.number,
-                    sort_by=sort_by,
-                    company=company_filter,
-                )
-                return redirect(redirect_url)
-        elif not can_manage_requests:
-            return HttpResponseForbidden('readonly')
         if form_name == 'bulk':
             action_form, response = _handle_bulk_form(
                 request,
@@ -152,7 +116,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 page_obj,
                 sort_by,
                 company_filter,
-                allowed_company=forced_company,
             )
             if response:
                 return response
@@ -164,7 +127,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 page_obj,
                 sort_by,
                 company_filter,
-                allowed_company=forced_company,
             )
             if response:
                 return response
@@ -198,7 +160,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     company_options = helpers.company_options(lang)
     status_options = helpers.status_options(lang)
     status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
-    company_labels = helpers.company_labels(lang)
 
     if lang == 'pl':
         detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
@@ -206,41 +167,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     else:
         detail_error_message = 'Unable to load request data.'
         update_error_message = 'Could not save changes. Please fix the errors and try again.'
-
-    new_token = request.session.pop('new_admin_token', None)
-    new_email = request.session.pop('new_admin_email', None)
-    admin_users = AdminUser.objects.all()
-    if lang == 'pl':
-        level_labels = {
-            AdminUser.LEVEL_1: 'Poziom 1',
-            AdminUser.LEVEL_2: 'Poziom 2',
-            AdminUser.LEVEL_3: 'Poziom 3',
-        }
-    else:
-        level_labels = {
-            AdminUser.LEVEL_1: 'Level 1',
-            AdminUser.LEVEL_2: 'Level 2',
-            AdminUser.LEVEL_3: 'Level 3',
-        }
-
-    department_labels = {
-        MessageFilterForm.COMPANY_ALL: 'Wszystkie departamenty' if lang == 'pl' else 'All departments'
-    }
-    department_labels.update(company_labels)
-
-    admin_user_rows = [
-        {
-            'email': user.email,
-            'level_label': level_labels.get(user.level, user.level),
-            'department_label': department_labels.get(
-                user.department or MessageFilterForm.COMPANY_ALL,
-                user.department or '',
-            ),
-        }
-        for user in admin_users
-    ]
-
-    current_level_label = level_labels.get(user_level, user_level)
 
     context = {
         'lang': lang,
@@ -264,19 +190,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'status_meta_json': json.dumps(status_meta),
         'request_detail_error_message': detail_error_message,
         'request_update_error_message': update_error_message,
-        'admin_user_form': admin_user_form,
-        'admin_users': admin_user_rows,
-        'level_labels': level_labels,
-        'department_labels': department_labels,
-        'new_admin_token': new_token,
-        'new_admin_email': new_email,
-        'can_open_settings': user_level == AdminUser.LEVEL_1,
-        'can_manage_requests': can_manage_requests,
-        'is_read_only': user_level == AdminUser.LEVEL_3,
-        'current_user_email': request.session.get('user_email'),
-        'current_user_level': user_level,
-        'current_user_level_label': current_level_label,
-        'forced_company_label': company_labels.get(forced_company) if forced_company else None,
     }
     return render(request, 'contact/admin_panel.html', context)
 
@@ -288,20 +201,12 @@ def _handle_bulk_form(
     page_obj,
     sort_by: str | None,
     company_filter: str | None,
-    *,
-    allowed_company: str | None = None,
 ):
     form = MessageBulkActionForm(request.POST, message_choices=choices)
     helpers.localise_action_choices(form, lang)
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['selected']]
-        helpers.handle_action(
-            form.cleaned_data['action'],
-            ids,
-            lang,
-            request,
-            allowed_company=allowed_company,
-        )
+        helpers.handle_action(form.cleaned_data['action'], ids, lang, request)
         return form, redirect(
             helpers.panel_redirect_url(
                 lang,
@@ -320,19 +225,11 @@ def _handle_trash_form(
     page_obj,
     sort_by: str | None,
     company_filter: str | None,
-    *,
-    allowed_company: str | None = None,
 ):
     form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['selected']]
-        helpers.handle_trash_action(
-            form.cleaned_data['action'],
-            ids,
-            lang,
-            request,
-            allowed_company=allowed_company,
-        )
+        helpers.handle_trash_action(form.cleaned_data['action'], ids, lang, request)
         return form, redirect(
             helpers.panel_redirect_url(
                 lang,
