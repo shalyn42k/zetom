@@ -313,10 +313,15 @@
 
 <main class="admin-dashboard admin-dashboard--with-sidebar">
     <aside class="admin-sidebar">
-        <button type="button" class="sidebar-button sidebar-button--active">{% if lang == 'pl' %}Zgłoszenia{% else %}Requests{% endif %}</button>
-        {% if user_level == 'level1' %}
-            <button type="button" class="sidebar-button sidebar-button--ghost" data-settings-open>Settings</button>
-        {% endif %}
+        <div class="admin-sidebar__top">
+            <div class="lang-switcher">
+                <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+                <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+            </div>
+            {% if user_level == 'level1' %}
+                <button type="button" class="sidebar-button sidebar-button--ghost" data-settings-open>Settings</button>
+            {% endif %}
+        </div>
     </aside>
     <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
