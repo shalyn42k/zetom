@@ -10,6 +10,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="adminuser",
             name="department",
-            field=models.CharField(blank=True, max_length=50),
+            field=models.CharField(blank=True, max_length=50, null=True),
         ),
     ]
