@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.core.validators import EmailValidator
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -17,7 +19,7 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
-from ..models import AdminActivityLog, ClientChangeLog, ContactMessage
+from ..models import AdminActivityLog, AdminUser, ClientChangeLog, ContactMessage
 from ..services import messages as message_service
 from ..services.activity_log import log_action
 from ..services.email_service import send_email_with_attachment
@@ -72,6 +74,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if not request.session.get('logged_in'):
         return redirect('contact:login')
 
+    user_level = request.session.get('user_level', AdminUser.LEVEL_ADMIN)
+    readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
     filter_data = helpers.resolve_filter_data(request, lang)
@@ -104,7 +108,20 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         message_choices=download_choices,
         language=lang,
     )
+    if readonly_mode:
+        action_form.fields['action'].disabled = True
+        action_form.fields['selected'].disabled = True
     filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
+
+    if request.method == 'POST' and readonly_mode:
+        return redirect(
+            helpers.panel_redirect_url(
+                lang,
+                page_obj.number,
+                sort_by=sort_by,
+                company=company_filter,
+            )
+        )
 
     if request.method == 'POST':
         form_name = (request.POST.get('form_name') or '').strip()
@@ -170,6 +187,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     context = {
         'lang': lang,
+        'user_level': user_level,
+        'readonly_mode': readonly_mode,
         'messages_page': page_obj,
         'paginator': paginator,
         'page_range': list(paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)),
@@ -192,6 +211,170 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'request_update_error_message': update_error_message,
     }
     return render(request, 'contact/admin_panel.html', context)
+
+
+def _serialise_admin_user(user: AdminUser) -> dict:
+    return {
+        'user_id': user.id,
+        'email': user.email,
+        'password_hash': user.password_hash,
+        'level': user.level,
+    }
+
+
+@require_http_methods(["GET", "POST"])
+def admin_settings(request: HttpRequest) -> JsonResponse:
+    if not request.session.get('logged_in'):
+        return JsonResponse({'error': 'unauthorised'}, status=403)
+
+    if request.session.get('user_level', AdminUser.LEVEL_ADMIN) != AdminUser.LEVEL_ADMIN:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    language = get_language(request)
+    level_labels = {
+        AdminUser.LEVEL_ADMIN: 'level1',
+        AdminUser.LEVEL_DEPARTMENT: 'level2',
+        AdminUser.LEVEL_TESTER: 'level3',
+    }
+    error_messages = {
+        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
+        'duplicate_user_id': 'Duplikat identyfikatora użytkownika.' if language == 'pl' else 'Duplicate user id detected.',
+        'unknown_user_id': 'Nieznany użytkownik.' if language == 'pl' else 'Unknown user.',
+        'email_required': 'Email jest wymagany.' if language == 'pl' else 'Email is required.',
+        'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Email format is invalid.',
+        'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
+        'level_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Level of access is required.',
+        'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
+        if language == 'pl'
+        else 'At least one level1 admin must remain.',
+    }
+
+    email_validator = EmailValidator(message=error_messages['email_invalid'])
+
+    if request.method == 'GET':
+        users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+        return JsonResponse({'users': users})
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        return JsonResponse({'errors': [error_messages['invalid_payload']]}, status=400)
+
+    rows = payload.get('users', []) if isinstance(payload, dict) else []
+    if not isinstance(rows, list):
+        return JsonResponse({'errors': [error_messages['invalid_payload']]}, status=400)
+
+    existing_users = {str(user.id): user for user in AdminUser.objects.all()}
+    seen_ids: set[str] = set()
+    planned_email_map: dict[str, str] = {}
+    errors: list[str] = []
+
+    def _error(code: str) -> None:
+        errors.append(error_messages.get(code, code))
+
+    # Basic row validation
+    validated_rows: list[dict] = []
+    for index, row in enumerate(rows):
+        row_identifier = f"row_{index}"
+        user_id = str(row.get('user_id')) if row.get('user_id') not in (None, '') else None
+        email_raw = (row.get('email') or '').strip()
+        email = email_raw.lower()
+        level = (row.get('level') or '').strip()
+        marked_for_deletion = bool(row.get('marked_for_deletion'))
+        is_new = bool(row.get('is_new')) or user_id is None
+
+        if user_id:
+            if user_id in seen_ids:
+                _error('duplicate_user_id')
+            seen_ids.add(user_id)
+            if user_id not in existing_users:
+                _error('unknown_user_id')
+        if not email:
+            _error('email_required')
+        else:
+            try:
+                email_validator(email)
+            except ValidationError:
+                _error('email_invalid')
+        if level not in level_labels.values():
+            _error('level_required')
+
+        if not marked_for_deletion:
+            if email in planned_email_map and planned_email_map[email] != user_id:
+                _error('email_not_unique')
+            planned_email_map[email] = user_id or row_identifier
+
+        validated_rows.append(
+            {
+                'user_id': user_id,
+                'email': email,
+                'level': level,
+                'marked_for_deletion': marked_for_deletion,
+                'is_new': is_new,
+            }
+        )
+
+    if errors:
+        return JsonResponse({'errors': errors}, status=400)
+
+    # Uniqueness against database excluding rows marked for deletion
+    allowed_ids = {row['user_id'] for row in validated_rows if row['user_id']}
+    final_emails = [row['email'] for row in validated_rows if not row['marked_for_deletion']]
+    for candidate in set(final_emails):
+        qs = AdminUser.objects.filter(email__iexact=candidate)
+        if allowed_ids:
+            qs = qs.exclude(id__in=allowed_ids)
+        if qs.exists():
+            _error('email_not_unique')
+            break
+
+    # Prevent removing/downgrading last admin
+    final_admins = 0
+    for row in validated_rows:
+        if row['marked_for_deletion']:
+            continue
+        if row['level'] == level_labels[AdminUser.LEVEL_ADMIN]:
+            final_admins += 1
+
+    if final_admins == 0:
+        _error('no_admin_left')
+
+    if errors:
+        return JsonResponse({'errors': errors}, status=400)
+
+    updated_users: list[AdminUser] = []
+    with transaction.atomic():
+        for row in validated_rows:
+            if row['marked_for_deletion'] and row['user_id']:
+                user = existing_users.get(row['user_id'])
+                if user and user.level == AdminUser.LEVEL_ADMIN and final_admins < 1:
+                    continue
+                if user:
+                    user.delete()
+                continue
+
+            if row['user_id']:
+                user = existing_users[row['user_id']]
+                email_changed = user.email.lower() != row['email']
+                level_changed = user.level != row['level']
+                user.email = row['email']
+                user.level = row['level']
+                if email_changed:
+                    user.regenerate_token_hash()
+                elif not user.password_hash:
+                    user.regenerate_token_hash()
+                if email_changed or level_changed:
+                    user.save()
+                else:
+                    user.save(update_fields=['updated_at'])
+            else:
+                user = AdminUser(email=row['email'], level=row['level'])
+                user.regenerate_token_hash()
+                user.save()
+            updated_users.append(user)
+
+    response_users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+    return JsonResponse({'users': response_users})
 
 
 def _handle_bulk_form(
@@ -314,6 +497,8 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
 def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     if not request.session.get('logged_in'):
         return JsonResponse({'error': 'unauthorized'}, status=403)
+    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+        return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     language = get_language(request)
@@ -329,6 +514,8 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
 def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -> JsonResponse:
     if not request.session.get('logged_in'):
         return JsonResponse({'error': 'unauthorized'}, status=403)
+    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+        return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     with transaction.atomic():

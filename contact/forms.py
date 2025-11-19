@@ -193,8 +193,21 @@ class ContactForm(forms.ModelForm):
 
 
 class LoginForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-input login-input",
+                "autocomplete": "email",
+            }
+        )
+    )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-input login-input"})
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input login-input",
+                "autocomplete": "current-password",
+            }
+        )
     )
 
 

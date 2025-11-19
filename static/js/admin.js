@@ -894,4 +894,203 @@
             }
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.querySelector('[data-settings-modal]');
+        const openButton = document.querySelector('[data-settings-open]');
+        if (!modal || !openButton) {
+            return;
+        }
+
+        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close]')).concat(
+            modal.querySelector('.modal__backdrop'),
+        );
+        const rowsContainer = modal.querySelector('[data-settings-rows]');
+        const emptyState = modal.querySelector('[data-settings-empty]');
+        const addButton = modal.querySelector('[data-settings-add]');
+        const applyButton = modal.querySelector('[data-settings-apply]');
+        const errorBox = modal.querySelector('[data-settings-error]');
+        const endpoint = modal.dataset.settingsEndpoint;
+        const hashMask = '••••••••••••••••';
+
+        const levelOptions = [
+            { value: 'level1', label: 'level1' },
+            { value: 'level2', label: 'level2' },
+            { value: 'level3', label: 'level3' },
+        ];
+
+        const getCsrfToken = () => {
+            const name = 'csrftoken=';
+            return document.cookie
+                .split(';')
+                .map((cookie) => cookie.trim())
+                .find((cookie) => cookie.startsWith(name))?.slice(name.length);
+        };
+
+        const showError = (message) => {
+            if (!errorBox) return;
+            errorBox.textContent = message;
+            errorBox.hidden = !message;
+        };
+
+        const toggleModal = (shouldOpen) => {
+            if (shouldOpen) {
+                modal.classList.add('is-visible');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } else {
+                modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+                showError('');
+            }
+        };
+
+        const updateEmptyState = () => {
+            if (!rowsContainer || !emptyState) return;
+            const hasRows = rowsContainer.querySelector('[data-settings-row]');
+            emptyState.style.display = hasRows ? 'none' : 'block';
+        };
+
+        const buildRow = (user) => {
+            const row = document.createElement('div');
+            row.className = 'settings-table__row';
+            row.dataset.settingsRow = 'true';
+            row.dataset.userId = user.user_id || '';
+            row.dataset.isNew = user.is_new ? 'true' : 'false';
+            row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
+
+            const idCell = document.createElement('span');
+            idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
+
+            const emailInput = document.createElement('input');
+            emailInput.type = 'email';
+            emailInput.required = true;
+            emailInput.value = user.email || '';
+            emailInput.dataset.settingsEmail = 'true';
+
+            const hashCell = document.createElement('span');
+            hashCell.textContent = user.password_hash ? hashMask : '—';
+            hashCell.title = user.password_hash || '';
+            hashCell.dataset.settingsHash = 'true';
+
+            const levelSelect = document.createElement('select');
+            levelSelect.dataset.settingsLevel = 'true';
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = '—';
+            placeholderOption.disabled = true;
+            placeholderOption.selected = !user.level;
+            levelSelect.appendChild(placeholderOption);
+            levelOptions.forEach((option) => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                if (option.value === user.level) {
+                    opt.selected = true;
+                }
+                levelSelect.appendChild(opt);
+            });
+
+            const deleteCell = document.createElement('div');
+            deleteCell.className = 'settings-table__delete';
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.innerHTML = '🗑';
+            deleteButton.title = 'Delete user';
+            deleteButton.addEventListener('click', () => {
+                const isMarked = row.dataset.markedForDeletion === 'true';
+                row.dataset.markedForDeletion = (!isMarked).toString();
+                row.classList.toggle('is-marked-for-deletion', !isMarked);
+                deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
+            });
+            deleteCell.appendChild(deleteButton);
+
+            row.append(idCell, emailInput, hashCell, levelSelect, deleteCell);
+            return row;
+        };
+
+        const renderRows = (users) => {
+            if (!rowsContainer) return;
+            rowsContainer.innerHTML = '';
+            users.forEach((user) => {
+                const row = buildRow(user);
+                rowsContainer.appendChild(row);
+            });
+            updateEmptyState();
+        };
+
+        const fetchUsers = async () => {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                showError('Unable to load settings data.');
+                return;
+            }
+            const data = await response.json();
+            renderRows(data.users || []);
+        };
+
+        const applyChanges = async () => {
+            if (!rowsContainer) return;
+            const payload = {
+                users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
+                    user_id: row.dataset.userId || null,
+                    email: row.querySelector('[data-settings-email]')?.value || '',
+                    password_hash: row.querySelector('[data-settings-hash]')?.title || '',
+                    level: row.querySelector('[data-settings-level]')?.value || '',
+                    marked_for_deletion: row.dataset.markedForDeletion === 'true',
+                    is_new: row.dataset.isNew === 'true',
+                })),
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                showError((data.errors && data.errors.join(', ')) || 'Validation error.');
+                return;
+            }
+            showError('');
+            renderRows(data.users || []);
+        };
+
+        openButton.addEventListener('click', () => {
+            toggleModal(true);
+            fetchUsers();
+        });
+
+        closeElements.forEach((el) => {
+            el?.addEventListener('click', () => toggleModal(false));
+        });
+
+        addButton?.addEventListener('click', () => {
+            const row = buildRow({
+                user_id: null,
+                email: '',
+                password_hash: '',
+                level: '',
+                is_new: true,
+                marked_for_deletion: false,
+            });
+            rowsContainer.appendChild(row);
+            updateEmptyState();
+        });
+
+        applyButton?.addEventListener('click', () => {
+            applyChanges().catch(() => showError('Unable to save changes.'));
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
+                toggleModal(false);
+            }
+        });
+    });
 })();

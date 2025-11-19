@@ -39,7 +39,7 @@
     <section class="admin-login" aria-labelledby="admin-login-title">
         <div class="admin-login__intro">
             <h2 class="admin-login__title" id="admin-login-title">{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}</h2>
-            <p class="admin-login__description">{% if lang == 'pl' %}Wprowadź hasło, aby uzyskać dostęp do panelu.{% else %}Enter the password to access the panel.{% endif %}</p>
+            <p class="admin-login__description">{% if lang == 'pl' %}Zaloguj się za pomocą emaila i hasła, aby uzyskać dostęp do panelu.{% else %}Sign in with your email and password to access the panel.{% endif %}</p>
             {% if blocked %}
     <div class="admin-login__blocked">
         {% if lang == 'pl' %}
@@ -76,10 +76,18 @@
         <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ back_url }}">
+            <label class="admin-login__label" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div class="admin-login__error">{{ form.email.errors.0 }}</div>
+            {% endif %}
             <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
             {{ form.password }}
             {% if form.password.errors %}
                 <div class="admin-login__error">{{ form.password.errors.0 }}</div>
+            {% endif %}
+            {% if form.non_field_errors %}
+                <div class="admin-login__error">{{ form.non_field_errors.0 }}</div>
             {% endif %}
             <div class="admin-login__actions">
                 <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
