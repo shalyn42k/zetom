@@ -80,7 +80,7 @@ def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
 
 
 def _get_admin_user(request: HttpRequest) -> AdminUser | None:
-    user_id = request.session.get('user_id')
+    user_id = request.session.get('admin_user_id')
     if not user_id:
         return None
     try:
@@ -108,10 +108,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     user_level = admin_user.level_of_access
     user_departments = list(admin_user.departments.values_list('code', flat=True))
-    request.session['user_level'] = user_level
-    request.session['user_email'] = admin_user.email
-    request.session['user_id'] = admin_user.id
-    request.session['user_departments'] = user_departments
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
@@ -173,6 +169,12 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if readonly_mode:
         action_form.fields['action'].disabled = True
         action_form.fields['selected'].disabled = True
+        for field in email_form.fields.values():
+            field.disabled = True
+        for field in trash_form.fields.values():
+            field.disabled = True
+        for field in download_form.fields.values():
+            field.disabled = True
     filter_form = helpers.build_filter_form(
         request,
         lang,
@@ -261,6 +263,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     context = {
         'lang': lang,
         'user_level': user_level,
+        'user_departments': user_departments,
         'readonly_mode': readonly_mode,
         'messages_page': page_obj,
         'paginator': paginator,

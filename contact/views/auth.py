@@ -73,12 +73,12 @@ def login(request: HttpRequest) -> HttpResponse:
 
         if user and user.check_password(password):
             request.session['logged_in'] = True
-            request.session['user_level'] = user.level_of_access
-            request.session['user_email'] = user.email
-            request.session['user_id'] = user.id
-            request.session['user_departments'] = list(
+            request.session['admin_user_id'] = user.id
+            request.session['level_of_access'] = user.level_of_access
+            request.session['departments'] = list(
                 user.departments.values_list('code', flat=True)
             )
+            request.session['admin_email'] = user.email
             request.session['lang'] = lang
             failed_attempts[ip] = 0
             panel_url = reverse('contact:panel')
