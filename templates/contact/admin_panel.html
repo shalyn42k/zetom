@@ -334,6 +334,15 @@
             </div>
             <button type="submit" class="button button--primary button--compact">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
         </form>
+        {% if readonly_mode %}
+            <div class="panel__notice">
+                {% if lang == 'pl' %}
+                    Dostęp tylko do podglądu. Zgłoszenia są nieedytowalne dla Twojej roli.
+                {% else %}
+                    View-only access. Requests cannot be modified for your role.
+                {% endif %}
+            </div>
+        {% endif %}
         <form method="post"
               class="panel-form"
               data-bulk-form
@@ -350,17 +359,17 @@
                     {% if action_form.action.errors %}<div class="form-error">{{ action_form.action.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="panel-form-actions">
-                    <button type="submit" class="button button--primary button--compact" data-bulk-submit>
+                    <button type="submit" class="button button--primary button--compact" data-bulk-submit {% if readonly_mode %}disabled{% endif %}>
                         {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
                     </button>
                     <button type="button"
                             class="button button--ghost button--compact button--download"
                             data-download-open
                             data-download-available="{{ download_has_choices|yesno:'true,false' }}"
-                            {% if not download_has_choices or not selected_download_ids %}disabled{% endif %}>
+                            {% if not download_has_choices or not selected_download_ids or readonly_mode %}disabled{% endif %}>
                         {% if lang == 'pl' %}Pobierz{% else %}Download{% endif %}
                     </button>
-                    <button type="button" class="button button--ghost button--compact button--trash" data-trash-open>
+                    <button type="button" class="button button--ghost button--compact button--trash" data-trash-open {% if readonly_mode %}disabled{% endif %}>
                         {% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}
                     </button>
                 </div>
@@ -373,7 +382,7 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}"></th>
+                        <th><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
                         <th>ID</th>
                         <th>{% if lang == 'pl' %}Data{% else %}Date{% endif %}</th>
                         <th>{% if lang == 'pl' %}Klient{% else %}Customer{% endif %}</th>
@@ -396,6 +405,7 @@
                                        class="table-checkbox"
                                        data-row-checkbox
                                        {% if message_id in selected_download_ids %}checked{% endif %}
+                                       {% if readonly_mode %}disabled{% endif %}
                                        aria-label="{% if lang == 'pl' %}Zaznacz wiadomość o ID {{ message_item.id }}{% else %}Select message with ID {{ message_item.id }}{% endif %}">
                                 {% endwith %}
                             </td>

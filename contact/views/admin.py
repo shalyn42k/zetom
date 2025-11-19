@@ -73,6 +73,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         return redirect('contact:login')
 
     user_level = request.session.get('user_level', AdminUser.LEVEL_ADMIN)
+    readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
     filter_data = helpers.resolve_filter_data(request, lang)
@@ -105,7 +106,20 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         message_choices=download_choices,
         language=lang,
     )
+    if readonly_mode:
+        action_form.fields['action'].disabled = True
+        action_form.fields['selected'].disabled = True
     filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
+
+    if request.method == 'POST' and readonly_mode:
+        return redirect(
+            helpers.panel_redirect_url(
+                lang,
+                page_obj.number,
+                sort_by=sort_by,
+                company=company_filter,
+            )
+        )
 
     if request.method == 'POST':
         form_name = (request.POST.get('form_name') or '').strip()
@@ -172,6 +186,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     context = {
         'lang': lang,
         'user_level': user_level,
+        'readonly_mode': readonly_mode,
         'messages_page': page_obj,
         'paginator': paginator,
         'page_range': list(paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)),
@@ -471,6 +486,8 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
 def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     if not request.session.get('logged_in'):
         return JsonResponse({'error': 'unauthorized'}, status=403)
+    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+        return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     language = get_language(request)
@@ -486,6 +503,8 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
 def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -> JsonResponse:
     if not request.session.get('logged_in'):
         return JsonResponse({'error': 'unauthorized'}, status=403)
+    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+        return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     with transaction.atomic():

@@ -4,12 +4,14 @@ import logging
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
 
+from ..models import AdminUser
 from ..forms import LoginForm
 from ..utils import get_language
 
@@ -24,6 +26,8 @@ def login(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = LoginForm(request.POST or None)
     ip = request.META.get('REMOTE_ADDR', 'unknown')
+
+    back_url = request.GET.get('next') or f"{reverse('contact:index')}?lang={lang}"
 
     blocked = False
     time_left = None
@@ -40,10 +44,21 @@ def login(request: HttpRequest) -> HttpResponse:
             failed_attempts[ip] = 0
 
     if request.method == 'POST' and not blocked and form.is_valid():
-        if form.cleaned_data['password'] == settings.ADMIN_PASSWORD:
+        email = form.cleaned_data['email']
+        password = form.cleaned_data['password']
+        try:
+            user = AdminUser.objects.get(email__iexact=email)
+        except AdminUser.DoesNotExist:
+            user = None
+
+        if user and check_password(password, user.password_hash):
             request.session['logged_in'] = True
+            request.session['user_level'] = user.level
+            request.session['user_email'] = user.email
+            request.session['user_id'] = user.id
             failed_attempts[ip] = 0
-            return redirect('contact:panel')
+            return redirect(request.POST.get('next') or 'contact:panel')
+
         failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
         if failed_attempts[ip] >= 5:
             blocked_ips[ip] = timezone.now() + timedelta(minutes=5)
@@ -55,11 +70,16 @@ def login(request: HttpRequest) -> HttpResponse:
         else:
             attempts_left = 5 - failed_attempts[ip]
             error_message = (
-                f"Nieprawidłowe hasło! Pozostało prób: {attempts_left}"
+                "Nieprawidłowe dane logowania!"
                 if lang == 'pl'
-                else f"Wrong password! Attempts left: {attempts_left}"
+                else "Invalid credentials"
             )
-            form.add_error('password', error_message)
+            form.add_error(None, error_message)
+            form.add_error('password', (
+                f"Pozostało prób: {attempts_left}"
+                if lang == 'pl'
+                else f"Attempts left: {attempts_left}"
+            ))
             if 'logged_in' in request.session:
                 del request.session['logged_in']
 
@@ -71,6 +91,7 @@ def login(request: HttpRequest) -> HttpResponse:
             'lang': lang,
             'blocked': blocked,
             'time_left': time_left,
+            'back_url': back_url,
         },
     )
 
