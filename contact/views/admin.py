@@ -86,7 +86,9 @@ def _get_admin_user(request: HttpRequest) -> AdminUser | None:
 def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
     if not admin_user:
         return False
-    if admin_user.level == AdminUser.LEVEL_DEPARTMENT and admin_user.department:
+    if admin_user.level == AdminUser.LEVEL_DEPARTMENT:
+        if not admin_user.department:
+            return False
         return message.company == admin_user.department
     return True
 
@@ -105,19 +107,33 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
-    filter_data = helpers.resolve_filter_data(request, lang)
-    sort_by = filter_data["sort_by"]
-    company_filter = filter_data["company"]
     user_department = (admin_user.department or "").strip()
+    department_label = helpers.company_labels(lang).get(user_department, user_department or "")
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
-        company_filter = user_department or company_filter
+        filter_data = helpers.resolve_filter_data(
+            request,
+            lang,
+            company_choices=[(user_department, department_label)] if user_department else [],
+            include_all=False,
+        )
+        sort_by = filter_data["sort_by"]
+        company_filter = user_department or filter_data["company"]
+        filter_data["company"] = company_filter
+    else:
+        filter_data = helpers.resolve_filter_data(request, lang)
+        sort_by = filter_data["sort_by"]
+        company_filter = filter_data["company"]
 
-    queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
-    deleted_queryset = message_service.get_deleted_messages()
-    if user_level == AdminUser.LEVEL_DEPARTMENT and user_department:
-        queryset = queryset.filter(company=user_department)
-        deleted_queryset = deleted_queryset.filter(company=user_department)
+    if user_level == AdminUser.LEVEL_DEPARTMENT and not user_department:
+        queryset = ContactMessage.objects.none()
+        deleted_queryset = ContactMessage.objects.none()
+    else:
+        queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
+        deleted_queryset = message_service.get_deleted_messages()
+        if user_level == AdminUser.LEVEL_DEPARTMENT and user_department:
+            queryset = queryset.filter(company=user_department)
+            deleted_queryset = deleted_queryset.filter(company=user_department)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -145,11 +161,15 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if readonly_mode:
         action_form.fields['action'].disabled = True
         action_form.fields['selected'].disabled = True
-    filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
+    filter_form = helpers.build_filter_form(
+        request,
+        lang,
+        initial_data=filter_data,
+        company_choices=[(user_department, department_label)] if user_level == AdminUser.LEVEL_DEPARTMENT else None,
+        include_all=user_level != AdminUser.LEVEL_DEPARTMENT,
+    )
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
-        company_label = helpers.company_labels(lang).get(user_department, user_department or "")
-        filter_form.fields['company'].choices = [(user_department, company_label or user_department or "—")]
         filter_form.fields['company'].initial = user_department
         filter_form.fields['company'].widget.attrs['disabled'] = True
 
@@ -281,7 +301,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         AdminUser.LEVEL_DEPARTMENT: 'level2',
         AdminUser.LEVEL_TESTER: 'level3',
     }
-    allowed_departments = {value for value, _ in ContactForm.COMPANY_CHOICES}
+    allowed_departments = {value for value, _ in AdminUser.DEPARTMENT_CHOICES}
     error_messages = {
         'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
         'duplicate_user_id': 'Duplikat identyfikatora użytkownika.' if language == 'pl' else 'Duplicate user id detected.',
@@ -292,6 +312,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         'level_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Level of access is required.',
         'department_required': 'Departament jest wymagany dla level2.' if language == 'pl' else 'Department is required for level2 users.',
         'department_invalid': 'Nieprawidłowy departament.' if language == 'pl' else 'Invalid department.',
+        'password_required': 'Hasło jest wymagane.' if language == 'pl' else 'Password is required.',
         'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
         if language == 'pl'
         else 'At least one level1 admin must remain.',
@@ -329,6 +350,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         email = email_raw.lower()
         level = (row.get('level') or '').strip()
         department = (row.get('department') or '').strip()
+        password_value = row.get('password') if isinstance(row.get('password'), str) else ''
+        password_changed = bool(row.get('password_changed'))
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
 
@@ -356,6 +379,9 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         elif department and department not in allowed_departments:
             _error('department_invalid')
 
+        if password_changed and not password_value:
+            _error('password_required')
+
         if not marked_for_deletion:
             if email in planned_email_map and planned_email_map[email] != user_id:
                 _error('email_not_unique')
@@ -367,6 +393,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 'email': email,
                 'level': level,
                 'department': department,
+                'password': password_value,
+                'password_changed': password_changed,
                 'marked_for_deletion': marked_for_deletion,
                 'is_new': is_new,
             }
@@ -418,10 +446,14 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 level_changed = user.level != row['level']
                 department_changed = user.department != row['department']
                 password_regenerated = False
+                password_changed = row.get('password_changed', False)
                 user.email = row['email']
                 user.level = row['level']
                 user.department = row['department']
-                if email_changed:
+                if password_changed:
+                    user.set_password_token(row.get('password', ''))
+                    tokens_to_send.append((user, row.get('password', '')))
+                elif email_changed:
                     token = user.regenerate_token_hash()
                     tokens_to_send.append((user, token))
                     password_regenerated = True
@@ -429,13 +461,18 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     token = user.regenerate_token_hash()
                     tokens_to_send.append((user, token))
                     password_regenerated = True
-                if email_changed or level_changed or department_changed or password_regenerated:
+                if email_changed or level_changed or department_changed or password_changed or password_regenerated:
                     user.save()
                 else:
                     user.save(update_fields=['updated_at'])
             else:
                 user = AdminUser(email=row['email'], level=row['level'], department=row['department'])
-                token = user.regenerate_token_hash()
+                if row.get('password_changed'):
+                    password_value = row.get('password', '')
+                    user.set_password_token(password_value)
+                    token = password_value
+                else:
+                    token = user.regenerate_token_hash()
                 user.save()
                 tokens_to_send.append((user, token))
             updated_users.append(user)

@@ -311,9 +311,21 @@ class MessageFilterForm(forms.Form):
     sort_by = forms.ChoiceField(choices=SORT_CHOICES, required=False)
     company = forms.ChoiceField(choices=(), required=False)
 
-    def __init__(self, *args, language: str | None = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        language: str | None = None,
+        company_choices: list[tuple[str, str]] | None = None,
+        include_all: bool = True,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        company_choices = [(self.COMPANY_ALL, "All departments")] + list(ContactForm.COMPANY_CHOICES)
+        effective_choices = list(company_choices or ContactForm.COMPANY_CHOICES)
+        default_company = effective_choices[0][0] if effective_choices else self.COMPANY_ALL
+
+        if include_all:
+            effective_choices = [(self.COMPANY_ALL, "All departments"), *effective_choices]
+            default_company = self.COMPANY_ALL
         if language == "pl":
             sort_labels = {
                 self.SORT_NEWEST: "Najnowsze",
@@ -347,12 +359,12 @@ class MessageFilterForm(forms.Form):
             (value, sort_labels.get(value, label)) for value, label in self.SORT_CHOICES
         ]
         self.fields["company"].choices = [
-            (value, company_labels.get(value, label)) for value, label in company_choices
+            (value, company_labels.get(value, label)) for value, label in effective_choices
         ]
         self.fields["sort_by"].widget.attrs["class"] = "form-input"
         self.fields["company"].widget.attrs["class"] = "form-input"
         self.fields["sort_by"].initial = self.SORT_NEWEST
-        self.fields["company"].initial = self.COMPANY_ALL
+        self.fields["company"].initial = default_company
 
     def clean_sort_by(self) -> str:
         value = self.cleaned_data.get("sort_by") or self.SORT_NEWEST
@@ -362,10 +374,10 @@ class MessageFilterForm(forms.Form):
         return value
 
     def clean_company(self) -> str:
-        value = self.cleaned_data.get("company") or self.COMPANY_ALL
+        value = self.cleaned_data.get("company") or self.fields["company"].initial
         valid_values = {choice[0] for choice in self.fields["company"].choices}
         if value not in valid_values:
-            return self.COMPANY_ALL
+            return self.fields["company"].initial
         return value
 
 

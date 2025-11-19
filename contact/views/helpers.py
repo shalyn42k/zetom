@@ -127,7 +127,13 @@ def status_options(language: str) -> list[dict[str, str]]:
     ]
 
 
-def resolve_filter_data(request: HttpRequest, language: str) -> dict[str, str]:
+def resolve_filter_data(
+    request: HttpRequest,
+    language: str,
+    *,
+    company_choices: list[tuple[str, str]] | None = None,
+    include_all: bool = True,
+) -> dict[str, str]:
     data = request.GET if request.method == 'GET' else request.POST
     if not data or ('sort_by' not in data and 'company' not in data):
         return {
@@ -135,7 +141,12 @@ def resolve_filter_data(request: HttpRequest, language: str) -> dict[str, str]:
             'company': MessageFilterForm.COMPANY_ALL,
         }
 
-    filter_form = MessageFilterForm(data, language=language)
+    filter_form = MessageFilterForm(
+        data,
+        language=language,
+        company_choices=company_choices,
+        include_all=include_all,
+    )
     if filter_form.is_valid():
         return {
             'sort_by': filter_form.cleaned_data['sort_by'],
@@ -152,13 +163,25 @@ def build_filter_form(
     language: str,
     *,
     initial_data: dict[str, str],
+    company_choices: list[tuple[str, str]] | None = None,
+    include_all: bool = True,
 ) -> MessageFilterForm:
     data = request.GET if request.method == 'GET' else request.POST
     if data and ('sort_by' in data or 'company' in data):
-        form = MessageFilterForm(data, language=language)
+        form = MessageFilterForm(
+            data,
+            language=language,
+            company_choices=company_choices,
+            include_all=include_all,
+        )
         if form.is_valid():
             return form
-    return MessageFilterForm(initial=initial_data, language=language)
+    return MessageFilterForm(
+        initial=initial_data,
+        language=language,
+        company_choices=company_choices,
+        include_all=include_all,
+    )
 
 
 def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
