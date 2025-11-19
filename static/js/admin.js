@@ -894,4 +894,64 @@
             }
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const settingsModal = $('[data-settings-modal]');
+        if (!settingsModal) {
+            return;
+        }
+
+        const openButtons = $$('[data-settings-open]');
+        const closeButtons = $$('[data-settings-close]', settingsModal).concat(
+            settingsModal.querySelector('.modal__backdrop'),
+        );
+        const levelSelect = settingsModal.querySelector('select[name="level"]');
+        const departmentField = settingsModal.querySelector('[data-settings-department]');
+
+        const toggleModal = (shouldOpen) => {
+            if (shouldOpen) {
+                settingsModal.classList.add('is-visible');
+                settingsModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+                const emailInput = settingsModal.querySelector('input[name="email"]');
+                if (emailInput) {
+                    emailInput.focus();
+                }
+            } else {
+                settingsModal.classList.remove('is-visible');
+                settingsModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+            }
+        };
+
+        const updateDepartmentVisibility = () => {
+            if (!departmentField || !levelSelect) {
+                return;
+            }
+            const isLevelTwo = levelSelect.value === 'level2';
+            departmentField.hidden = !isLevelTwo;
+        };
+
+        openButtons.forEach((button) => {
+            button.addEventListener('click', () => toggleModal(true));
+        });
+
+        closeButtons.forEach((element) => {
+            if (!element) {
+                return;
+            }
+            element.addEventListener('click', () => toggleModal(false));
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && settingsModal.classList.contains('is-visible')) {
+                toggleModal(false);
+            }
+        });
+
+        if (levelSelect) {
+            levelSelect.addEventListener('change', updateDepartmentVisibility);
+            updateDepartmentVisibility();
+        }
+    });
 })();

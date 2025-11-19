@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
-<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}">
+<body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}"
+      data-admin-readonly="{{ is_read_only|yesno:'true,false' }}">
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
@@ -252,6 +253,97 @@
         </form>
     </div>
 </div>
+<div class="modal settings-modal" data-settings-modal aria-hidden="true">
+    <div class="modal__backdrop" data-settings-close></div>
+    <div class="modal__dialog settings-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
+        <h2 class="modal__title" id="settings-title">{% if lang == 'pl' %}Ustawienia kont{% else %}Account settings{% endif %}</h2>
+        <p class="modal__subtitle">
+            {% if lang == 'pl' %}
+                Twórz tokeny dostępu dla nowych użytkowników i przydzielaj im poziomy uprawnień.
+            {% else %}
+                Create access tokens for new users and decide which level they should have.
+            {% endif %}
+        </p>
+        <div class="settings-modal__content">
+            <form method="post" class="settings-form">
+                {% csrf_token %}
+                {{ admin_user_form.form_name }}
+                <div class="settings-grid">
+                    <label class="settings-field">
+                        <span class="form-label">{{ admin_user_form.email.label }}</span>
+                        {{ admin_user_form.email }}
+                        {% if admin_user_form.email.errors %}
+                            <div class="form-error">{{ admin_user_form.email.errors.0 }}</div>
+                        {% endif %}
+                    </label>
+                    <label class="settings-field">
+                        <span class="form-label">{% if lang == 'pl' %}Token hasła{% else %}Password token{% endif %}</span>
+                        <input type="text"
+                               class="form-input"
+                               value="{% if new_admin_token %}{{ new_admin_token }}{% else %}{% if lang == 'pl' %}Wygeneruje się po zapisaniu{% else %}It will be generated after saving{% endif %}{% endif %}"
+                               readonly>
+                        <small class="settings-hint">
+                            {% if lang == 'pl' %}Token przekazujesz nowemu użytkownikowi jako hasło.{% else %}Share this token with the new user as their password.{% endif %}
+                        </small>
+                    </label>
+                    <div class="settings-row settings-row--columns">
+                        <label class="settings-column">
+                            <span class="form-label">{{ admin_user_form.level.label }}</span>
+                            {{ admin_user_form.level }}
+                            {% if admin_user_form.level.errors %}
+                                <div class="form-error">{{ admin_user_form.level.errors.0 }}</div>
+                            {% endif %}
+                        </label>
+                        <label class="settings-column" data-settings-department>
+                            <span class="form-label">{{ admin_user_form.department.label }}</span>
+                            {{ admin_user_form.department }}
+                            {% if admin_user_form.department.errors %}
+                                <div class="form-error">{{ admin_user_form.department.errors.0 }}</div>
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+                {% if admin_user_form.non_field_errors %}
+                    <div class="form-error">{{ admin_user_form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="modal__actions">
+                    <button type="submit" class="button button--primary">{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}</button>
+                </div>
+            </form>
+            {% if new_admin_email and new_admin_token %}
+                <div class="settings-token-alert">
+                    <p>
+                        {% if lang == 'pl' %}
+                            Nowy token dla <strong>{{ new_admin_email }}</strong> to:
+                        {% else %}
+                            New token for <strong>{{ new_admin_email }}</strong>:
+                        {% endif %}
+                    </p>
+                    <code>{{ new_admin_token }}</code>
+                </div>
+            {% endif %}
+            <section class="settings-users">
+                <h3>{% if lang == 'pl' %}Użytkownicy panelu{% else %}Panel users{% endif %}</h3>
+                <ul class="settings-users__list">
+                    {% for entry in admin_users %}
+                        <li class="settings-users__item">
+                            <div>
+                                <strong>{{ entry.email }}</strong>
+                                <span class="settings-users__meta">{{ entry.level_label }}</span>
+                            </div>
+                            <span class="settings-users__meta">{{ entry.department_label }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="settings-users__item settings-users__item--empty">
+                            {% if lang == 'pl' %}Brak zapisanych użytkowników.{% else %}No users yet.{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -283,22 +375,56 @@
     </div>
 </header>
 
-<main class="admin-dashboard">
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar__profile">
+            <p class="admin-sidebar__label">{% if lang == 'pl' %}Zalogowano jako{% else %}Signed in as{% endif %}</p>
+            <p class="admin-sidebar__email">{{ current_user_email }}</p>
+            <p class="admin-sidebar__role">{{ current_user_level_label }}</p>
+        </div>
+        {% if forced_company_label %}
+            <p class="admin-sidebar__note">
+                {% if lang == 'pl' %}
+                    Widzisz tylko zgłoszenia departamentu: <strong>{{ forced_company_label }}</strong>.
+                {% else %}
+                    You can only view the <strong>{{ forced_company_label }}</strong> department.
+                {% endif %}
+            </p>
+        {% endif %}
+        {% if is_read_only %}
+            <p class="admin-sidebar__note">
+                {% if lang == 'pl' %}
+                    Tryb podglądu – nie możesz wykonywać akcji.
+                {% else %}
+                    Preview mode – no actions are available.
+                {% endif %}
+            </p>
+        {% endif %}
+        {% if can_open_settings %}
+            <button type="button" class="admin-sidebar__button" data-settings-open>
+                {% if lang == 'pl' %}Ustawienia{% else %}Settings{% endif %}
+            </button>
+        {% endif %}
+    </aside>
+
+    <main class="admin-dashboard" data-admin-lock>
     <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
                 <input type="hidden" name="lang" value="{{ lang }}">
             {% endif %}
-            <div class="panel-filters__field">
-                <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">{% if lang == 'pl' %}Sortuj{% else %}Sort{% endif %}</label>
-                {{ filter_form.sort_by }}
-            </div>
-            <div class="panel-filters__field">
-                <label for="{{ filter_form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</label>
-                {{ filter_form.company }}
-            </div>
-            <button type="submit" class="button button--primary button--compact">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+            <fieldset {% if not can_manage_requests %}disabled{% endif %}>
+                <div class="panel-filters__field">
+                    <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">{% if lang == 'pl' %}Sortuj{% else %}Sort{% endif %}</label>
+                    {{ filter_form.sort_by }}
+                </div>
+                <div class="panel-filters__field">
+                    <label for="{{ filter_form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</label>
+                    {{ filter_form.company }}
+                </div>
+                <button type="submit" class="button button--primary button--compact">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+            </fieldset>
         </form>
         <form method="post"
               class="panel-form"
@@ -309,6 +435,7 @@
             <input type="hidden" name="page" value="{{ current_page }}">
             <input type="hidden" name="sort_by" value="{{ current_sort }}">
             <input type="hidden" name="company" value="{{ current_company }}">
+            <fieldset {% if not can_manage_requests %}disabled{% endif %}>
             <div class="panel-form-row">
                 <div class="panel-form-field">
                     <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if lang == 'pl' %}Akcja{% else %}Action{% endif %}</label>
@@ -353,7 +480,7 @@
                     </thead>
                     <tbody>
                     {% for message_item in messages_page %}
-                        <tr class="table-row" data-request-row data-request-id="{{ message_item.id }}" tabindex="0">
+                        <tr class="table-row"{% if can_manage_requests %} data-request-row data-request-id="{{ message_item.id }}" tabindex="0"{% else %} tabindex="-1"{% endif %}>
                             <td>
                                 {% with message_id=message_item.id|stringformat:'s' %}
                                 <input type="checkbox"
@@ -397,7 +524,7 @@
                     </tbody>
                 </table>
             </div>
-
+            </fieldset>
         </form>
 
         {% if paginator.num_pages > 1 %}
@@ -487,6 +614,7 @@
                 <input type="hidden" name="send_email" value="1">
                 <input type="hidden" name="sort_by" value="{{ current_sort }}">
                 <input type="hidden" name="company" value="{{ current_company }}">
+                <fieldset {% if not can_manage_requests %}disabled{% endif %}>
                 {% if email_form.non_field_errors %}
                     <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
                 {% endif %}
@@ -513,9 +641,11 @@
                     </div>
                 </div>
                 <button type="submit" class="form-submit">{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                </fieldset>
             </form>
         </div>
     </section>
 </main>
+</div>
 </body>
 </html>
