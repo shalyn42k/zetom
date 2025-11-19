@@ -50,7 +50,10 @@ def get_messages(*, sort_by: str | None = None, company: str | None = None) -> Q
     queryset = ContactMessage.objects.filter(is_deleted=False).prefetch_related('attachments')
 
     if company and company != "all":
-        queryset = queryset.filter(company=company)
+        if isinstance(company, (list, tuple, set)):
+            queryset = queryset.filter(company__in=company)
+        else:
+            queryset = queryset.filter(company=company)
 
     order_by = _resolve_ordering(sort_by)
     if order_by:

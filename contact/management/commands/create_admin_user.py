@@ -3,10 +3,9 @@ from __future__ import annotations
 import getpass
 from typing import Any
 
-from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 
-from contact.models import AdminUser
+from contact.models import AdminUser, Department
 
 
 class Command(BaseCommand):
@@ -32,6 +31,13 @@ class Command(BaseCommand):
             help="Access level to assign (default: level1)",
         )
         parser.add_argument(
+            "--department",
+            action="append",
+            dest="departments",
+            default=[],
+            help="Department code to assign (can be provided multiple times)",
+        )
+        parser.add_argument(
             "--force-update",
             action="store_true",
             help="Update an existing user even if it is already present.",
@@ -41,6 +47,7 @@ class Command(BaseCommand):
         email: str = options["email"].strip()
         password_opt: str | None = options.get("password")
         level: str = options["level"]
+        departments: list[str] = options.get("departments") or []
         force_update: bool = options["force_update"]
 
         if not email:
@@ -62,10 +69,10 @@ class Command(BaseCommand):
             email__iexact=email,
             defaults={
                 "email": email,
-                "password_hash": make_password(password),
-                "level": level,
+                "level_of_access": level,
             },
         )
+        user.set_password(password)
 
         if created:
             action = "created"
@@ -75,12 +82,18 @@ class Command(BaseCommand):
                     "User already exists. Re-run with --force-update to change password/level."
                 )
             user.email = email
-            user.level = level
-            user.password_hash = make_password(password)
-            user.save(update_fields=["email", "level", "password_hash", "updated_at"])
+            user.level_of_access = level
             action = "updated"
 
-        self.stdout.write(self.style.SUCCESS(f"Admin user {action}: {user.email} ({user.level})"))
+        user.save(update_fields=["email", "level_of_access", "password_hash", "updated_at"])
+
+        if departments:
+            department_objects = list(Department.objects.filter(code__in=departments))
+            user.departments.set(department_objects)
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Admin user {action}: {user.email} ({user.level_of_access})")
+        )
         self.stdout.write(self.style.WARNING("Store this password securely; it will not be shown again."))
         self.stdout.write(password)
         return None
