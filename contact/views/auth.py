@@ -6,6 +6,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse
+from django.db import OperationalError, ProgrammingError
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -50,6 +51,26 @@ def login(request: HttpRequest) -> HttpResponse:
             user = AdminUser.objects.get(email__iexact=email)
         except AdminUser.DoesNotExist:
             user = None
+        except (OperationalError, ProgrammingError):
+            logger.exception("AdminUser table is not ready; migrations are missing")
+            error_message = (
+                "Baza użytkowników administratora nie jest gotowa. Uruchom migracje bazy danych."
+                if lang == "pl"
+                else "Admin user table is not ready. Please run database migrations."
+            )
+            form.add_error(None, error_message)
+            return render(
+                request,
+                "contact/admin_login.html",
+                {
+                    "form": form,
+                    "lang": lang,
+                    "blocked": blocked,
+                    "time_left": time_left,
+                    "back_url": back_url,
+                },
+                status=503,
+            )
 
         if user and check_password(password, user.password_hash):
             request.session['logged_in'] = True
