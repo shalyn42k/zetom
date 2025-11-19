@@ -15,6 +15,7 @@ SESSION_COOKIE_SAMESITE = 'Strict'  # Защита от CSRF в cross-site.
 
 # --- Core ---
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
+ADMIN_PASSWORD_SECRET = os.environ.get('ADMIN_PASSWORD_SECRET', SECRET_KEY)
 DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
 

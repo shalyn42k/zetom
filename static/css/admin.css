@@ -80,54 +80,6 @@ body[data-theme='dark'] .modal__backdrop {
     outline-offset: 2px;
 }
 
-.admin-dashboard--with-sidebar {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 24px;
-}
-
-.admin-sidebar {
-    align-self: start;
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 12px 28px rgba(17, 24, 39, 0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.sidebar-button {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    color: #111827;
-    text-align: left;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.sidebar-button:hover,
-.sidebar-button:focus-visible {
-    background: #eef2ff;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
-    outline: none;
-}
-
-.sidebar-button--active {
-    background: #1b6d34;
-    color: #ffffff;
-    border-color: transparent;
-    box-shadow: 0 12px 28px rgba(27, 109, 52, 0.25);
-}
-
-.sidebar-button--ghost {
-    background: #ffffff;
-}
-
 .settings-modal {
     max-width: 960px;
     width: 100%;
@@ -169,7 +121,7 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__header,
 .settings-table__row {
     display: grid;
-    grid-template-columns: 1fr 2.5fr 3fr 1.5fr 0.8fr;
+    grid-template-columns: 1fr 2.5fr 2.2fr 1.5fr 1.6fr 0.9fr 0.8fr;
     gap: 8px;
     align-items: center;
     padding: 12px 14px;
@@ -209,6 +161,29 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__row select {
     background: #ffffff url("data:image/svg+xml,%3Csvg width='16' height='16' fill='%236b7280' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") no-repeat right 10px center;
     appearance: none;
+}
+
+.settings-table__password {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.settings-table__password-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-table__password-toggle:hover,
+.settings-table__password-toggle:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    outline: none;
 }
 
 .settings-table__actions-label,

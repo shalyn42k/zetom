@@ -19,10 +19,14 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
+from ..forms import ContactForm
 from ..models import AdminActivityLog, AdminUser, ClientChangeLog, ContactMessage
 from ..services import messages as message_service
 from ..services.activity_log import log_action
-from ..services.email_service import send_email_with_attachment
+from ..services.email_service import (
+    send_admin_user_credentials,
+    send_email_with_attachment,
+)
 from ..services.pdf_service import build_messages_pdf
 from ..utils import get_language
 from . import helpers
@@ -69,21 +73,51 @@ def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
     }
 
 
+def _get_admin_user(request: HttpRequest) -> AdminUser | None:
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return None
+    try:
+        return AdminUser.objects.get(id=user_id)
+    except AdminUser.DoesNotExist:
+        return None
+
+
+def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
+    if not admin_user:
+        return False
+    if admin_user.level == AdminUser.LEVEL_DEPARTMENT and admin_user.department:
+        return message.company == admin_user.department
+    return True
+
+
 @require_http_methods(["GET", "POST"])
 def admin_panel(request: HttpRequest) -> HttpResponse:
-    if not request.session.get('logged_in'):
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
         return redirect('contact:login')
 
-    user_level = request.session.get('user_level', AdminUser.LEVEL_ADMIN)
+    user_level = admin_user.level
+    request.session['user_level'] = user_level
+    request.session['user_email'] = admin_user.email
+    request.session['user_id'] = admin_user.id
+    request.session['user_department'] = admin_user.department
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
     filter_data = helpers.resolve_filter_data(request, lang)
     sort_by = filter_data["sort_by"]
     company_filter = filter_data["company"]
+    user_department = (admin_user.department or "").strip()
+
+    if user_level == AdminUser.LEVEL_DEPARTMENT:
+        company_filter = user_department or company_filter
 
     queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
     deleted_queryset = message_service.get_deleted_messages()
+    if user_level == AdminUser.LEVEL_DEPARTMENT and user_department:
+        queryset = queryset.filter(company=user_department)
+        deleted_queryset = deleted_queryset.filter(company=user_department)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -112,6 +146,12 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         action_form.fields['action'].disabled = True
         action_form.fields['selected'].disabled = True
     filter_form = helpers.build_filter_form(request, lang, initial_data=filter_data)
+
+    if user_level == AdminUser.LEVEL_DEPARTMENT:
+        company_label = helpers.company_labels(lang).get(user_department, user_department or "")
+        filter_form.fields['company'].choices = [(user_department, company_label or user_department or "—")]
+        filter_form.fields['company'].initial = user_department
+        filter_form.fields['company'].widget.attrs['disabled'] = True
 
     if request.method == 'POST' and readonly_mode:
         return redirect(
@@ -175,6 +215,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         selected_download_ids = list(dict.fromkeys(raw_ids))
 
     company_options = helpers.company_options(lang)
+    settings_departments_json = json.dumps(company_options)
     status_options = helpers.status_options(lang)
     status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
 
@@ -205,6 +246,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'download_fields_total': download_fields_total,
         'selected_download_ids': selected_download_ids,
         'company_options': company_options,
+        'settings_departments_json': settings_departments_json,
         'status_options': status_options,
         'status_meta_json': json.dumps(status_meta),
         'request_detail_error_message': detail_error_message,
@@ -217,17 +259,20 @@ def _serialise_admin_user(user: AdminUser) -> dict:
     return {
         'user_id': user.id,
         'email': user.email,
-        'password_hash': user.password_hash,
+        'password_plaintext': user.reveal_plaintext_password() or '',
+        'has_password': bool(user.password_ciphertext or user.password_hash),
         'level': user.level,
+        'department': user.department,
     }
 
 
 @require_http_methods(["GET", "POST"])
 def admin_settings(request: HttpRequest) -> JsonResponse:
-    if not request.session.get('logged_in'):
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorised'}, status=403)
 
-    if request.session.get('user_level', AdminUser.LEVEL_ADMIN) != AdminUser.LEVEL_ADMIN:
+    if admin_user.level != AdminUser.LEVEL_ADMIN:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     language = get_language(request)
@@ -236,6 +281,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         AdminUser.LEVEL_DEPARTMENT: 'level2',
         AdminUser.LEVEL_TESTER: 'level3',
     }
+    allowed_departments = {value for value, _ in ContactForm.COMPANY_CHOICES}
     error_messages = {
         'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
         'duplicate_user_id': 'Duplikat identyfikatora użytkownika.' if language == 'pl' else 'Duplicate user id detected.',
@@ -244,6 +290,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Email format is invalid.',
         'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
         'level_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Level of access is required.',
+        'department_required': 'Departament jest wymagany dla level2.' if language == 'pl' else 'Department is required for level2 users.',
+        'department_invalid': 'Nieprawidłowy departament.' if language == 'pl' else 'Invalid department.',
         'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
         if language == 'pl'
         else 'At least one level1 admin must remain.',
@@ -280,6 +328,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         email_raw = (row.get('email') or '').strip()
         email = email_raw.lower()
         level = (row.get('level') or '').strip()
+        department = (row.get('department') or '').strip()
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
 
@@ -299,6 +348,14 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         if level not in level_labels.values():
             _error('level_required')
 
+        if level == level_labels[AdminUser.LEVEL_DEPARTMENT]:
+            if not department:
+                _error('department_required')
+            elif department not in allowed_departments:
+                _error('department_invalid')
+        elif department and department not in allowed_departments:
+            _error('department_invalid')
+
         if not marked_for_deletion:
             if email in planned_email_map and planned_email_map[email] != user_id:
                 _error('email_not_unique')
@@ -309,6 +366,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 'user_id': user_id,
                 'email': email,
                 'level': level,
+                'department': department,
                 'marked_for_deletion': marked_for_deletion,
                 'is_new': is_new,
             }
@@ -343,6 +401,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         return JsonResponse({'errors': errors}, status=400)
 
     updated_users: list[AdminUser] = []
+    tokens_to_send: list[tuple[AdminUser, str]] = []
     with transaction.atomic():
         for row in validated_rows:
             if row['marked_for_deletion'] and row['user_id']:
@@ -357,21 +416,37 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 user = existing_users[row['user_id']]
                 email_changed = user.email.lower() != row['email']
                 level_changed = user.level != row['level']
+                department_changed = user.department != row['department']
+                password_regenerated = False
                 user.email = row['email']
                 user.level = row['level']
+                user.department = row['department']
                 if email_changed:
-                    user.regenerate_token_hash()
+                    token = user.regenerate_token_hash()
+                    tokens_to_send.append((user, token))
+                    password_regenerated = True
                 elif not user.password_hash:
-                    user.regenerate_token_hash()
-                if email_changed or level_changed:
+                    token = user.regenerate_token_hash()
+                    tokens_to_send.append((user, token))
+                    password_regenerated = True
+                if email_changed or level_changed or department_changed or password_regenerated:
                     user.save()
                 else:
                     user.save(update_fields=['updated_at'])
             else:
-                user = AdminUser(email=row['email'], level=row['level'])
-                user.regenerate_token_hash()
+                user = AdminUser(email=row['email'], level=row['level'], department=row['department'])
+                token = user.regenerate_token_hash()
                 user.save()
+                tokens_to_send.append((user, token))
             updated_users.append(user)
+
+    if tokens_to_send:
+        transaction.on_commit(
+            lambda: [
+                send_admin_user_credentials(email=user.email, token=token, user=user)
+                for user, token in tokens_to_send
+            ]
+        )
 
     response_users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
     return JsonResponse({'users': response_users})
@@ -485,22 +560,28 @@ def _handle_email_form(
 
 @require_http_methods(["GET"])
 def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
-    if not request.session.get('logged_in'):
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    if not _can_access_message(admin_user, message):
+        return JsonResponse({'error': 'forbidden'}, status=403)
     language = get_language(request)
     return JsonResponse(_serialise_admin_message(message, language))
 
 
 @require_POST
 def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
-    if not request.session.get('logged_in'):
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+    if admin_user.level == AdminUser.LEVEL_TESTER:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    if not _can_access_message(admin_user, message):
+        return JsonResponse({'error': 'forbidden'}, status=403)
     language = get_language(request)
     form = MessageUpdateForm(request.POST, instance=message)
     if form.is_valid():
@@ -512,12 +593,15 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
 
 @require_POST
 def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -> JsonResponse:
-    if not request.session.get('logged_in'):
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if request.session.get('user_level') == AdminUser.LEVEL_TESTER:
+    if admin_user.level == AdminUser.LEVEL_TESTER:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
+    if not _can_access_message(admin_user, message):
+        return JsonResponse({'error': 'forbidden'}, status=403)
     with transaction.atomic():
         log_entry = get_object_or_404(
             ClientChangeLog.objects.select_for_update(),

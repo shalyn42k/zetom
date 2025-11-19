@@ -77,8 +77,13 @@ def login(request: HttpRequest) -> HttpResponse:
             request.session['user_level'] = user.level
             request.session['user_email'] = user.email
             request.session['user_id'] = user.id
+            request.session['user_department'] = user.department
+            request.session['lang'] = lang
             failed_attempts[ip] = 0
-            return redirect(request.POST.get('next') or 'contact:panel')
+            panel_url = reverse('contact:panel')
+            if lang:
+                panel_url = f"{panel_url}?lang={lang}"
+            return redirect(panel_url)
 
         failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
         if failed_attempts[ip] >= 5:

@@ -12,7 +12,7 @@ from typing import IO
 from django.conf import settings
 from django.utils import timezone
 
-from ..models import ContactMessage
+from ..models import AdminUser, ContactMessage
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,40 @@ def send_contact_email(recipient: str, message: ContactMessage, *, access_token:
         content=message.message,
     )
     _send_plain_email(to_email=recipient, subject=subject, body=body)
+
+
+def send_admin_user_credentials(*, email: str, token: str, user: AdminUser | None = None) -> None:
+    subject = "Your ZETOM admin panel access"
+    role_label = None
+    if user:
+        role_label = {
+            AdminUser.LEVEL_ADMIN: "level1",
+            AdminUser.LEVEL_DEPARTMENT: "level2",
+            AdminUser.LEVEL_TESTER: "level3",
+        }.get(user.level)
+
+    body_lines = [
+        "Hello,",
+        "",
+        "You have been granted access to the ZETOM admin panel.",
+        f"Email: {email}",
+        f"Temporary password/token: {token}",
+    ]
+
+    if role_label:
+        body_lines.append(f"Role: {role_label}")
+    if user and user.department:
+        body_lines.append(f"Department: {user.department}")
+
+    body_lines.extend(
+        [
+            "",
+            "Please log in using your email address and this password.",
+            "We recommend changing it after your first login, if allowed.",
+        ]
+    )
+
+    _send_plain_email(to_email=email, subject=subject, body="\n".join(body_lines))
 
 
 def send_company_notification(message: ContactMessage, *, link: str | None = None) -> None:

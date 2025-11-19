@@ -245,41 +245,44 @@
                 <button type="button" class="button button--ghost" data-request-close>
                     {% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}
                 </button>
-                <button type="submit" class="button button--primary" data-request-save>
+                <button type="submit" class="button button--primary" data-request-save {% if readonly_mode %}disabled{% endif %}>
                     {% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}
                 </button>
             </div>
         </form>
     </div>
 </div>
-<div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}">
-    <div class="modal__backdrop" data-settings-close></div>
-    <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-        <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
-        <div class="settings-modal__header">
-            <h2 class="modal__title" id="settings-title">Settings</h2>
-            <div class="settings-modal__header-actions">
-                <button type="button" class="button button--primary" data-settings-apply>{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+{% if user_level == 'level1' %}
+    <div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}" data-settings-departments="{{ settings_departments_json|escapejs }}">
+        <div class="modal__backdrop" data-settings-close></div>
+        <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+            <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
+            <div class="settings-modal__header">
+                <h2 class="modal__title" id="settings-title">Settings</h2>
+                <div class="settings-modal__header-actions">
+                    <button type="button" class="button button--primary" data-settings-apply>{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+                </div>
             </div>
-        </div>
-        <div class="settings-modal__error" data-settings-error hidden></div>
-        <div class="settings-table" data-settings-table>
-            <div class="settings-table__header">
-                <span>#</span>
-                <span>Email</span>
-                <span>Token hash</span>
-                <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
-                <span class="settings-table__actions-label">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</span>
+            <div class="settings-modal__error" data-settings-error hidden></div>
+            <div class="settings-table" data-settings-table>
+                <div class="settings-table__header">
+                    <span>#</span>
+                    <span>Email</span>
+                    <span>Password</span>
+                    <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                    <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
+                    <span class="settings-table__actions-label">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</span>
+                </div>
+                <div class="settings-table__body" data-settings-rows>
+                    <p class="settings-table__placeholder" data-settings-empty>{% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}</p>
+                </div>
             </div>
-            <div class="settings-table__body" data-settings-rows>
-                <p class="settings-table__placeholder" data-settings-empty>{% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}</p>
+            <div class="settings-modal__footer">
+                <button type="button" class="settings-add" data-settings-add title="{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}">+</button>
             </div>
-        </div>
-        <div class="settings-modal__footer">
-            <button type="button" class="settings-add" data-settings-add title="{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}">+</button>
         </div>
     </div>
-</div>
+{% endif %}
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -304,6 +307,9 @@
             <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
             <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
         </div>
+        {% if user_level == 'level1' %}
+            <button type="button" class="button button--ghost button--compact" data-settings-open>Settings</button>
+        {% endif %}
         <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
             {% csrf_token %}
             <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
@@ -311,13 +317,7 @@
     </div>
 </header>
 
-<main class="admin-dashboard admin-dashboard--with-sidebar">
-    <aside class="admin-sidebar">
-        <button type="button" class="sidebar-button sidebar-button--active">{% if lang == 'pl' %}Zgłoszenia{% else %}Requests{% endif %}</button>
-        {% if user_level == 'level1' %}
-            <button type="button" class="sidebar-button sidebar-button--ghost" data-settings-open>Settings</button>
-        {% endif %}
-    </aside>
+<main class="admin-dashboard">
     <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
@@ -556,7 +556,7 @@
                         {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
-                <button type="submit" class="form-submit">{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
             </form>
         </div>
     </section>
