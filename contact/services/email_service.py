@@ -57,7 +57,7 @@ def send_admin_user_credentials(*, email: str, token: str, user: AdminUser | Non
             AdminUser.LEVEL_ADMIN: "level1",
             AdminUser.LEVEL_DEPARTMENT: "level2",
             AdminUser.LEVEL_TESTER: "level3",
-        }.get(user.level)
+        }.get(user.level_of_access)
 
     body_lines = [
         "Hello,",
@@ -69,8 +69,8 @@ def send_admin_user_credentials(*, email: str, token: str, user: AdminUser | Non
 
     if role_label:
         body_lines.append(f"Role: {role_label}")
-    if user and user.department:
-        body_lines.append(f"Department: {user.department}")
+    if user and user.departments:
+        body_lines.append(f"Departments: {', '.join(user.departments)}")
 
     body_lines.extend(
         [

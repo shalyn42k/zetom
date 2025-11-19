@@ -46,11 +46,18 @@ def delete_messages(message_ids: Iterable[int]) -> None:
     ContactMessage.objects.filter(id__in=message_ids).update(is_deleted=True)
 
 
-def get_messages(*, sort_by: str | None = None, company: str | None = None) -> QuerySet[ContactMessage]:
+def get_messages(
+    *,
+    sort_by: str | None = None,
+    company: str | Sequence[str] | None = None,
+) -> QuerySet[ContactMessage]:
     queryset = ContactMessage.objects.filter(is_deleted=False).prefetch_related('attachments')
 
     if company and company != "all":
-        queryset = queryset.filter(company=company)
+        if isinstance(company, (list, tuple, set)):
+            queryset = queryset.filter(company__in=company)
+        else:
+            queryset = queryset.filter(company=company)
 
     order_by = _resolve_ordering(sort_by)
     if order_by:
@@ -59,8 +66,14 @@ def get_messages(*, sort_by: str | None = None, company: str | None = None) -> Q
     return queryset
 
 
-def get_deleted_messages() -> QuerySet[ContactMessage]:
-    return ContactMessage.objects.filter(is_deleted=True).prefetch_related('attachments')
+def get_deleted_messages(company: str | Sequence[str] | None = None) -> QuerySet[ContactMessage]:
+    queryset = ContactMessage.objects.filter(is_deleted=True).prefetch_related('attachments')
+    if company and company != "all":
+        if isinstance(company, (list, tuple, set)):
+            queryset = queryset.filter(company__in=company)
+        else:
+            queryset = queryset.filter(company=company)
+    return queryset
 
 
 def restore_messages(message_ids: Iterable[int]) -> None:
