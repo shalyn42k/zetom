@@ -113,6 +113,7 @@ class AdminUser(models.Model):
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=128)
     level = models.CharField(max_length=16, choices=LEVEL_CHOICES)
+    department = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

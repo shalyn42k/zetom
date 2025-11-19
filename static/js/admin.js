@@ -912,6 +912,14 @@
         const errorBox = modal.querySelector('[data-settings-error]');
         const endpoint = modal.dataset.settingsEndpoint;
         const hashMask = '••••••••••••••••';
+        const departments = (() => {
+            try {
+                return JSON.parse(modal.dataset.settingsDepartments || '[]');
+            } catch (error) {
+                console.error('Unable to parse departments list', error);
+                return [];
+            }
+        })();
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -992,6 +1000,24 @@
                 levelSelect.appendChild(opt);
             });
 
+            const departmentSelect = document.createElement('select');
+            departmentSelect.dataset.settingsDepartment = 'true';
+            const departmentPlaceholder = document.createElement('option');
+            departmentPlaceholder.value = '';
+            departmentPlaceholder.textContent = '—';
+            departmentPlaceholder.disabled = false;
+            departmentPlaceholder.selected = !user.department;
+            departmentSelect.appendChild(departmentPlaceholder);
+            departments.forEach((department) => {
+                const option = document.createElement('option');
+                option.value = department.value;
+                option.textContent = department.label;
+                if (department.value === user.department) {
+                    option.selected = true;
+                }
+                departmentSelect.appendChild(option);
+            });
+
             const deleteCell = document.createElement('div');
             deleteCell.className = 'settings-table__delete';
             const deleteButton = document.createElement('button');
@@ -1006,7 +1032,7 @@
             });
             deleteCell.appendChild(deleteButton);
 
-            row.append(idCell, emailInput, hashCell, levelSelect, deleteCell);
+            row.append(idCell, emailInput, hashCell, levelSelect, departmentSelect, deleteCell);
             return row;
         };
 
@@ -1038,6 +1064,7 @@
                     email: row.querySelector('[data-settings-email]')?.value || '',
                     password_hash: row.querySelector('[data-settings-hash]')?.title || '',
                     level: row.querySelector('[data-settings-level]')?.value || '',
+                    department: row.querySelector('[data-settings-department]')?.value || '',
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
                     is_new: row.dataset.isNew === 'true',
                 })),

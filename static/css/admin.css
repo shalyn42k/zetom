@@ -80,61 +80,6 @@ body[data-theme='dark'] .modal__backdrop {
     outline-offset: 2px;
 }
 
-.admin-dashboard--with-sidebar {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 24px;
-}
-
-.admin-sidebar {
-    align-self: start;
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 12px 28px rgba(17, 24, 39, 0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.admin-sidebar__top {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-}
-
-.sidebar-button {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    color: #111827;
-    text-align: left;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.sidebar-button:hover,
-.sidebar-button:focus-visible {
-    background: #eef2ff;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
-    outline: none;
-}
-
-.sidebar-button--active {
-    background: #1b6d34;
-    color: #ffffff;
-    border-color: transparent;
-    box-shadow: 0 12px 28px rgba(27, 109, 52, 0.25);
-}
-
-.sidebar-button--ghost {
-    background: #ffffff;
-}
-
 .settings-modal {
     max-width: 960px;
     width: 100%;
@@ -176,7 +121,7 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__header,
 .settings-table__row {
     display: grid;
-    grid-template-columns: 1fr 2.5fr 3fr 1.5fr 0.8fr;
+    grid-template-columns: 1fr 2.5fr 3fr 1.5fr 1.6fr 0.8fr;
     gap: 8px;
     align-items: center;
     padding: 12px 14px;
