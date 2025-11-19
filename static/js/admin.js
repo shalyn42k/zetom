@@ -977,10 +977,34 @@
             emailInput.value = user.email || '';
             emailInput.dataset.settingsEmail = 'true';
 
-            const hashCell = document.createElement('span');
-            hashCell.textContent = user.password_hash ? hashMask : '—';
-            hashCell.title = user.password_hash || '';
-            hashCell.dataset.settingsHash = 'true';
+            const passwordCell = document.createElement('div');
+            passwordCell.className = 'settings-table__password';
+            const passwordValue = document.createElement('span');
+            passwordValue.textContent = user.has_password ? hashMask : '—';
+            passwordValue.dataset.settingsPasswordValue = 'true';
+            passwordValue.dataset.visible = 'false';
+            passwordValue.dataset.mask = hashMask;
+            passwordValue.dataset.password = user.password_plaintext || '';
+            passwordCell.appendChild(passwordValue);
+
+            if (user.password_plaintext) {
+                const toggleButton = document.createElement('button');
+                toggleButton.type = 'button';
+                toggleButton.className = 'settings-table__password-toggle';
+                toggleButton.dataset.settingsPasswordToggle = 'true';
+                toggleButton.setAttribute('aria-label', 'Show password');
+                toggleButton.textContent = '👁';
+                toggleButton.addEventListener('click', () => {
+                    const isVisible = passwordValue.dataset.visible === 'true';
+                    passwordValue.dataset.visible = (!isVisible).toString();
+                    passwordValue.textContent = isVisible
+                        ? passwordValue.dataset.mask
+                        : passwordValue.dataset.password;
+                    toggleButton.textContent = isVisible ? '👁' : '🙈';
+                    toggleButton.setAttribute('aria-pressed', (!isVisible).toString());
+                });
+                passwordCell.appendChild(toggleButton);
+            }
 
             const levelSelect = document.createElement('select');
             levelSelect.dataset.settingsLevel = 'true';
@@ -1032,7 +1056,14 @@
             });
             deleteCell.appendChild(deleteButton);
 
-            row.append(idCell, emailInput, hashCell, levelSelect, departmentSelect, deleteCell);
+            row.append(
+                idCell,
+                emailInput,
+                passwordCell,
+                levelSelect,
+                departmentSelect,
+                deleteCell,
+            );
             return row;
         };
 
@@ -1062,7 +1093,6 @@
                 users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
                     user_id: row.dataset.userId || null,
                     email: row.querySelector('[data-settings-email]')?.value || '',
-                    password_hash: row.querySelector('[data-settings-hash]')?.title || '',
                     level: row.querySelector('[data-settings-level]')?.value || '',
                     department: row.querySelector('[data-settings-department]')?.value || '',
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
@@ -1101,7 +1131,8 @@
             const row = buildRow({
                 user_id: null,
                 email: '',
-                password_hash: '',
+                password_plaintext: '',
+                has_password: false,
                 level: '',
                 is_new: true,
                 marked_for_deletion: false,

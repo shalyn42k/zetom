@@ -259,7 +259,8 @@ def _serialise_admin_user(user: AdminUser) -> dict:
     return {
         'user_id': user.id,
         'email': user.email,
-        'password_hash': user.password_hash,
+        'password_plaintext': user.reveal_plaintext_password() or '',
+        'has_password': bool(user.password_ciphertext or user.password_hash),
         'level': user.level,
         'department': user.department,
     }
@@ -416,16 +417,19 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 email_changed = user.email.lower() != row['email']
                 level_changed = user.level != row['level']
                 department_changed = user.department != row['department']
+                password_regenerated = False
                 user.email = row['email']
                 user.level = row['level']
                 user.department = row['department']
                 if email_changed:
                     token = user.regenerate_token_hash()
                     tokens_to_send.append((user, token))
+                    password_regenerated = True
                 elif not user.password_hash:
                     token = user.regenerate_token_hash()
                     tokens_to_send.append((user, token))
-                if email_changed or level_changed or department_changed:
+                    password_regenerated = True
+                if email_changed or level_changed or department_changed or password_regenerated:
                     user.save()
                 else:
                     user.save(update_fields=['updated_at'])
