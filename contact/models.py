@@ -102,6 +102,11 @@ class ContactAttachment(models.Model):
 
 
 class AdminUser(models.Model):
+    DEPARTMENT_COMPANY_1 = "firma1"
+    DEPARTMENT_COMPANY_2 = "firma2"
+    DEPARTMENT_COMPANY_3 = "firma3"
+    DEPARTMENT_OTHER = "inna"
+
     LEVEL_ADMIN = "level1"
     LEVEL_DEPARTMENT = "level2"
     LEVEL_TESTER = "level3"
@@ -112,11 +117,23 @@ class AdminUser(models.Model):
         (LEVEL_TESTER, "Tester"),
     ]
 
+    DEPARTMENT_CHOICES = [
+        (DEPARTMENT_COMPANY_1, "Company 1"),
+        (DEPARTMENT_COMPANY_2, "Company 2"),
+        (DEPARTMENT_COMPANY_3, "Company 3"),
+        (DEPARTMENT_OTHER, "Other"),
+    ]
+
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=128)
     password_ciphertext = models.TextField(blank=True)
     level = models.CharField(max_length=16, choices=LEVEL_CHOICES)
-    department = models.CharField(max_length=50, blank=True, null=True)
+    department = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=DEPARTMENT_CHOICES,
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -911,7 +911,6 @@
         const applyButton = modal.querySelector('[data-settings-apply]');
         const errorBox = modal.querySelector('[data-settings-error]');
         const endpoint = modal.dataset.settingsEndpoint;
-        const hashMask = '••••••••••••••••';
         const departments = (() => {
             try {
                 return JSON.parse(modal.dataset.settingsDepartments || '[]');
@@ -979,32 +978,17 @@
 
             const passwordCell = document.createElement('div');
             passwordCell.className = 'settings-table__password';
-            const passwordValue = document.createElement('span');
-            passwordValue.textContent = user.has_password ? hashMask : '—';
-            passwordValue.dataset.settingsPasswordValue = 'true';
-            passwordValue.dataset.visible = 'false';
-            passwordValue.dataset.mask = hashMask;
-            passwordValue.dataset.password = user.password_plaintext || '';
-            passwordCell.appendChild(passwordValue);
-
-            if (user.password_plaintext) {
-                const toggleButton = document.createElement('button');
-                toggleButton.type = 'button';
-                toggleButton.className = 'settings-table__password-toggle';
-                toggleButton.dataset.settingsPasswordToggle = 'true';
-                toggleButton.setAttribute('aria-label', 'Show password');
-                toggleButton.textContent = '👁';
-                toggleButton.addEventListener('click', () => {
-                    const isVisible = passwordValue.dataset.visible === 'true';
-                    passwordValue.dataset.visible = (!isVisible).toString();
-                    passwordValue.textContent = isVisible
-                        ? passwordValue.dataset.mask
-                        : passwordValue.dataset.password;
-                    toggleButton.textContent = isVisible ? '👁' : '🙈';
-                    toggleButton.setAttribute('aria-pressed', (!isVisible).toString());
-                });
-                passwordCell.appendChild(toggleButton);
-            }
+            const passwordInput = document.createElement('input');
+            passwordInput.type = 'text';
+            passwordInput.value = user.password_plaintext || '';
+            passwordInput.placeholder = 'Password';
+            passwordInput.autocomplete = 'new-password';
+            passwordInput.dataset.settingsPassword = 'true';
+            passwordInput.dataset.passwordDirty = 'false';
+            passwordInput.addEventListener('input', () => {
+                passwordInput.dataset.passwordDirty = 'true';
+            });
+            passwordCell.appendChild(passwordInput);
 
             const levelSelect = document.createElement('select');
             levelSelect.dataset.settingsLevel = 'true';
@@ -1093,6 +1077,13 @@
                 users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
                     user_id: row.dataset.userId || null,
                     email: row.querySelector('[data-settings-email]')?.value || '',
+                    password: (() => {
+                        const passwordInput = row.querySelector('[data-settings-password]');
+                        const isDirty = passwordInput?.dataset.passwordDirty === 'true';
+                        return isDirty ? passwordInput?.value || '' : '';
+                    })(),
+                    password_changed:
+                        row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true',
                     level: row.querySelector('[data-settings-level]')?.value || '',
                     department: row.querySelector('[data-settings-department]')?.value || '',
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
