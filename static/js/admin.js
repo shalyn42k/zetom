@@ -960,7 +960,6 @@
         };
 
         const buildRow = (user) => {
-            const userDepartments = Array.isArray(user.departments) ? user.departments : [];
             const row = document.createElement('div');
             row.className = 'settings-table__row';
             row.dataset.settingsRow = 'true';
@@ -981,8 +980,8 @@
             passwordCell.className = 'settings-table__password';
             const passwordInput = document.createElement('input');
             passwordInput.type = 'text';
-            passwordInput.value = '';
-            passwordInput.placeholder = user.has_password ? '••••••' : 'Password';
+            passwordInput.value = user.password_plaintext || '';
+            passwordInput.placeholder = 'Password';
             passwordInput.autocomplete = 'new-password';
             passwordInput.dataset.settingsPassword = 'true';
             passwordInput.dataset.passwordDirty = 'false';
@@ -1011,12 +1010,17 @@
 
             const departmentSelect = document.createElement('select');
             departmentSelect.dataset.settingsDepartment = 'true';
-            departmentSelect.multiple = true;
+            const departmentPlaceholder = document.createElement('option');
+            departmentPlaceholder.value = '';
+            departmentPlaceholder.textContent = '—';
+            departmentPlaceholder.disabled = false;
+            departmentPlaceholder.selected = !user.department;
+            departmentSelect.appendChild(departmentPlaceholder);
             departments.forEach((department) => {
                 const option = document.createElement('option');
                 option.value = department.value;
                 option.textContent = department.label;
-                if (userDepartments.includes(department.value)) {
+                if (department.value === user.department) {
                     option.selected = true;
                 }
                 departmentSelect.appendChild(option);
@@ -1044,9 +1048,6 @@
                 departmentSelect,
                 deleteCell,
             );
-            if (row.dataset.markedForDeletion === 'true') {
-                row.classList.add('is-marked-for-deletion');
-            }
             return row;
         };
 
@@ -1084,9 +1085,7 @@
                     password_changed:
                         row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true',
                     level: row.querySelector('[data-settings-level]')?.value || '',
-                    departments: Array.from(
-                        row.querySelector('[data-settings-department]')?.selectedOptions || [],
-                    ).map((option) => option.value),
+                    department: row.querySelector('[data-settings-department]')?.value || '',
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
                     is_new: row.dataset.isNew === 'true',
                 })),
@@ -1123,9 +1122,9 @@
             const row = buildRow({
                 user_id: null,
                 email: '',
+                password_plaintext: '',
                 has_password: false,
                 level: '',
-                departments: [],
                 is_new: true,
                 marked_for_deletion: false,
             });

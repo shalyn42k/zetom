@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import secrets
+
 from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
+
+from .utils import decrypt_admin_secret, encrypt_admin_secret
 
 
 def _generate_access_token() -> str:
@@ -123,8 +126,14 @@ class AdminUser(models.Model):
 
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=128)
-    level_of_access = models.CharField(max_length=16, choices=LEVEL_CHOICES)
-    departments = models.JSONField(default=list, blank=True)
+    password_ciphertext = models.TextField(blank=True)
+    level = models.CharField(max_length=16, choices=LEVEL_CHOICES)
+    department = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=DEPARTMENT_CHOICES,
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -132,13 +141,19 @@ class AdminUser(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:  # pragma: no cover - representation helper
-        return f"AdminUser({self.email}, {self.level_of_access})"
+        return f"AdminUser({self.email}, {self.level})"
 
-    def set_password(self, raw_password: str) -> None:
-        self.password_hash = make_password(raw_password)
+    def set_password_token(self, token: str) -> None:
+        self.password_hash = make_password(token)
+        self.password_ciphertext = encrypt_admin_secret(token)
 
-    def check_password(self, raw_password: str) -> bool:
-        return check_password(raw_password, self.password_hash)
+    def regenerate_token_hash(self) -> str:
+        token = _generate_access_token()
+        self.set_password_token(token)
+        return token
+
+    def reveal_plaintext_password(self) -> str | None:
+        return decrypt_admin_secret(self.password_ciphertext)
 
 class AdminActivityLog(models.Model):
     ACTION_STATUS_CHANGE = "status_change"

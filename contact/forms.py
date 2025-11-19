@@ -321,7 +321,7 @@ class MessageFilterForm(forms.Form):
     ):
         super().__init__(*args, **kwargs)
         effective_choices = list(company_choices or ContactForm.COMPANY_CHOICES)
-        default_company = effective_choices[0][0] if effective_choices else ('' if not include_all else self.COMPANY_ALL)
+        default_company = effective_choices[0][0] if effective_choices else self.COMPANY_ALL
 
         if include_all:
             effective_choices = [(self.COMPANY_ALL, "All departments"), *effective_choices]
