@@ -99,6 +99,34 @@ class ContactAttachment(models.Model):
         return f"Attachment({self.original_name})"
 
 
+class AdminUser(models.Model):
+    LEVEL_ADMIN = "level1"
+    LEVEL_DEPARTMENT = "level2"
+    LEVEL_TESTER = "level3"
+
+    LEVEL_CHOICES = [
+        (LEVEL_ADMIN, "Admin"),
+        (LEVEL_DEPARTMENT, "Department"),
+        (LEVEL_TESTER, "Tester"),
+    ]
+
+    email = models.EmailField(unique=True)
+    password_hash = models.CharField(max_length=128)
+    level = models.CharField(max_length=16, choices=LEVEL_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:  # pragma: no cover - representation helper
+        return f"AdminUser({self.email}, {self.level})"
+
+    def regenerate_token_hash(self) -> str:
+        token = _generate_access_token()
+        self.password_hash = make_password(token)
+        return token
+
 class AdminActivityLog(models.Model):
     ACTION_STATUS_CHANGE = "status_change"
     ACTION_DELETE = "delete"

@@ -17,7 +17,7 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
-from ..models import AdminActivityLog, ClientChangeLog, ContactMessage
+from ..models import AdminActivityLog, AdminUser, ClientChangeLog, ContactMessage
 from ..services import messages as message_service
 from ..services.activity_log import log_action
 from ..services.email_service import send_email_with_attachment
@@ -72,6 +72,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if not request.session.get('logged_in'):
         return redirect('contact:login')
 
+    user_level = request.session.get('user_level', AdminUser.LEVEL_ADMIN)
     lang = get_language(request)
 
     filter_data = helpers.resolve_filter_data(request, lang)
@@ -170,6 +171,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     context = {
         'lang': lang,
+        'user_level': user_level,
         'messages_page': page_obj,
         'paginator': paginator,
         'page_range': list(paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)),
@@ -192,6 +194,161 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'request_update_error_message': update_error_message,
     }
     return render(request, 'contact/admin_panel.html', context)
+
+
+def _serialise_admin_user(user: AdminUser) -> dict:
+    return {
+        'user_id': user.id,
+        'email': user.email,
+        'password_hash': user.password_hash,
+        'level': user.level,
+    }
+
+
+@require_http_methods(["GET", "POST"])
+def admin_settings(request: HttpRequest) -> JsonResponse:
+    if not request.session.get('logged_in'):
+        return JsonResponse({'error': 'unauthorised'}, status=403)
+
+    if request.session.get('user_level', AdminUser.LEVEL_ADMIN) != AdminUser.LEVEL_ADMIN:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    language = get_language(request)
+    level_labels = {
+        AdminUser.LEVEL_ADMIN: 'level1',
+        AdminUser.LEVEL_DEPARTMENT: 'level2',
+        AdminUser.LEVEL_TESTER: 'level3',
+    }
+    error_messages = {
+        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
+        'duplicate_user_id': 'Duplikat identyfikatora użytkownika.' if language == 'pl' else 'Duplicate user id detected.',
+        'unknown_user_id': 'Nieznany użytkownik.' if language == 'pl' else 'Unknown user.',
+        'email_required': 'Email jest wymagany.' if language == 'pl' else 'Email is required.',
+        'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Email format is invalid.',
+        'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
+        'level_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Level of access is required.',
+        'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
+        if language == 'pl'
+        else 'At least one level1 admin must remain.',
+    }
+
+    if request.method == 'GET':
+        users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+        return JsonResponse({'users': users})
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        return JsonResponse({'errors': [error_messages['invalid_payload']]}, status=400)
+
+    rows = payload.get('users', []) if isinstance(payload, dict) else []
+    if not isinstance(rows, list):
+        return JsonResponse({'errors': [error_messages['invalid_payload']]}, status=400)
+
+    existing_users = {str(user.id): user for user in AdminUser.objects.all()}
+    seen_ids: set[str] = set()
+    planned_email_map: dict[str, str] = {}
+    errors: list[str] = []
+
+    def _error(code: str) -> None:
+        errors.append(error_messages.get(code, code))
+
+    # Basic row validation
+    validated_rows: list[dict] = []
+    for index, row in enumerate(rows):
+        row_identifier = f"row_{index}"
+        user_id = str(row.get('user_id')) if row.get('user_id') not in (None, '') else None
+        email = (row.get('email') or '').strip()
+        level = (row.get('level') or '').strip()
+        marked_for_deletion = bool(row.get('marked_for_deletion'))
+        is_new = bool(row.get('is_new')) or user_id is None
+
+        if user_id:
+            if user_id in seen_ids:
+                _error('duplicate_user_id')
+            seen_ids.add(user_id)
+            if user_id not in existing_users:
+                _error('unknown_user_id')
+        if not email:
+            _error('email_required')
+        elif '@' not in email:
+            _error('email_invalid')
+        if level not in level_labels.values():
+            _error('level_required')
+
+        if not marked_for_deletion:
+            if email in planned_email_map and planned_email_map[email] != user_id:
+                _error('email_not_unique')
+            planned_email_map[email] = user_id or row_identifier
+
+        validated_rows.append(
+            {
+                'user_id': user_id,
+                'email': email,
+                'level': level,
+                'marked_for_deletion': marked_for_deletion,
+                'is_new': is_new,
+            }
+        )
+
+    if errors:
+        return JsonResponse({'errors': errors}, status=400)
+
+    # Uniqueness against database excluding rows marked for deletion
+    final_emails = [row['email'] for row in validated_rows if not row['marked_for_deletion']]
+    db_conflicts = AdminUser.objects.filter(email__in=final_emails).exclude(
+        id__in=[row['user_id'] for row in validated_rows if row['user_id']]
+    )
+    if db_conflicts.exists():
+        _error('email_not_unique')
+
+    # Prevent removing/downgrading last admin
+    final_admins = 0
+    for row in validated_rows:
+        if row['marked_for_deletion']:
+            continue
+        if row['level'] == level_labels[AdminUser.LEVEL_ADMIN]:
+            final_admins += 1
+
+    if final_admins == 0:
+        _error('no_admin_left')
+
+    if errors:
+        return JsonResponse({'errors': errors}, status=400)
+
+    updated_users: list[AdminUser] = []
+    with transaction.atomic():
+        for row in validated_rows:
+            if row['marked_for_deletion'] and row['user_id']:
+                user = existing_users.get(row['user_id'])
+                if user and user.level == AdminUser.LEVEL_ADMIN and final_admins < 1:
+                    continue
+                if user:
+                    user.delete()
+                continue
+
+            if row['user_id']:
+                user = existing_users[row['user_id']]
+                email_changed = user.email != row['email']
+                level_changed = user.level != row['level']
+                user.email = row['email']
+                user.level = row['level']
+                if email_changed:
+                    user.regenerate_token_hash()
+                elif not user.password_hash:
+                    user.regenerate_token_hash()
+                if email_changed or level_changed:
+                    user.save()
+                else:
+                    user.save(update_fields=['updated_at'])
+            else:
+                user = AdminUser(email=row['email'], level=row['level'])
+                user.regenerate_token_hash()
+                user.save()
+            updated_users.append(user)
+
+    response_users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+    return JsonResponse({'users': response_users})
 
 
 def _handle_bulk_form(

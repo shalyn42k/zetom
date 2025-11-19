@@ -252,6 +252,34 @@
         </form>
     </div>
 </div>
+<div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}">
+    <div class="modal__backdrop" data-settings-close></div>
+    <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
+        <div class="settings-modal__header">
+            <h2 class="modal__title" id="settings-title">Settings</h2>
+            <div class="settings-modal__header-actions">
+                <button type="button" class="button button--primary" data-settings-apply>{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+            </div>
+        </div>
+        <div class="settings-modal__error" data-settings-error hidden></div>
+        <div class="settings-table" data-settings-table>
+            <div class="settings-table__header">
+                <span>#</span>
+                <span>Email</span>
+                <span>Token hash</span>
+                <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                <span class="settings-table__actions-label">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</span>
+            </div>
+            <div class="settings-table__body" data-settings-rows>
+                <p class="settings-table__placeholder" data-settings-empty>{% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}</p>
+            </div>
+        </div>
+        <div class="settings-modal__footer">
+            <button type="button" class="settings-add" data-settings-add title="{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}">+</button>
+        </div>
+    </div>
+</div>
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -283,7 +311,13 @@
     </div>
 </header>
 
-<main class="admin-dashboard">
+<main class="admin-dashboard admin-dashboard--with-sidebar">
+    <aside class="admin-sidebar">
+        <button type="button" class="sidebar-button sidebar-button--active">{% if lang == 'pl' %}Zgłoszenia{% else %}Requests{% endif %}</button>
+        {% if user_level == 'level1' %}
+            <button type="button" class="sidebar-button sidebar-button--ghost" data-settings-open>Settings</button>
+        {% endif %}
+    </aside>
     <section class="admin-card panel">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
