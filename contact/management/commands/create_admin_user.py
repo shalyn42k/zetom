@@ -3,6 +3,7 @@ from __future__ import annotations
 import getpass
 from typing import Any
 
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 
 from contact.models import AdminUser
@@ -61,15 +62,12 @@ class Command(BaseCommand):
             email__iexact=email,
             defaults={
                 "email": email,
-                "password_hash": "",
-                "level_of_access": level,
-                "departments": [],
+                "password_hash": make_password(password),
+                "level": level,
             },
         )
 
         if created:
-            user.set_password(password)
-            user.save(update_fields=["email", "password_hash", "level_of_access", "departments", "updated_at"])
             action = "created"
         else:
             if not force_update:
@@ -77,14 +75,12 @@ class Command(BaseCommand):
                     "User already exists. Re-run with --force-update to change password/level."
                 )
             user.email = email
-            user.level_of_access = level
-            if level != AdminUser.LEVEL_DEPARTMENT:
-                user.departments = []
-            user.set_password(password)
-            user.save(update_fields=["email", "level_of_access", "departments", "password_hash", "updated_at"])
+            user.level = level
+            user.password_hash = make_password(password)
+            user.save(update_fields=["email", "level", "password_hash", "updated_at"])
             action = "updated"
 
-        self.stdout.write(self.style.SUCCESS(f"Admin user {action}: {user.email} ({user.level_of_access})"))
+        self.stdout.write(self.style.SUCCESS(f"Admin user {action}: {user.email} ({user.level})"))
         self.stdout.write(self.style.WARNING("Store this password securely; it will not be shown again."))
         self.stdout.write(password)
         return None
