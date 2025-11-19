@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.core.validators import EmailValidator
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -247,6 +249,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         else 'At least one level1 admin must remain.',
     }
 
+    email_validator = EmailValidator(message=error_messages['email_invalid'])
+
     if request.method == 'GET':
         users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
         return JsonResponse({'users': users})
@@ -273,7 +277,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     for index, row in enumerate(rows):
         row_identifier = f"row_{index}"
         user_id = str(row.get('user_id')) if row.get('user_id') not in (None, '') else None
-        email = (row.get('email') or '').strip()
+        email_raw = (row.get('email') or '').strip()
+        email = email_raw.lower()
         level = (row.get('level') or '').strip()
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
@@ -286,8 +291,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 _error('unknown_user_id')
         if not email:
             _error('email_required')
-        elif '@' not in email:
-            _error('email_invalid')
+        else:
+            try:
+                email_validator(email)
+            except ValidationError:
+                _error('email_invalid')
         if level not in level_labels.values():
             _error('level_required')
 
@@ -310,12 +318,15 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         return JsonResponse({'errors': errors}, status=400)
 
     # Uniqueness against database excluding rows marked for deletion
+    allowed_ids = {row['user_id'] for row in validated_rows if row['user_id']}
     final_emails = [row['email'] for row in validated_rows if not row['marked_for_deletion']]
-    db_conflicts = AdminUser.objects.filter(email__in=final_emails).exclude(
-        id__in=[row['user_id'] for row in validated_rows if row['user_id']]
-    )
-    if db_conflicts.exists():
-        _error('email_not_unique')
+    for candidate in set(final_emails):
+        qs = AdminUser.objects.filter(email__iexact=candidate)
+        if allowed_ids:
+            qs = qs.exclude(id__in=allowed_ids)
+        if qs.exists():
+            _error('email_not_unique')
+            break
 
     # Prevent removing/downgrading last admin
     final_admins = 0
@@ -344,7 +355,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
 
             if row['user_id']:
                 user = existing_users[row['user_id']]
-                email_changed = user.email != row['email']
+                email_changed = user.email.lower() != row['email']
                 level_changed = user.level != row['level']
                 user.email = row['email']
                 user.level = row['level']

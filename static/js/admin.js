@@ -1075,7 +1075,7 @@
                 user_id: null,
                 email: '',
                 password_hash: '',
-                level: 'level3',
+                level: '',
                 is_new: true,
                 marked_for_deletion: false,
             });
