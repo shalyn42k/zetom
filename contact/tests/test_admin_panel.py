@@ -4,12 +4,16 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from contact.forms import MessageBulkActionForm, TrashActionForm
-from contact.models import ContactMessage
+from contact.models import AdminUser, ContactMessage, Department
 
 
 @override_settings(COMPANY_NOTIFICATION_RECIPIENTS={'default': []}, SMTP_USER='')
 class AdminPanelTests(TestCase):
     def setUp(self) -> None:
+        self.department, _ = Department.objects.get_or_create(
+            code='firma1',
+            defaults={'name_pl': 'Firma 1', 'name_en': 'Company 1'},
+        )
         self.message = ContactMessage.objects.create(
             full_name='Jane Doe',
             phone='+48123123123',
@@ -18,8 +22,20 @@ class AdminPanelTests(TestCase):
             company_name='JD Consulting',
             message='Need help',
         )
+        self.admin_user = AdminUser.objects.create(
+            email='admin@example.com',
+            password_hash='',
+            level_of_access=AdminUser.LEVEL_ADMIN,
+        )
+        self.admin_user.set_password('password123')
+        self.admin_user.save()
+        self.admin_user.departments.add(self.department)
         session = self.client.session
         session['logged_in'] = True
+        session['admin_user_id'] = self.admin_user.id
+        session['level_of_access'] = self.admin_user.level_of_access
+        session['departments'] = [self.department.code]
+        session['admin_email'] = self.admin_user.email
         session.save()
 
     def test_bulk_action_updates_status(self) -> None:

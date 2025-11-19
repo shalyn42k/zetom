@@ -19,8 +19,14 @@ from ..forms import (
     MessageUpdateForm,
     TrashActionForm,
 )
-from ..forms import ContactForm
-from ..models import AdminActivityLog, AdminUser, ClientChangeLog, ContactMessage
+from ..models import (
+    AdminActivityLog,
+    AdminUser,
+    ClientChangeLog,
+    ContactMessage,
+    Department,
+    _generate_access_token,
+)
 from ..services import messages as message_service
 from ..services.activity_log import log_action
 from ..services.email_service import (
@@ -74,11 +80,11 @@ def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
 
 
 def _get_admin_user(request: HttpRequest) -> AdminUser | None:
-    user_id = request.session.get('user_id')
+    user_id = request.session.get('admin_user_id')
     if not user_id:
         return None
     try:
-        return AdminUser.objects.get(id=user_id)
+        return AdminUser.objects.prefetch_related('departments').get(id=user_id)
     except AdminUser.DoesNotExist:
         return None
 
@@ -86,10 +92,11 @@ def _get_admin_user(request: HttpRequest) -> AdminUser | None:
 def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
     if not admin_user:
         return False
-    if admin_user.level == AdminUser.LEVEL_DEPARTMENT:
-        if not admin_user.department:
+    if admin_user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
+        departments = {dept.code for dept in admin_user.departments.all()}
+        if not departments:
             return False
-        return message.company == admin_user.department
+        return message.company in departments
     return True
 
 
@@ -99,41 +106,42 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if not request.session.get('logged_in') or not admin_user:
         return redirect('contact:login')
 
-    user_level = admin_user.level
-    request.session['user_level'] = user_level
-    request.session['user_email'] = admin_user.email
-    request.session['user_id'] = admin_user.id
-    request.session['user_department'] = admin_user.department
+    user_level = admin_user.level_of_access
+    user_departments = list(admin_user.departments.values_list('code', flat=True))
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
-    user_department = (admin_user.department or "").strip()
-    department_label = helpers.company_labels(lang).get(user_department, user_department or "")
+    department_labels = helpers.company_labels(lang)
+    department_choices = [(code, department_labels.get(code, code)) for code in user_departments]
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
         filter_data = helpers.resolve_filter_data(
             request,
             lang,
-            company_choices=[(user_department, department_label)] if user_department else [],
-            include_all=False,
+            company_choices=department_choices,
+            include_all=len(department_choices) > 1,
         )
         sort_by = filter_data["sort_by"]
-        company_filter = user_department or filter_data["company"]
-        filter_data["company"] = company_filter
+        company_filter = filter_data["company"]
+        if company_filter == MessageFilterForm.COMPANY_ALL:
+            company_filter = user_departments
+        filter_data["company"] = (
+            MessageFilterForm.COMPANY_ALL if company_filter == user_departments else company_filter
+        )
     else:
         filter_data = helpers.resolve_filter_data(request, lang)
         sort_by = filter_data["sort_by"]
         company_filter = filter_data["company"]
 
-    if user_level == AdminUser.LEVEL_DEPARTMENT and not user_department:
+    if user_level == AdminUser.LEVEL_DEPARTMENT and not user_departments:
         queryset = ContactMessage.objects.none()
         deleted_queryset = ContactMessage.objects.none()
     else:
         queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
         deleted_queryset = message_service.get_deleted_messages()
-        if user_level == AdminUser.LEVEL_DEPARTMENT and user_department:
-            queryset = queryset.filter(company=user_department)
-            deleted_queryset = deleted_queryset.filter(company=user_department)
+        if user_level == AdminUser.LEVEL_DEPARTMENT and user_departments:
+            queryset = queryset.filter(company__in=user_departments)
+            deleted_queryset = deleted_queryset.filter(company__in=user_departments)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -161,17 +169,23 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     if readonly_mode:
         action_form.fields['action'].disabled = True
         action_form.fields['selected'].disabled = True
+        for field in email_form.fields.values():
+            field.disabled = True
+        for field in trash_form.fields.values():
+            field.disabled = True
+        for field in download_form.fields.values():
+            field.disabled = True
     filter_form = helpers.build_filter_form(
         request,
         lang,
         initial_data=filter_data,
-        company_choices=[(user_department, department_label)] if user_level == AdminUser.LEVEL_DEPARTMENT else None,
+        company_choices=department_choices if user_level == AdminUser.LEVEL_DEPARTMENT else None,
         include_all=user_level != AdminUser.LEVEL_DEPARTMENT,
     )
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
-        filter_form.fields['company'].initial = user_department
-        filter_form.fields['company'].widget.attrs['disabled'] = True
+        filter_form.fields['company'].initial = filter_data.get('company')
+        filter_form.fields['company'].widget.attrs['disabled'] = False
 
     if request.method == 'POST' and readonly_mode:
         return redirect(
@@ -249,6 +263,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     context = {
         'lang': lang,
         'user_level': user_level,
+        'user_departments': user_departments,
         'readonly_mode': readonly_mode,
         'messages_page': page_obj,
         'paginator': paginator,
@@ -279,10 +294,10 @@ def _serialise_admin_user(user: AdminUser) -> dict:
     return {
         'user_id': user.id,
         'email': user.email,
-        'password_plaintext': user.reveal_plaintext_password() or '',
-        'has_password': bool(user.password_ciphertext or user.password_hash),
-        'level': user.level,
-        'department': user.department,
+        'password_plaintext': '',
+        'has_password': bool(user.password_hash),
+        'level': user.level_of_access,
+        'departments': list(user.departments.values_list('code', flat=True)),
     }
 
 
@@ -292,16 +307,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorised'}, status=403)
 
-    if admin_user.level != AdminUser.LEVEL_ADMIN:
+    if admin_user.level_of_access != AdminUser.LEVEL_ADMIN:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     language = get_language(request)
-    level_labels = {
-        AdminUser.LEVEL_ADMIN: 'level1',
-        AdminUser.LEVEL_DEPARTMENT: 'level2',
-        AdminUser.LEVEL_TESTER: 'level3',
-    }
-    allowed_departments = {value for value, _ in AdminUser.DEPARTMENT_CHOICES}
+    allowed_departments = set(Department.objects.values_list('code', flat=True))
     error_messages = {
         'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
         'duplicate_user_id': 'Duplikat identyfikatora użytkownika.' if language == 'pl' else 'Duplicate user id detected.',
@@ -321,7 +331,10 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     email_validator = EmailValidator(message=error_messages['email_invalid'])
 
     if request.method == 'GET':
-        users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+        users = [
+            _serialise_admin_user(user)
+            for user in AdminUser.objects.prefetch_related('departments').all().order_by('id')
+        ]
         return JsonResponse({'users': users})
 
     try:
@@ -333,7 +346,10 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     if not isinstance(rows, list):
         return JsonResponse({'errors': [error_messages['invalid_payload']]}, status=400)
 
-    existing_users = {str(user.id): user for user in AdminUser.objects.all()}
+    existing_users = {
+        str(user.id): user
+        for user in AdminUser.objects.prefetch_related('departments').all()
+    }
     seen_ids: set[str] = set()
     planned_email_map: dict[str, str] = {}
     errors: list[str] = []
@@ -349,9 +365,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         email_raw = (row.get('email') or '').strip()
         email = email_raw.lower()
         level = (row.get('level') or '').strip()
-        department = (row.get('department') or '').strip()
+        departments_raw = row.get('departments')
+        departments_list = departments_raw if isinstance(departments_raw, list) else []
+        departments = [str(value).strip() for value in departments_list if str(value).strip()]
         password_value = row.get('password') if isinstance(row.get('password'), str) else ''
-        password_changed = bool(row.get('password_changed'))
+        password_changed = bool(row.get('password_changed')) if level == AdminUser.LEVEL_ADMIN else False
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
 
@@ -368,16 +386,20 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 email_validator(email)
             except ValidationError:
                 _error('email_invalid')
-        if level not in level_labels.values():
+        if level not in {choice[0] for choice in AdminUser.LEVEL_CHOICES}:
             _error('level_required')
 
-        if level == level_labels[AdminUser.LEVEL_DEPARTMENT]:
-            if not department:
+        if level == AdminUser.LEVEL_DEPARTMENT:
+            if not departments:
                 _error('department_required')
-            elif department not in allowed_departments:
+            else:
+                invalid_departments = [dept for dept in departments if dept not in allowed_departments]
+                if invalid_departments:
+                    _error('department_invalid')
+        elif departments:
+            invalid_departments = [dept for dept in departments if dept not in allowed_departments]
+            if invalid_departments:
                 _error('department_invalid')
-        elif department and department not in allowed_departments:
-            _error('department_invalid')
 
         if password_changed and not password_value:
             _error('password_required')
@@ -392,7 +414,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 'user_id': user_id,
                 'email': email,
                 'level': level,
-                'department': department,
+                'departments': departments,
                 'password': password_value,
                 'password_changed': password_changed,
                 'marked_for_deletion': marked_for_deletion,
@@ -415,12 +437,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
             break
 
     # Prevent removing/downgrading last admin
-    final_admins = 0
-    for row in validated_rows:
-        if row['marked_for_deletion']:
-            continue
-        if row['level'] == level_labels[AdminUser.LEVEL_ADMIN]:
-            final_admins += 1
+    final_admins = sum(
+        1
+        for row in validated_rows
+        if not row['marked_for_deletion'] and row['level'] == AdminUser.LEVEL_ADMIN
+    )
 
     if final_admins == 0:
         _error('no_admin_left')
@@ -428,52 +449,62 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     if errors:
         return JsonResponse({'errors': errors}, status=400)
 
+    departments_lookup = {
+        dept.code: dept for dept in Department.objects.filter(code__in=allowed_departments)
+    }
     updated_users: list[AdminUser] = []
     tokens_to_send: list[tuple[AdminUser, str]] = []
     with transaction.atomic():
         for row in validated_rows:
+            selected_departments = [departments_lookup[code] for code in row['departments'] if code in departments_lookup]
             if row['marked_for_deletion'] and row['user_id']:
                 user = existing_users.get(row['user_id'])
-                if user and user.level == AdminUser.LEVEL_ADMIN and final_admins < 1:
+                if user and user.level_of_access == AdminUser.LEVEL_ADMIN and final_admins < 1:
                     continue
                 if user:
                     user.delete()
                 continue
 
+            token: str | None = None
             if row['user_id']:
                 user = existing_users[row['user_id']]
                 email_changed = user.email.lower() != row['email']
-                level_changed = user.level != row['level']
-                department_changed = user.department != row['department']
-                password_regenerated = False
+                level_changed = user.level_of_access != row['level']
+                existing_departments = set(user.departments.values_list('code', flat=True))
+                departments_changed = existing_departments != set(row['departments'])
                 password_changed = row.get('password_changed', False)
+
                 user.email = row['email']
-                user.level = row['level']
-                user.department = row['department']
-                if password_changed:
-                    user.set_password_token(row.get('password', ''))
-                    tokens_to_send.append((user, row.get('password', '')))
-                elif email_changed:
-                    token = user.regenerate_token_hash()
-                    tokens_to_send.append((user, token))
-                    password_regenerated = True
-                elif not user.password_hash:
-                    token = user.regenerate_token_hash()
-                    tokens_to_send.append((user, token))
-                    password_regenerated = True
-                if email_changed or level_changed or department_changed or password_changed or password_regenerated:
-                    user.save()
-                else:
-                    user.save(update_fields=['updated_at'])
+                user.level_of_access = row['level']
+
+                if password_changed and row.get('password'):
+                    user.set_password(row['password'])
+                    token = row['password']
+                elif email_changed or not user.password_hash:
+                    token = _generate_access_token()
+                    user.set_password(token)
+
+                user.save()
+                if departments_changed or user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
+                    user.departments.set(selected_departments)
             else:
-                user = AdminUser(email=row['email'], level=row['level'], department=row['department'])
-                if row.get('password_changed'):
-                    password_value = row.get('password', '')
-                    user.set_password_token(password_value)
+                user = AdminUser(email=row['email'], level_of_access=row['level'])
+                password_value = (
+                    row.get('password')
+                    if row['level'] == AdminUser.LEVEL_ADMIN and row.get('password_changed')
+                    else ''
+                )
+                if password_value:
+                    user.set_password(password_value)
                     token = password_value
                 else:
-                    token = user.regenerate_token_hash()
+                    token = _generate_access_token()
+                    user.set_password(token)
                 user.save()
+                if selected_departments:
+                    user.departments.set(selected_departments)
+
+            if token:
                 tokens_to_send.append((user, token))
             updated_users.append(user)
 
@@ -485,7 +516,10 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
             ]
         )
 
-    response_users = [_serialise_admin_user(user) for user in AdminUser.objects.all().order_by('id')]
+    response_users = [
+        _serialise_admin_user(user)
+        for user in AdminUser.objects.prefetch_related('departments').all().order_by('id')
+    ]
     return JsonResponse({'users': response_users})
 
 
@@ -613,7 +647,7 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if admin_user.level == AdminUser.LEVEL_TESTER:
+    if admin_user.level_of_access == AdminUser.LEVEL_TESTER:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
@@ -633,7 +667,7 @@ def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if admin_user.level == AdminUser.LEVEL_TESTER:
+    if admin_user.level_of_access == AdminUser.LEVEL_TESTER:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)

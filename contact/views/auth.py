@@ -4,7 +4,6 @@ import logging
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse
 from django.db import OperationalError, ProgrammingError
 from django.shortcuts import redirect, render
@@ -72,12 +71,14 @@ def login(request: HttpRequest) -> HttpResponse:
                 status=503,
             )
 
-        if user and check_password(password, user.password_hash):
+        if user and user.check_password(password):
             request.session['logged_in'] = True
-            request.session['user_level'] = user.level
-            request.session['user_email'] = user.email
-            request.session['user_id'] = user.id
-            request.session['user_department'] = user.department
+            request.session['admin_user_id'] = user.id
+            request.session['level_of_access'] = user.level_of_access
+            request.session['departments'] = list(
+                user.departments.values_list('code', flat=True)
+            )
+            request.session['admin_email'] = user.email
             request.session['lang'] = lang
             failed_attempts[ip] = 0
             panel_url = reverse('contact:panel')
