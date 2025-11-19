@@ -161,3 +161,33 @@ class ClientChangeLog(models.Model):
 
     class Meta:
         ordering = ["-changed_at", "-id"]
+
+
+class AdminUser(models.Model):
+    LEVEL_1 = "level1"
+    LEVEL_2 = "level2"
+    LEVEL_3 = "level3"
+
+    LEVEL_CHOICES = [
+        (LEVEL_1, "Level 1"),
+        (LEVEL_2, "Level 2"),
+        (LEVEL_3, "Level 3"),
+    ]
+
+    email = models.EmailField(unique=True)
+    token_hash = models.CharField(max_length=128)
+    level = models.CharField(max_length=16, choices=LEVEL_CHOICES, default=LEVEL_3)
+    department = models.CharField(max_length=50, blank=True, default="all")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["email"]
+
+    def __str__(self) -> str:  # pragma: no cover - representation helper
+        return f"{self.email} ({self.level})"
+
+    def reset_token(self) -> str:
+        token = secrets.token_urlsafe(18)
+        self.token_hash = make_password(token)
+        return token

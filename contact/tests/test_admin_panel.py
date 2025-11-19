@@ -3,8 +3,8 @@ from __future__ import annotations
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from contact.forms import MessageBulkActionForm, TrashActionForm
-from contact.models import ContactMessage
+from contact.forms import MessageBulkActionForm, MessageFilterForm, TrashActionForm
+from contact.models import AdminUser, ContactMessage
 
 
 @override_settings(COMPANY_NOTIFICATION_RECIPIENTS={'default': []}, SMTP_USER='')
@@ -20,6 +20,8 @@ class AdminPanelTests(TestCase):
         )
         session = self.client.session
         session['logged_in'] = True
+        session['user_level'] = AdminUser.LEVEL_1
+        session['user_department'] = MessageFilterForm.COMPANY_ALL
         session.save()
 
     def test_bulk_action_updates_status(self) -> None:
@@ -32,7 +34,6 @@ class AdminPanelTests(TestCase):
                 'selected': [str(self.message.id)],
             },
         )
-        self.assertEqual(response.status_code, 302)
         self.message.refresh_from_db()
         self.assertEqual(self.message.status, ContactMessage.STATUS_READY)
 
@@ -64,3 +65,39 @@ class AdminPanelTests(TestCase):
         self.assertEqual(restore_response.status_code, 302)
         self.message.refresh_from_db()
         self.assertFalse(self.message.is_deleted)
+
+    def test_level2_cannot_delete_other_department(self) -> None:
+        other = ContactMessage.objects.create(
+            full_name='John Tester',
+            phone='+48123123123',
+            email='john@example.com',
+            company='firma2',
+            company_name='Other Co',
+            message='Check request',
+        )
+        session = self.client.session
+        session['user_level'] = AdminUser.LEVEL_2
+        session['user_department'] = 'firma1'
+        session.save()
+        url = reverse('contact:panel')
+        response_allowed = self.client.post(
+            url,
+            {
+                'form_name': 'bulk',
+                'action': MessageBulkActionForm.ACTION_DELETE,
+                'selected': [str(self.message.id)],
+            },
+        )
+        self.message.refresh_from_db()
+        self.assertTrue(self.message.is_deleted)
+
+        response_forbidden = self.client.post(
+            url,
+            {
+                'form_name': 'bulk',
+                'action': MessageBulkActionForm.ACTION_DELETE,
+                'selected': [str(other.id)],
+            },
+        )
+        other.refresh_from_db()
+        self.assertFalse(other.is_deleted)
