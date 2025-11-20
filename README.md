@@ -56,7 +56,6 @@
 
    ```bash
    python manage.py migrate
-   python manage.py create_admin_user you@example.com --level level1 --password <MY_TEST_PASSWORD>
    ```
    Это гарантированно создаст таблицу с колонкой `password_hash` и заведёт тестовый логин. Не коммитьте тестовые пароли и не храните их в репозитории.
 
@@ -64,7 +63,12 @@
    ```bash
    python manage.py runserver
    ```
-
+8. Команды для быстрого запуска сервера после удаления дб(вам написать только пароль):
+   ```bash
+   pip install -r requirements.txt
+   python manage.py migrate
+   python manage.py create_admin_user test@gmail.com --level level1
+   ```
 Приложение будет доступно на <http://127.0.0.1:8000/>. Язык интерфейса переключается параметром `?lang=en` / `?lang=pl`.
 
 ## Тесты и проверки

@@ -62,9 +62,7 @@
         }
 
         const trashOpenButton = $('[data-trash-open]');
-        const trashCloseElements = $$('[data-trash-close].admin-modal__close', trashModal).concat(
-            trashModal.querySelector('.modal__backdrop'),
-        );
+        const trashCloseElements = $$('[data-trash-close]', trashModal).concat(trashModal.querySelector('.modal__backdrop'));
         const trashForm = $('[data-trash-form]', trashModal);
         const trashActionField = trashForm ? trashForm.querySelector('input[name="action"]') : null;
         const trashSelectAll = $('[data-trash-select-all]', trashModal);
@@ -154,7 +152,7 @@
         const canControlOpenButton = Boolean(
             openButton && openButton.dataset.downloadAvailable !== 'false',
         );
-        const closeElements = $$('[data-download-close].admin-modal__close', downloadModal).concat(
+        const closeElements = $$('[data-download-close]', downloadModal).concat(
             downloadModal.querySelector('.modal__backdrop')
         );
         const fieldCheckboxes = $$('input[name="fields"]', downloadModal);
@@ -402,7 +400,7 @@
         const tokenHashElement = $('[data-request-token-hash]', requestModal);
         const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
-        const closeElements = $$('[data-request-close].admin-modal__close', requestModal);
+        const closeElements = $$('[data-request-close]', requestModal);
         const statusMap = (() => {
             try {
                 return JSON.parse(requestModal.dataset.statusMap || '{}');
@@ -904,7 +902,7 @@
             return;
         }
 
-        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close].admin-modal__close')).concat(
+        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close]')).concat(
             modal.querySelector('.modal__backdrop'),
         );
         const rowsContainer = modal.querySelector('[data-settings-rows]');
