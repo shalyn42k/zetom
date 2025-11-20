@@ -14,7 +14,7 @@
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
-        <button type="button" class="modal__close" data-trash-close aria-label="{% if lang == 'pl' %}Zamknij kosz{% else %}Close trash{% endif %}">×</button>
+        <button type="button" class="admin-modal__close" data-trash-close aria-label="{% if lang == 'pl' %}Zamknij kosz{% else %}Close trash{% endif %}">×</button>
         <h2 class="modal__title" id="trash-title">{% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}</h2>
         <form method="post" class="modal__form" data-trash-form>
             {% csrf_token %}
@@ -86,7 +86,7 @@
      aria-hidden="{% if download_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-download-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="download-title">
-        <button type="button" class="modal__close" data-download-close aria-label="{% if lang == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
+        <button type="button" class="admin-modal__close" data-download-close aria-label="{% if lang == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
         <h2 class="modal__title" id="download-title">{% if lang == 'pl' %}Eksportuj zgłoszenia{% else %}Export requests{% endif %}</h2>
         <form method="post" class="modal__form" data-download-form>
             {% csrf_token %}
@@ -170,7 +170,7 @@
      data-language="{{ lang }}">
     <div class="modal__backdrop" data-request-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
-        <button type="button" class="modal__close" data-request-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
+        <button type="button" class="admin-modal__close" data-request-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
         <h2 class="modal__title" id="request-modal-title" data-request-title>{% if lang == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
         <p class="modal__subtitle" data-request-created></p>
         <form method="post" class="modal__form" data-request-form>
@@ -257,7 +257,7 @@
     <div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}" data-settings-departments="{{ settings_departments_json|escapejs }}">
         <div class="modal__backdrop" data-settings-close></div>
         <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-            <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
+            <button type="button" class="admin-modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
             <div class="settings-modal__header">
                 <h2 class="modal__title" id="settings-title">Settings</h2>
                 <div class="settings-modal__header-actions">

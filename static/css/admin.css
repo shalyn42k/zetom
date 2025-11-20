@@ -752,7 +752,8 @@ body[data-theme='dark'] .panel-email .form-submit {
     gap: 18px;
 }
 
-.modal__close {
+.modal__close,
+.admin-modal__close {
     position: absolute;
     top: 18px;
     right: 18px;
@@ -769,7 +770,9 @@ body[data-theme='dark'] .panel-email .form-submit {
 }
 
 .modal__close:hover,
-.modal__close:focus {
+.modal__close:focus,
+.admin-modal__close:hover,
+.admin-modal__close:focus {
     transform: scale(1.05);
     background: rgba(47, 168, 79, 0.2);
 }
