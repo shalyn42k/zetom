@@ -735,8 +735,7 @@ a:focus {
     padding: clamp(24px, 5vw, 32px);
 }
 
-.modal__close,
-.admin-modal__close {
+.modal__close {
     position: absolute;
     top: 16px;
     right: 16px;
