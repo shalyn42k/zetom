@@ -108,6 +108,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     user_level = admin_user.level_of_access
     user_departments = list(admin_user.departments.values_list('code', flat=True))
+    allowed_companies = set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
@@ -139,9 +140,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     else:
         queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
         deleted_queryset = message_service.get_deleted_messages()
-        if user_level == AdminUser.LEVEL_DEPARTMENT and user_departments:
-            queryset = queryset.filter(company__in=user_departments)
-            deleted_queryset = deleted_queryset.filter(company__in=user_departments)
+        if allowed_companies:
+            queryset = queryset.filter(company__in=allowed_companies)
+            deleted_queryset = deleted_queryset.filter(company__in=allowed_companies)
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -180,7 +181,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         lang,
         initial_data=filter_data,
         company_choices=department_choices if user_level == AdminUser.LEVEL_DEPARTMENT else None,
-        include_all=user_level != AdminUser.LEVEL_DEPARTMENT,
+        include_all=user_level != AdminUser.LEVEL_DEPARTMENT
+        or len(department_choices) > 1,
     )
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
@@ -207,6 +209,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 page_obj,
                 sort_by,
                 company_filter,
+                allowed_companies,
             )
             if response:
                 return response
@@ -218,6 +221,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 page_obj,
                 sort_by,
                 company_filter,
+                allowed_companies,
             )
             if response:
                 return response
@@ -228,6 +232,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 download_choices,
                 sort_by,
                 company_filter,
+                allowed_companies,
             )
             if response:
                 return response
@@ -530,12 +535,22 @@ def _handle_bulk_form(
     page_obj,
     sort_by: str | None,
     company_filter: str | None,
+    allowed_companies: set[str] | None,
 ):
-    form = MessageBulkActionForm(request.POST, message_choices=choices)
+    submitted_ids = request.POST.getlist('selected') if request.method == 'POST' else []
+    existing_values = {value for value, _ in choices}
+    extra_choices = [
+        (value, f"#{value}") for value in submitted_ids if value not in existing_values
+    ]
+    merged_choices = [*choices, *extra_choices]
+
+    form = MessageBulkActionForm(request.POST, message_choices=merged_choices)
     helpers.localise_action_choices(form, lang)
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['selected']]
-        helpers.handle_action(form.cleaned_data['action'], ids, lang, request)
+        helpers.handle_action(
+            form.cleaned_data['action'], ids, lang, request, allowed_companies
+        )
         return form, redirect(
             helpers.panel_redirect_url(
                 lang,
@@ -554,11 +569,21 @@ def _handle_trash_form(
     page_obj,
     sort_by: str | None,
     company_filter: str | None,
+    allowed_companies: set[str] | None,
 ):
-    form = TrashActionForm(request.POST, message_choices=deleted_choices, language=lang)
+    submitted_ids = request.POST.getlist('selected') if request.method == 'POST' else []
+    existing_values = {value for value, _ in deleted_choices}
+    extra_choices = [
+        (value, f"#{value}") for value in submitted_ids if value not in existing_values
+    ]
+    merged_choices = [*deleted_choices, *extra_choices]
+
+    form = TrashActionForm(request.POST, message_choices=merged_choices, language=lang)
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['selected']]
-        helpers.handle_trash_action(form.cleaned_data['action'], ids, lang, request)
+        helpers.handle_trash_action(
+            form.cleaned_data['action'], ids, lang, request, allowed_companies
+        )
         return form, redirect(
             helpers.panel_redirect_url(
                 lang,
@@ -576,6 +601,7 @@ def _handle_download_form(
     download_choices: list[tuple[str, str]],
     sort_by: str | None,
     company_filter: str | None,
+    allowed_companies: set[str] | None,
 ):
     form = DownloadMessagesForm(
         request.POST,
@@ -589,6 +615,8 @@ def _handle_download_form(
             sort_by=sort_by,
             company=company_filter,
         ).filter(id__in=ids)
+        if allowed_companies:
+            selected_messages = selected_messages.filter(company__in=allowed_companies)
         pdf_bytes = build_messages_pdf(selected_messages, fields=fields, language=lang)
         filename = timezone.localtime().strftime('requests_%Y%m%d_%H%M%S.pdf')
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
