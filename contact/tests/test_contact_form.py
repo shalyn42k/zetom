@@ -7,7 +7,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from contact.models import ContactMessage
+from contact.forms import ContactForm
+from contact.models import ContactMessage, Department
 
 
 @override_settings(
@@ -93,3 +94,17 @@ class ContactFormTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.context['active_request_id'])
         self.assertFalse(response.context['has_active_request'])
+
+
+class DepartmentDefaultsTests(TestCase):
+    def test_department_choices_seed_defaults_when_missing(self) -> None:
+        Department.objects.all().delete()
+
+        choices = ContactForm.department_choices()
+
+        expected_codes = {code for code, _, _ in ContactForm.DEFAULT_DEPARTMENTS}
+        returned_codes = {code for code, _ in choices}
+
+        self.assertEqual(returned_codes, expected_codes)
+        for code in expected_codes:
+            self.assertTrue(Department.objects.filter(code=code).exists())
