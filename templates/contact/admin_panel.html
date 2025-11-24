@@ -263,7 +263,7 @@
     </div>
 </div>
 {% if user_level == 'level1' %}
-    <div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}" data-settings-departments="{{ settings_departments_json|escapejs }}">
+    <div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}">
         <div class="modal__backdrop" data-settings-close></div>
         <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
             <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
@@ -275,6 +275,11 @@
             </div>
             <div class="settings-modal__error" data-settings-error hidden></div>
             <div class="settings-table" data-settings-table>
+                <select data-department-prototype="true" multiple size="4" style="display:none">
+                    {% for opt in company_options %}
+                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                    {% endfor %}
+                </select>
                 <div class="settings-table__header">
                     <span>#</span>
                     <span>Email</span>

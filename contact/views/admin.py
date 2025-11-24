@@ -331,9 +331,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     status_meta_json = json.dumps(status_meta)
 
-    company_options = helpers.company_options(lang)
-    settings_departments_json = json.dumps(company_options)
-
     if lang == "pl":
         detail_error_message = "Nie udało się pobrać danych zgłoszenia."
         update_error_message = (
@@ -370,7 +367,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "download_fields_total": download_fields_total,
         "selected_download_ids": selected_download_ids,
         "company_options": company_options,
-        "settings_departments_json": settings_departments_json,
         "status_options": status_options,
         "status_meta_json": status_meta_json,
         "request_detail_error_message": detail_error_message,
