@@ -253,6 +253,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         raw_ids = download_form.data.getlist('messages')
         selected_download_ids = list(dict.fromkeys(raw_ids))
 
+    company_options = helpers.company_options(lang)
+    settings_departments_json = json.dumps(company_options)
     status_options = helpers.status_options(lang)
     status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
 
@@ -283,7 +285,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         'download_has_choices': bool(download_choices),
         'download_fields_total': download_fields_total,
         'selected_download_ids': selected_download_ids,
-        'company_options': helpers.company_options(lang),
+        'company_options': company_options,
+        'settings_departments_json': settings_departments_json,
         'status_options': status_options,
         'status_meta_json': json.dumps(status_meta),
         'request_detail_error_message': detail_error_message,
@@ -322,6 +325,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Email format is invalid.',
         'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
         'level_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Level of access is required.',
+        'department_required': 'Departament jest wymagany dla level2.' if language == 'pl' else 'Department is required for level2 users.',
         'department_invalid': 'Nieprawidłowy departament.' if language == 'pl' else 'Invalid department.',
         'password_required': 'Hasło jest wymagane.' if language == 'pl' else 'Password is required.',
         'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
@@ -392,10 +396,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
 
         if level == AdminUser.LEVEL_DEPARTMENT:
             if not departments:
-                departments = sorted(allowed_departments)
-            invalid_departments = [dept for dept in departments if dept not in allowed_departments]
-            if invalid_departments:
-                _error('department_invalid')
+                _error('department_required')
+            else:
+                invalid_departments = [dept for dept in departments if dept not in allowed_departments]
+                if invalid_departments:
+                    _error('department_invalid')
         elif departments:
             invalid_departments = [dept for dept in departments if dept not in allowed_departments]
             if invalid_departments:
@@ -485,7 +490,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     user.set_password(token)
 
                 user.save()
-                if user.level_of_access == AdminUser.LEVEL_DEPARTMENT or departments_changed:
+                if departments_changed or user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
                     user.departments.set(selected_departments)
             else:
                 user = AdminUser(email=row['email'], level_of_access=row['level'])
@@ -501,9 +506,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     token = _generate_access_token()
                     user.set_password(token)
                 user.save()
-                if user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
-                    user.departments.set(selected_departments)
-                elif selected_departments:
+                if selected_departments:
                     user.departments.set(selected_departments)
 
             if token:
