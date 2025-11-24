@@ -121,7 +121,7 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__header,
 .settings-table__row {
     display: grid;
-    grid-template-columns: 1fr 2.5fr 2.2fr 1.5fr 1.6fr 0.9fr 0.8fr;
+    grid-template-columns: 1fr 2.5fr 2.2fr 1.5fr 0.9fr;
     gap: 8px;
     align-items: center;
     padding: 12px 14px;

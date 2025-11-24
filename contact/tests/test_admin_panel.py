@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -178,3 +180,71 @@ class Level2AdminPanelTests(TestCase):
 
         self.assertEqual(self.message_dept1.status, ContactMessage.STATUS_READY)
         self.assertEqual(self.message_other.status, ContactMessage.STATUS_NEW)
+
+
+@override_settings(COMPANY_NOTIFICATION_RECIPIENTS={'default': []}, SMTP_USER='')
+class AdminSettingsLevel2DefaultsTests(TestCase):
+    def setUp(self) -> None:
+        self.department1, _ = Department.objects.get_or_create(
+            code='firma1',
+            defaults={'name_pl': 'Firma 1', 'name_en': 'Company 1'},
+        )
+        self.department2, _ = Department.objects.get_or_create(
+            code='firma2',
+            defaults={'name_pl': 'Firma 2', 'name_en': 'Company 2'},
+        )
+
+        self.admin_user = AdminUser.objects.create(
+            email='admin@example.com',
+            password_hash='',
+            level_of_access=AdminUser.LEVEL_ADMIN,
+        )
+        self.admin_user.set_password('password123')
+        self.admin_user.save()
+
+        session = self.client.session
+        session['logged_in'] = True
+        session['admin_user_id'] = self.admin_user.id
+        session['level_of_access'] = self.admin_user.level_of_access
+        session['departments'] = []
+        session['admin_email'] = self.admin_user.email
+        session.save()
+
+    def test_level2_receives_all_departments_when_not_specified(self) -> None:
+        payload = {
+            'users': [
+                {
+                    'user_id': str(self.admin_user.id),
+                    'email': self.admin_user.email,
+                    'level': AdminUser.LEVEL_ADMIN,
+                    'password': '',
+                    'password_changed': False,
+                    'departments': [],
+                    'marked_for_deletion': False,
+                    'is_new': False,
+                },
+                {
+                    'user_id': None,
+                    'email': 'level2@example.com',
+                    'level': AdminUser.LEVEL_DEPARTMENT,
+                    'password': '',
+                    'password_changed': False,
+                    'departments': [],
+                    'marked_for_deletion': False,
+                    'is_new': True,
+                },
+            ]
+        }
+
+        response = self.client.post(
+            reverse('contact:admin_settings'),
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        level2_user = AdminUser.objects.get(email='level2@example.com')
+        self.assertEqual(
+            set(level2_user.departments.values_list('code', flat=True)),
+            set(Department.objects.values_list('code', flat=True)),
+        )
