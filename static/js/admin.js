@@ -937,7 +937,9 @@
         const applyButton = modal.querySelector('[data-settings-apply]');
         const errorBox = modal.querySelector('[data-settings-error]');
         const endpoint = modal.dataset.settingsEndpoint;
-        const departments = parseJsonData(modal.dataset.settingsDepartments, []);
+        const departmentsPrototype = modal.querySelector('select[data-department-prototype="true"]');
+        const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
+        const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -1048,16 +1050,14 @@
             const departmentSelect = document.createElement('select');
             departmentSelect.dataset.settingsDepartments = 'true';
             departmentSelect.multiple = true;
-            departmentSelect.size = Math.min(Math.max(departments.length, 2), 6);
+            departmentSelect.size = departmentsSize;
+            departmentSelect.innerHTML = departmentsOptionsHTML;
+
             const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
-            departments.forEach((department) => {
-                const option = document.createElement('option');
-                option.value = department.value;
-                option.textContent = department.label;
-                if (selectedDepartments.includes(department.value)) {
-                    option.selected = true;
+            Array.from(departmentSelect.options).forEach((opt) => {
+                if (selectedDepartments.includes(opt.value)) {
+                    opt.selected = true;
                 }
-                departmentSelect.appendChild(option);
             });
 
             const deleteCell = document.createElement('div');
