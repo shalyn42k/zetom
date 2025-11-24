@@ -178,8 +178,22 @@ def build_filter_form(
     )
 
 
-def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
+def handle_action(
+    action: str,
+    ids: Iterable[int],
+    lang: str,
+    request: HttpRequest,
+    allowed_companies: set[str] | None = None,
+) -> None:
     id_list = [int(value) for value in ids]
+    if allowed_companies is not None:
+        id_list = list(
+            ContactMessage.objects.filter(
+                id__in=id_list, company__in=allowed_companies, is_deleted=False
+            ).values_list('id', flat=True)
+        )
+        if not id_list:
+            return
     status_actions: dict[str, tuple[str, str, str]] = {
         MessageBulkActionForm.ACTION_MARK_NEW: (
             ContactMessage.STATUS_NEW,
@@ -226,7 +240,13 @@ def handle_action(action: str, ids: Iterable[int], lang: str, request: HttpReque
         messages.success(request, success_message, extra_tags='admin')
 
 
-def handle_trash_action(action: str, ids: Iterable[int], lang: str, request: HttpRequest) -> None:
+def handle_trash_action(
+    action: str,
+    ids: Iterable[int],
+    lang: str,
+    request: HttpRequest,
+    allowed_companies: set[str] | None = None,
+) -> None:
     action_handlers: dict[str, tuple[Callable[[Iterable[int]], None], str, str]] = {
         TrashActionForm.ACTION_RESTORE: (
             message_service.restore_messages,
@@ -239,19 +259,34 @@ def handle_trash_action(action: str, ids: Iterable[int], lang: str, request: Htt
             'Selected messages permanently deleted.',
         ),
         TrashActionForm.ACTION_EMPTY: (
-            lambda _message_ids: message_service.purge_messages(),
+            lambda message_ids: message_service.purge_messages(message_ids),
             'Kosz opróżniono.',
             'Trash emptied.',
         ),
     }
 
     id_list = [int(value) for value in ids]
+    if allowed_companies is not None:
+        base_queryset = ContactMessage.objects.filter(company__in=allowed_companies)
+        if action == TrashActionForm.ACTION_EMPTY:
+            id_list = list(
+                base_queryset.filter(is_deleted=True).values_list('id', flat=True)
+            )
+        else:
+            id_list = list(
+                base_queryset.filter(id__in=id_list).values_list('id', flat=True)
+            )
+        if not id_list:
+            return
     handler = action_handlers.get(action)
     if not handler:
         return
 
     func, message_pl, message_en = handler
-    func(id_list)
+    target_ids: Iterable[int] | None = id_list
+    if action == TrashActionForm.ACTION_EMPTY and allowed_companies is None:
+        target_ids = None
+    func(target_ids)
     if action == TrashActionForm.ACTION_RESTORE:
         log_bulk_action(
             AdminActivityLog.ACTION_RESTORE,

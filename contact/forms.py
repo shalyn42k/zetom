@@ -115,8 +115,23 @@ class ContactForm(forms.ModelForm):
 
     company = forms.ChoiceField(choices=(), required=True)
 
+    DEFAULT_DEPARTMENTS: list[tuple[str, str, str]] = [
+        ("firma1", "Firma 1", "Company 1"),
+        ("firma2", "Firma 2", "Company 2"),
+        ("firma3", "Firma 3", "Company 3"),
+        ("inna", "Inna", "Other"),
+    ]
+
     @staticmethod
     def department_choices(language: str | None = None) -> list[tuple[str, str]]:
+        if not Department.objects.exists():
+            Department.objects.bulk_create(
+                [
+                    Department(code=code, name_pl=name_pl, name_en=name_en)
+                    for code, name_pl, name_en in ContactForm.DEFAULT_DEPARTMENTS
+                ],
+                ignore_conflicts=True,
+            )
         label_field = "name_pl" if language == "pl" else "name_en"
         return [
             (department.code, getattr(department, label_field) or department.code)

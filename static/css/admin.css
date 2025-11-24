@@ -158,6 +158,11 @@ body[data-theme='dark'] .modal__backdrop {
     background: #ffffff;
 }
 
+.settings-table__row select[multiple] {
+    min-height: 120px;
+    background-image: none;
+}
+
 .settings-table__row select {
     background: #ffffff url("data:image/svg+xml,%3Csvg width='16' height='16' fill='%236b7280' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") no-repeat right 10px center;
     appearance: none;
