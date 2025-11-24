@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Render.com deployment configuration for the zetom web service and database.
+# Responsible for: Defining service type, build/start commands, environment variables, and database provisioning.
+# Connected to: requirements.txt for dependencies, manage.py commands for migrations/static, deployment environment variables.
+# Important classes/functions: None
+# Notes: Uses generated secrets and Render-provided hostnames for production settings.
+# =====================================
 services:
   - type: web
     name: zetom

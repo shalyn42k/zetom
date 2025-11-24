@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Defines form classes for contact submissions, admin operations, filtering, downloads, and authentication.
+# Responsible for: Validating user input, handling attachments, providing UI widgets, and localising error messages.
+# Connected to: contact.models (ContactMessage, Department), Django settings for attachment rules, contact views and services.
+# Important classes/functions: ContactForm, LoginForm, MessageBulkActionForm, TrashActionForm, EmailForm, MessageFilterForm, DownloadMessagesForm, MessageUpdateForm, UserMessageUpdateForm, RequestAccessForm, _validate_attachments(), _scan_attachment_for_malware()
+# Notes: Attachment validation respects configurable limits and optional malware scanning command.
+# =====================================
 from __future__ import annotations
 
 import shlex

@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Quick reference for Django and project-related commands (Windows PowerShell focus).
+# Responsible for: Providing setup, environment variable, and management command examples.
+# Connected to: manage.py usage, environment configuration, dependency installation.
+# Important classes/functions: None
+# Notes: Tailored for PowerShell syntax and common project workflows.
+# =====================================
 
 Django & Project Commands — Quick Cheat Sheet (Windows PowerShell)
 =================================================================

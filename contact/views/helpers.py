@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Shared helper functions for contact views covering session tracking, filtering, serialisation, and admin actions.
+# Responsible for: Managing stored user message ids, building filter URLs/forms, serialising entities, and executing admin operations with logging.
+# Connected to: ContactForm and filter-related forms, ContactMessage and related models, activity_log service, message_service.
+# Important classes/functions: remember_user_message(), store_user_message_ids(), company_options(), status_options(), resolve_filter_data(), build_filter_form(), handle_action(), handle_email_action(), handle_trash_action(), localise_action_choices(), serialise_client_message(), serialise_attachment()
+# Notes: Centralises repeated logic used across admin and user-facing views.
+# =====================================
+"""
+
 from __future__ import annotations
 
 from typing import Callable, Iterable, Sequence

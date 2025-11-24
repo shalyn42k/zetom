@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Pin Python dependencies for the zetom project.
+# Responsible for: Listing required packages with versions for installation.
+# Connected to: pip installation steps in README and deployment configuration.
+# Important classes/functions: None
+# Notes: Update versions cautiously to maintain compatibility.
+# =====================================
 Django~=5.2
 Faker~=37.11.0
 dj-database-url

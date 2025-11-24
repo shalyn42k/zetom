@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Expose public interface for contact view functions.
+# Responsible for: Importing view callables and defining __all__ for easier imports.
+# Connected to: Individual view modules (public, auth, portal, admin, user).
+# Important classes/functions: __all__ export list
+# Notes: Simplifies module imports across the project.
+# =====================================
+"""
+
 from .auth import login, logout
 from .portal import panel
 from .public import index

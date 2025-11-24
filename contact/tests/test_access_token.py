@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Tests for access token lifecycle and user restoration flows.
+# Responsible for: Verifying token expiry behaviour, portal validation responses, and restore access endpoint handling.
+# Connected to: ContactMessage model, portal and restore_access views via reverse URLs.
+# Important classes/functions: AccessTokenTests
+# Notes: Uses Django test client to simulate user interactions around access tokens.
+# =====================================
 from __future__ import annotations
 
 from datetime import timedelta

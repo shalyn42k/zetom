@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Styles for the user requests portal interface.
+# Responsible for: Layout, typography, cards, modals, and responsive behaviour for user request management.
+# Connected to: templates/contact/user_requests.html, request_modal.js, user_requests.js.
+# Important classes/functions: CSS classes such as .user-requests, .request-card, modal styles.
+# Notes: Uses CSS variables defined elsewhere for theming.
+# =====================================
+*/
 .user-requests {
     background: linear-gradient(180deg, #f2f7f3 0%, #ffffff 40%);
     min-height: 100vh;

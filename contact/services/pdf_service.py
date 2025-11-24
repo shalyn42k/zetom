@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Generate PDF exports of contact messages with selectable fields and localisation.
+# Responsible for: Building styled PDF documents summarising requests, formatting tables, and handling empty datasets.
+# Connected to: ContactMessage model data, ReportLab library, Django timezone utilities.
+# Important classes/functions: build_messages_pdf(), _status_labels(), _field_labels(), _field_value()
+# Notes: Uses HTML escaping to protect rendered content and applies Polish/English labels based on language parameter.
+# =====================================
 from __future__ import annotations
 
 from io import BytesIO

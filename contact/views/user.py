@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: User-facing views for accessing, restoring, viewing, updating, and deleting contact requests.
+# Responsible for: Validating access tokens, managing stored request ids, handling CRUD operations for users, and localising responses.
+# Connected to: RequestAccessForm, UserMessageUpdateForm, ContactMessage model, helper utilities, message_service, Django settings for attachment limits.
+# Important classes/functions: access_portal(), restore_access(), user_requests(), user_message_detail(), user_update_message(), user_delete_message()
+# Notes: Uses session-based tracking and language preferences to tailor user portal behaviour.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import json

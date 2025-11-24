@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Persist activity logs for admin actions on contact messages.
+# Responsible for: Recording single and bulk actions with optional descriptions within database transactions.
+# Connected to: AdminActivityLog model, Django transaction management, admin view helpers.
+# Important classes/functions: log_bulk_action(), log_action()
+# Notes: Bulk logging uses bulk_create with conflict ignoring to avoid duplication issues.
+# =====================================
 from __future__ import annotations
 
 from typing import Iterable

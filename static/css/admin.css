@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Stylesheet for the admin dashboard UI.
+# Responsible for: Layout, theming, table styling, forms, modals, and responsive behaviour in admin panel.
+# Connected to: templates/contact/admin_panel.html and admin.js interactions.
+# Important classes/functions: CSS classes including .admin-page, .admin-card, .filter-panel, modal selectors.
+# Notes: Contains light/dark theme overrides aligned with landing page palette.
+# =====================================
+*/
 .admin-page {
     min-height: 100vh;
     display: flex;

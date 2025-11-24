@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Client-side interactions for the public landing page and contact form.
+# Responsible for: Initialising request modal toggle, smooth scrolling navigation, form enhancements, and language-aware behaviours.
+# Connected to: templates/contact/index.html elements, user_requests modal, CSS classes.
+# Important classes/functions: ready(), initRequestsModal(), initSmoothScroll(), initFormInteractions()
+# Notes: Runs on DOMContentLoaded to bind event listeners.
+# =====================================
+*/
 (function () {
     const ready = (callback) => {
         if (document.readyState === 'loading') {

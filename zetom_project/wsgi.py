@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: WSGI entrypoint for deploying the zetom project with synchronous servers.
+# Responsible for: Setting the settings module, initialising the WSGI app, and wrapping it with WhiteNoise for static/media files.
+# Connected to: zetom_project.settings, WhiteNoise configuration, deployment servers.
+# Important classes/functions: get_wsgi_application(), WhiteNoise
+# Notes: Adds media files dynamically when MEDIA_URL and MEDIA_ROOT are set.
+# =====================================
 import os
 
 from django.conf import settings

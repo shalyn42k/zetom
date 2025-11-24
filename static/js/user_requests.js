@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Front-end behaviour for the user requests list and modal interactions.
+# Responsible for: Initialising modals, handling card clicks, preparing forms, and managing deletion confirmations.
+# Connected to: templates/contact/user_requests.html elements, request_modal.js utilities, backend endpoints for user actions.
+# Important classes/functions: ready(), initRequestsPage(), attachCardHandlers(), buildDeleteConfirmation()
+# Notes: Integrates with session-stored request data passed via data attributes.
+# =====================================
+*/
 (function () {
     const ready = (callback) => {
         if (document.readyState === 'loading') {

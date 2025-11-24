@@ -1,9 +1,18 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Defines database models for contact messages, attachments, departments, admin users, activity logs, and change tracking.
+# Responsible for: Persisting contact-related data, access tokens, admin credentials, and audit trails.
+# Connected to: Django settings for token TTL, contact services and views, authentication helpers.
+# Important classes/functions: ContactMessage, ContactAttachment, Department, AdminUser, AdminActivityLog, ClientChangeLog, _generate_access_token()
+# Notes: Models include helper methods for token creation and password hashing to support portal workflows.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import secrets
 
 from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models

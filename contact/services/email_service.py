@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Email delivery utilities for contact messages, admin credentials, and notifications.
+# Responsible for: Building and sending plain emails or PDFs, handling SMTP retries, and routing messages to appropriate recipients.
+# Connected to: Django settings for SMTP configuration, ContactMessage and AdminUser models, standard library email utilities.
+# Important classes/functions: send_contact_email(), send_admin_user_credentials(), send_company_notification(), send_email_with_attachment(), _smtp_connection()
+# Notes: Respects SMTP retry/timeout settings and optional company notification recipients/links.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import logging

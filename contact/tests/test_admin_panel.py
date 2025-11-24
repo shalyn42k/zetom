@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Test suite for admin panel behaviours including bulk actions, filtering, and permissions.
+# Responsible for: Verifying admin workflows such as status changes, trash handling, department-level access, and bulk actions.
+# Connected to: Admin-related views via reverse URLs, MessageBulkActionForm, MessageFilterForm, TrashActionForm, and related models.
+# Important classes/functions: AdminPanelTests, Level2AdminPanelTests
+# Notes: Uses override_settings to control notification/email side effects during tests.
+# =====================================
+"""
+
 from __future__ import annotations
 
 from django.test import TestCase, override_settings
