@@ -11,6 +11,30 @@
     const $ = (selector, scope = document) => scope.querySelector(selector);
     const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
+    const parseJsonData = (rawValue, fallbackValue) => {
+        if (!rawValue) {
+            return fallbackValue;
+        }
+
+        const normalised = rawValue
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .trim();
+
+        const candidates = [normalised, normalised.replace(/'/g, '"')];
+
+        for (const candidate of candidates) {
+            try {
+                return JSON.parse(candidate);
+            } catch (error) {
+                // try next candidate
+            }
+        }
+
+        console.warn('Unable to parse JSON data, falling back to default.');
+        return fallbackValue;
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         const bulkForm = $('[data-bulk-form]');
         if (!bulkForm) {
@@ -410,14 +434,7 @@
         const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
         const closeElements = $$('[data-request-close]', requestModal);
-        const statusMap = (() => {
-            try {
-                return JSON.parse(requestModal.dataset.statusMap || '{}');
-            } catch (error) {
-                console.error('Invalid status map', error);
-                return {};
-            }
-        })();
+        const statusMap = parseJsonData(requestModal.dataset.statusMap, {});
         const detailErrorMessage = requestModal.dataset.detailError || '';
         const updateErrorMessage = requestModal.dataset.updateError || '';
         const detailTemplate = requestModal.dataset.detailTemplate || '';
@@ -920,14 +937,7 @@
         const applyButton = modal.querySelector('[data-settings-apply]');
         const errorBox = modal.querySelector('[data-settings-error]');
         const endpoint = modal.dataset.settingsEndpoint;
-        const departments = (() => {
-            try {
-                return JSON.parse(modal.dataset.settingsDepartments || '[]');
-            } catch (error) {
-                console.error('Unable to parse departments list', error);
-                return [];
-            }
-        })();
+        const departments = parseJsonData(modal.dataset.settingsDepartments, []);
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
