@@ -109,6 +109,27 @@ def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -
     return True
 
 
+def _apply_company_filter(
+    queryset,
+    *,
+    company_filter: str | None,
+    allowed_companies: set[str] | None,
+    user_level: str,
+    valid_companies: set[str],
+):
+    if user_level == AdminUser.LEVEL_DEPARTMENT and allowed_companies:
+        queryset = queryset.filter(company__in=allowed_companies)
+
+    if company_filter and company_filter != MessageFilterForm.COMPANY_ALL:
+        if user_level == AdminUser.LEVEL_DEPARTMENT:
+            if allowed_companies and company_filter in allowed_companies:
+                queryset = queryset.filter(company=company_filter)
+        elif company_filter in valid_companies:
+            queryset = queryset.filter(company=company_filter)
+
+    return queryset
+
+
 @require_http_methods(["GET", "POST"])
 def admin_panel(request: HttpRequest) -> HttpResponse:
     admin_user = _get_admin_user(request)
@@ -121,6 +142,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
+    company_options = helpers.company_options(lang)
     department_labels = helpers.company_labels(lang)
     department_choices = [(code, department_labels.get(code, code)) for code in user_departments]
 
@@ -133,25 +155,31 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         )
         sort_by = filter_data["sort_by"]
         company_filter = filter_data["company"]
-        if company_filter == MessageFilterForm.COMPANY_ALL:
-            company_filter = user_departments
-        filter_data["company"] = (
-            MessageFilterForm.COMPANY_ALL if company_filter == user_departments else company_filter
-        )
     else:
         filter_data = helpers.resolve_filter_data(request, lang)
         sort_by = filter_data["sort_by"]
         company_filter = filter_data["company"]
 
+    valid_companies = allowed_companies if allowed_companies is not None else set(company_options.keys())
+
     if user_level == AdminUser.LEVEL_DEPARTMENT and not user_departments:
         queryset = ContactMessage.objects.none()
         deleted_queryset = ContactMessage.objects.none()
     else:
-        queryset = message_service.get_messages(sort_by=sort_by, company=company_filter)
-        deleted_queryset = message_service.get_deleted_messages()
-        if allowed_companies:
-            queryset = queryset.filter(company__in=allowed_companies)
-            deleted_queryset = deleted_queryset.filter(company__in=allowed_companies)
+        queryset = _apply_company_filter(
+            message_service.get_messages(sort_by=sort_by),
+            company_filter=company_filter,
+            allowed_companies=allowed_companies,
+            user_level=user_level,
+            valid_companies=valid_companies,
+        )
+        deleted_queryset = _apply_company_filter(
+            message_service.get_deleted_messages(),
+            company_filter=company_filter,
+            allowed_companies=allowed_companies,
+            user_level=user_level,
+            valid_companies=valid_companies,
+        )
 
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
@@ -242,6 +270,8 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 sort_by,
                 company_filter,
                 allowed_companies,
+                user_level,
+                valid_companies,
             )
             if response:
                 return response
@@ -262,7 +292,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         raw_ids = download_form.data.getlist('messages')
         selected_download_ids = list(dict.fromkeys(raw_ids))
 
-    company_options = helpers.company_options(lang)
     settings_departments_json = json.dumps(company_options)
     status_options = helpers.status_options(lang)
     status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
@@ -611,6 +640,8 @@ def _handle_download_form(
     sort_by: str | None,
     company_filter: str | None,
     allowed_companies: set[str] | None,
+    user_level: str,
+    valid_companies: set[str],
 ):
     form = DownloadMessagesForm(
         request.POST,
@@ -620,12 +651,13 @@ def _handle_download_form(
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['messages']]
         fields = form.cleaned_data['fields']
-        selected_messages = message_service.get_messages(
-            sort_by=sort_by,
-            company=company_filter,
+        selected_messages = _apply_company_filter(
+            message_service.get_messages(sort_by=sort_by),
+            company_filter=company_filter,
+            allowed_companies=allowed_companies,
+            user_level=user_level,
+            valid_companies=valid_companies,
         ).filter(id__in=ids)
-        if allowed_companies:
-            selected_messages = selected_messages.filter(company__in=allowed_companies)
         pdf_bytes = build_messages_pdf(selected_messages, fields=fields, language=lang)
         filename = timezone.localtime().strftime('requests_%Y%m%d_%H%M%S.pdf')
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
