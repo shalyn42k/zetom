@@ -121,6 +121,25 @@ class Department(models.Model):
         return f"Department({self.code})"
 
 
+DEFAULT_DEPARTMENTS: list[tuple[str, str, str]] = [
+    ("firma1", "Firma 1", "Company 1"),
+    ("firma2", "Firma 2", "Company 2"),
+    ("firma3", "Firma 3", "Company 3"),
+    ("inna", "Inna", "Other"),
+]
+
+
+def ensure_default_departments() -> None:
+    existing_codes = set(Department.objects.values_list("code", flat=True))
+    missing = [
+        Department(code=code, name_pl=name_pl, name_en=name_en)
+        for code, name_pl, name_en in DEFAULT_DEPARTMENTS
+        if code not in existing_codes
+    ]
+    if missing:
+        Department.objects.bulk_create(missing, ignore_conflicts=True)
+
+
 class AdminUser(models.Model):
     LEVEL_ADMIN = "level1"
     LEVEL_DEPARTMENT = "level2"

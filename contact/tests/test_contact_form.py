@@ -15,7 +15,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from contact.forms import ContactForm
-from contact.models import ContactMessage, Department
+from contact.models import ContactMessage, Department, DEFAULT_DEPARTMENTS
 
 
 @override_settings(
@@ -109,7 +109,7 @@ class DepartmentDefaultsTests(TestCase):
 
         choices = ContactForm.department_choices()
 
-        expected_codes = {code for code, _, _ in ContactForm.DEFAULT_DEPARTMENTS}
+        expected_codes = {code for code, _, _ in DEFAULT_DEPARTMENTS}
         returned_codes = {code for code, _ in choices}
 
         self.assertEqual(returned_codes, expected_codes)
