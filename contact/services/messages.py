@@ -31,8 +31,8 @@ def add_message(
         )
         token = contact_message.initialise_access_token()
         contact_message.save(update_fields=["access_token_hash", "access_token_expires_at"])
-        if files:
-            _create_attachments(contact_message, files)
+if files:
+    _create_attachments(contact_message, files, language='pl') 
     return contact_message, token
 
 
@@ -50,7 +50,10 @@ def get_messages(*, sort_by: str | None = None, company: str | None = None) -> Q
     queryset = ContactMessage.objects.filter(is_deleted=False).prefetch_related('attachments')
 
     if company and company != "all":
-        queryset = queryset.filter(company=company)
+        if isinstance(company, (list, tuple, set)):
+            queryset = queryset.filter(company__in=company)
+        else:
+            queryset = queryset.filter(company=company)
 
     order_by = _resolve_ordering(sort_by)
     if order_by:
@@ -74,10 +77,10 @@ def purge_messages(message_ids: Iterable[int] | None = None) -> None:
     queryset.delete()
 
 
-def add_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> None:
+def add_attachments(message: ContactMessage, files: Sequence[UploadedFile], language: str = 'pl') -> None:
     if not files:
         return
-    _create_attachments(message, files)
+    _create_attachments(message, files, language=language)
 
 
 def _resolve_ordering(sort_by: str | None) -> list[str]:
@@ -89,13 +92,36 @@ def _resolve_ordering(sort_by: str | None) -> list[str]:
         return ["company", "-created_at"]
     return ["-created_at"]
 
+def _create_attachments(message: ContactMessage, files: Sequence[UploadedFile], language: str = 'pl') -> None:
+    from contact.services.file_scanner import validate_and_scan_uploaded_file
+    import os
 
-def _create_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> None:
     for uploaded in files:
-        ContactAttachment.objects.create(
+        if uploaded.size == 0:
+            continue
+
+        # Сначала сохраняем файл временно
+        attachment = ContactAttachment(
             message=message,
-            file=uploaded,
-            original_name=getattr(uploaded, "name", ""),
-            content_type=getattr(uploaded, "content_type", ""),
-            size=getattr(uploaded, "size", 0) or 0,
+            original_name=uploaded.name,
+            content_type=uploaded.content_type or '',
+            size=uploaded.size,
         )
+        attachment.file.save(uploaded.name, uploaded, save=False)
+        full_path = attachment.file.path
+
+        try:
+            # ПРОВЕРКА НА ВИРУСЫ И ТИП
+            validate_and_scan_uploaded_file(full_path, language=language)
+
+            # Если всё ок — сохраняем в БД
+            attachment.save()
+
+        except Exception as e:
+            # Если вирус или ошибка — удаляем файл с диска
+            if os.path.exists(full_path):
+                try:
+                    os.remove(full_path)
+                except:
+                    pass
+            raise  # пробрасываем ошибку дальше (в форму)

@@ -7,7 +7,7 @@ from pathlib import Path
 from django import forms
 from django.conf import settings
 
-from .models import ContactMessage
+from .models import ContactMessage, Department
 
 
 class MultiFileInput(forms.ClearableFileInput):
@@ -107,35 +107,37 @@ def _validate_attachments(files: list, language: str | None = None) -> list:
 
 
 class ContactForm(forms.ModelForm):
-    COMPANY_CHOICES = [
-        ("firma1", "Firma 1"),
-        ("firma2", "Firma 2"),
-        ("firma3", "Firma 3"),
-        ("inna",   "Inna"),
-    ]
-
     bot_check = forms.BooleanField(
         required=False,
         label="",
         widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
     )
 
-    company = forms.ChoiceField(
-        choices=COMPANY_CHOICES,
-        required=True,
-        widget=forms.Select(
-            attrs={
-                "class": "form-input",
-                "data-review-source": "company",
-            }
-        ),
-    )
+    company = forms.ChoiceField(choices=(), required=True)
+
+    @staticmethod
+    def department_choices(language: str | None = None) -> list[tuple[str, str]]:
+        label_field = "name_pl" if language == "pl" else "name_en"
+        return [
+            (department.code, getattr(department, label_field) or department.code)
+            for department in Department.objects.all().order_by("code")
+        ]
 
     attachments = MultipleFileField(required=False)
 
     def __init__(self, *args, language: str | None = None, **kwargs):
         self.language = language
         super().__init__(*args, **kwargs)
+        self.fields["company"] = forms.ChoiceField(
+            choices=self.department_choices(language),
+            required=True,
+            widget=forms.Select(
+                attrs={
+                    "class": "form-input",
+                    "data-review-source": "company",
+                }
+            ),
+        )
         message = (
             "Potwierdź, że nie jesteś botem."
             if self.language == "pl"
@@ -192,22 +194,23 @@ class ContactForm(forms.ModelForm):
         return _validate_attachments(files, self.language)
 
 
-class AdminLoginForm(forms.Form):
-    username = forms.CharField(
-        max_length=50,
-        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Login"}),
-        label="Login"
+class LoginForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-input login-input",
+                "autocomplete": "email",
+            }
+        )
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "Hasło"}),
-        label="Hasło" if getattr(settings, 'DEFAULT_LANGUAGE', 'pl') == 'pl' else "Password"
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input login-input",
+                "autocomplete": "current-password",
+            }
+        )
     )
-
-    def __init__(self, *args, language: str | None = None, **kwargs):
-        self.language = language or "pl"
-        super().__init__(*args, **kwargs)
-        self.fields['username'].label = "Login"
-        self.fields['password'].label = "Hasło" if self.language == "pl" else "Password"
 
 
 class MessageBulkActionForm(forms.Form):
@@ -310,9 +313,21 @@ class MessageFilterForm(forms.Form):
     sort_by = forms.ChoiceField(choices=SORT_CHOICES, required=False)
     company = forms.ChoiceField(choices=(), required=False)
 
-    def __init__(self, *args, language: str | None = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        language: str | None = None,
+        company_choices: list[tuple[str, str]] | None = None,
+        include_all: bool = True,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        company_choices = [(self.COMPANY_ALL, "All departments")] + list(ContactForm.COMPANY_CHOICES)
+        effective_choices = list(company_choices or ContactForm.department_choices(language))
+        default_company = effective_choices[0][0] if effective_choices else self.COMPANY_ALL
+
+        if include_all:
+            effective_choices = [(self.COMPANY_ALL, "All departments"), *effective_choices]
+            default_company = self.COMPANY_ALL
         if language == "pl":
             sort_labels = {
                 self.SORT_NEWEST: "Najnowsze",
@@ -320,13 +335,7 @@ class MessageFilterForm(forms.Form):
                 self.SORT_STATUS: "Status",
                 self.SORT_COMPANY: "Firma",
             }
-            company_labels = {
-                self.COMPANY_ALL: "Wszystkie departamenty",
-                "firma1": "Firma 1",
-                "firma2": "Firma 2",
-                "firma3": "Firma 3",
-                "inna": "Inna",
-            }
+            company_labels = {self.COMPANY_ALL: "Wszystkie departamenty"}
         else:
             sort_labels = {
                 self.SORT_NEWEST: "Newest first",
@@ -334,24 +343,20 @@ class MessageFilterForm(forms.Form):
                 self.SORT_STATUS: "Status",
                 self.SORT_COMPANY: "Company",
             }
-            company_labels = {
-                self.COMPANY_ALL: "All departments",
-                "firma1": "Company 1",
-                "firma2": "Company 2",
-                "firma3": "Company 3",
-                "inna": "Other",
-            }
+            company_labels = {self.COMPANY_ALL: "All departments"}
+
+        company_labels.update({value: label for value, label in effective_choices})
 
         self.fields["sort_by"].choices = [
             (value, sort_labels.get(value, label)) for value, label in self.SORT_CHOICES
         ]
         self.fields["company"].choices = [
-            (value, company_labels.get(value, label)) for value, label in company_choices
+            (value, company_labels.get(value, label)) for value, label in effective_choices
         ]
         self.fields["sort_by"].widget.attrs["class"] = "form-input"
         self.fields["company"].widget.attrs["class"] = "form-input"
         self.fields["sort_by"].initial = self.SORT_NEWEST
-        self.fields["company"].initial = self.COMPANY_ALL
+        self.fields["company"].initial = default_company
 
     def clean_sort_by(self) -> str:
         value = self.cleaned_data.get("sort_by") or self.SORT_NEWEST
@@ -361,10 +366,10 @@ class MessageFilterForm(forms.Form):
         return value
 
     def clean_company(self) -> str:
-        value = self.cleaned_data.get("company") or self.COMPANY_ALL
+        value = self.cleaned_data.get("company") or self.fields["company"].initial
         valid_values = {choice[0] for choice in self.fields["company"].choices}
         if value not in valid_values:
-            return self.COMPANY_ALL
+            return self.fields["company"].initial
         return value
 
 
@@ -490,7 +495,7 @@ class MessageUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["company"].choices = ContactForm.COMPANY_CHOICES
+        self.fields["company"].choices = ContactForm.department_choices()
         self.fields["status"].choices = ContactMessage.STATUS_CHOICES
 
 
@@ -518,7 +523,7 @@ class UserMessageUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["company"].choices = ContactForm.COMPANY_CHOICES
+        self.fields["company"].choices = ContactForm.department_choices()
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     def clean_attachments(self) -> list:

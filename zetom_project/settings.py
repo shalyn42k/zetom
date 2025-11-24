@@ -15,6 +15,7 @@ SESSION_COOKIE_SAMESITE = 'Strict'  # Защита от CSRF в cross-site.
 
 # --- Core ---
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
+ADMIN_PASSWORD_SECRET = os.environ.get('ADMIN_PASSWORD_SECRET', SECRET_KEY)
 DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
 
@@ -79,6 +80,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # WhiteNoise добавим ниже условно в проде
+    'zetom_project.middleware.SecurityHeadersMiddleware',
+    'zetom_project.middleware.AdminIPRestrictionMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -181,16 +184,35 @@ else:
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     }
 
-# --- Security (prod) ---
+# --- Security (production) - УСИЛЕННЫЙ ВАРИАНТ ---
 if not DEBUG:
-    SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "true").lower() in ("1", "true", "yes", "on")
+    # 1. Принудительный HTTPS
+    SECURE_SSL_REDIRECT = True
+
+    # 2. Cookies только по HTTPS
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "3600"))
+
+    # 3. HSTS — 1 год (рекомендовано для максимальной защиты)
+    SECURE_HSTS_SECONDS = 31536000  # 1 год
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+    # 4. Защита от MIME-sniffing атак
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    # 5. Включаем встроенный XSS-фильтр браузера (Chrome/Edge/Safari)
+    SECURE_BROWSER_XSS_FILTER = True
+
+    # 6. Защита от кликджекинга (уже есть middleware, но явно укажем)
+    X_FRAME_OPTIONS = 'DENY'
+
+    # 7. Referrer-Policy — не отдаём реферер на внешние сайты
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 else:
+    # В локальной разработке — всё выключено, чтобы не мешало
     SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 0
 
 # --- Email ---
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip() or (
@@ -248,6 +270,7 @@ COMPANY_NOTIFICATION_LINK = os.environ.get(
 # --- Other ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
 LOGIN_URL = 'contact:login'
 
