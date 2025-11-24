@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Tests for public contact form behaviour, throttling, attachment validation, and department defaults.
+# Responsible for: Ensuring rate limiting, attachment checks, active request context, and default department seeding work as expected.
+# Connected to: ContactForm, ContactMessage and Department models, index view via reverse.
+# Important classes/functions: ContactFormTests, DepartmentDefaultsTests
+# Notes: Overrides settings to control notification delivery and scanning during tests.
+# =====================================
 from __future__ import annotations
 
 import json

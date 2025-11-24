@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Adjust AdminUser department to many-to-many relationship.
+# Responsible for: Removing single department field and adding M2M to Department model.
+# Connected to: AdminUser and Department relational changes.
+# Important classes/functions: Migration
+# Notes: Uses intermediate table creation for many-to-many mapping.
+# =====================================
 from django.db import migrations, models
 
 

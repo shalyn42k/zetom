@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Service layer for CRUD operations on contact messages and attachments.
+# Responsible for: Creating messages with access tokens, updating status, soft-deleting/restoring, purging, and ordering results.
+# Connected to: ContactMessage and ContactAttachment models, views that orchestrate user/admin flows.
+# Important classes/functions: add_message(), update_messages_status(), delete_messages(), get_messages(), get_deleted_messages(), restore_messages(), purge_messages(), add_attachments()
+# Notes: Uses database transactions to ensure message creation with attachments is atomic.
+# =====================================
+"""
+
 from __future__ import annotations
 
 from typing import Iterable, Sequence

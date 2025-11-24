@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Manage modal interactions for viewing and editing user request details.
+# Responsible for: Opening/closing modals, fetching request data, handling form submission via AJAX, and updating UI state.
+# Connected to: templates/contact/index.html and user_requests.html elements, backend endpoints for detail/update/delete actions.
+# Important classes/functions: ready(), buildUrl(), fetchRequestDetails(), submitUpdateForm(), initModal()
+# Notes: Uses fetch API and dataset attributes to coordinate client-server interactions.
+# =====================================
+*/
 (function (window) {
     const ready = (callback) => {
         if (document.readyState === 'loading') {

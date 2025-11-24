@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Authentication views for admin users including login handling and logout.
+# Responsible for: Validating credentials, tracking failed attempts and blocking IPs, managing session state, and redirecting.
+# Connected to: AdminUser model, LoginForm, Django settings for defaults, portal views via redirects.
+# Important classes/functions: login(), logout()
+# Notes: Implements basic rate limiting via in-memory tracking; expects database migrations for AdminUser.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import logging

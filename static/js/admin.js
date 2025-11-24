@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Client-side logic for the admin panel interface.
+# Responsible for: Handling bulk actions, trash operations, download selections, modals, filtering, pagination, and admin settings interactions.
+# Connected to: templates/contact/admin_panel.html elements, admin_settings endpoint, forms rendered in admin views.
+# Important classes/functions: DOMContentLoaded handler initialising form behaviours and settings management functions.
+# Notes: Relies on data attributes and standard fetch API for AJAX requests.
+# =====================================
+*/
 (function () {
     const $ = (selector, scope = document) => scope.querySelector(selector);
     const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));

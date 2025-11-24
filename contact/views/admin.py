@@ -1,7 +1,16 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Admin-facing views for managing contact messages, attachments, admin users, and associated actions.
+# Responsible for: Rendering the admin panel, handling bulk actions, trash management, downloads, email sending, and admin user CRUD via JSON API.
+# Connected to: Forms for filtering/actions, ContactMessage and related models, helper utilities, email/pdf services, session state.
+# Important classes/functions: admin_panel(), admin_settings(), _handle_* helpers, _serialise_admin_message(), _get_admin_user()
+# Notes: Enforces access control via session data and department-level permissions; relies on supporting services for persistence.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import json
-
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import EmailValidator

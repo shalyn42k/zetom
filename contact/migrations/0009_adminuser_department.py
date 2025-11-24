@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Add department field to AdminUser.
+# Responsible for: Extending adminuser table with optional department reference field.
+# Connected to: AdminUser model evolution.
+# Important classes/functions: Migration
+# Notes: Uses simple CharField for department linkage.
+# =====================================
 from django.db import migrations, models
 
 

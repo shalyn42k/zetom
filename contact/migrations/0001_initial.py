@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Initial migration creating the ContactMessage model.
+# Responsible for: Defining the initial database schema for storing contact messages with read status.
+# Connected to: ContactMessage model definition in current models module.
+# Important classes/functions: Migration
+# Notes: Establishes ordering by created_at and basic contact fields.
+# =====================================
 from django.db import migrations, models
 import django.utils.timezone
 

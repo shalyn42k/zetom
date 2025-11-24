@@ -1,3 +1,12 @@
+<!--
+# === FILE SUMMARY ===
+# Purpose: Template snippet for rendering checkbox options in download selection lists.
+# Responsible for: Displaying checkbox inputs with labels for choosing exported fields.
+# Connected to: DownloadMessagesForm widget customisation in admin templates.
+# Important classes/functions: N/A (template snippet)
+# Notes: Relies on provided widget/option attributes for accessibility.
+# =====================================
+-->
 <label class="download-item"{% if widget.attrs.id %} for="{{ option.attrs.id }}"{% endif %}>
     <input type="checkbox"
            name="{{ widget.name }}"

@@ -1,3 +1,12 @@
+<!--
+# === FILE SUMMARY ===
+# Purpose: Render a single checkbox option for selecting fields in download forms.
+# Responsible for: Displaying input elements with labels for PDF export selection UI.
+# Connected to: DownloadMessagesForm field rendering in admin panel templates.
+# Important classes/functions: N/A (template snippet)
+# Notes: Uses built-in Django widget attributes for accessibility.
+# =====================================
+-->
 <label class="download-option"{% if widget.attrs.id %} for="{{ option.attrs.id }}"{% endif %}>
     <input type="checkbox"
            name="{{ widget.name }}"

@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Central Django settings configuration for the zetom project.
+# Responsible for: Defining environment-driven settings for security, sessions, apps, middleware, databases, static/media files, email, notifications, and third-party integrations.
+# Connected to: Django runtime, environment variables, contact app components, Sentry SDK, dj_database_url.
+# Important classes/functions: _load_company_notification_recipients(), _validate_environment_configuration()
+# Notes: Values are environment-sensitive; defaults target development while allowing production overrides.
+# =====================================
 import json
 import os
 from pathlib import Path

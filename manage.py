@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+# === FILE SUMMARY ===
+# Purpose: Django management entrypoint for running administrative commands.
+# Responsible for: Loading environment variables, setting the settings module, and delegating to Django's command-line utility.
+# Connected to: zetom_project.settings via DJANGO_SETTINGS_MODULE; dotenv for optional env loading.
+# Important classes/functions: main()
+# Notes: Keeps runtime configuration intact while optionally loading .env values.
+# =====================================
 import os
 import sys
 

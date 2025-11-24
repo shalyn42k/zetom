@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Handle the public contact form, throttling, persistence, notifications, and contextual data for the landing page.
+# Responsible for: Validating submissions, enforcing rate limits, saving messages, sending emails, and preparing view context.
+# Connected to: ContactForm, ContactMessage model, message_service, email_service, helper utilities, Django cache and settings.
+# Important classes/functions: index()
+# Notes: Respects attachment and throttling settings while providing multi-language messaging.
+# =====================================
 from __future__ import annotations
 
 import json

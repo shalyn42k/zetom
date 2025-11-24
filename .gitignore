@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Specify files and directories for Git to ignore in the zetom project.
+# Responsible for: Preventing commits of environment files, caches, databases, and tooling artifacts.
+# Connected to: Git version control behaviour across the repository.
+# Important classes/functions: None
+# Notes: Keeps .env.example tracked while ignoring real environment files and build outputs.
+# =====================================
 # Byte-compiled / cache
 __pycache__/
 *.py[cod]

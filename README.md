@@ -1,3 +1,12 @@
+<!--
+# === FILE SUMMARY ===
+# Purpose: Project overview and setup guide for the Zetom Django application.
+# Responsible for: Documenting features, requirements, environment configuration, and local development steps.
+# Connected to: manage.py commands, environment variables (.env), dependency installation via requirements.txt.
+# Important classes/functions: None
+# Notes: Provides commands for migrations, static collection, admin user creation, and running tests.
+# =====================================
+-->
 # Zetom Django Project
 
 Небольшое Django‑приложение с контактной формой, переводами и простым "админ"‑кабинетом. Авторизация в панели теперь строится на базе таблицы пользователей (управляется в модуле Settings), поэтому пароль хранится в базе данных, а не в `.env`.

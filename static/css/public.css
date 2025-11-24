@@ -1,3 +1,12 @@
+/*
+# === FILE SUMMARY ===
+# Purpose: Styles for the public landing page and contact form.
+# Responsible for: Defining color variables, layout, typography, sections, cards, and responsive design for the public site.
+# Connected to: templates/contact/index.html and public.js interactions.
+# Important classes/functions: CSS variables, layout classes like .site-header, .contact-form, .services.
+# Notes: Uses modern CSS features like clamp and grid for responsive behaviour.
+# =====================================
+*/
 :root {
     --green: #2fa84f;
     --green-dark: #1b6d34;

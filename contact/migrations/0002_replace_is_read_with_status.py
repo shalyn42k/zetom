@@ -1,3 +1,10 @@
+# === FILE SUMMARY ===
+# Purpose: Migration replacing is_read boolean with a status field on ContactMessage.
+# Responsible for: Altering the schema to include status choices and removing obsolete is_read field.
+# Connected to: ContactMessage model updates reflecting status tracking.
+# Important classes/functions: Migration
+# Notes: Introduces default status value 'new' and indexes.
+# =====================================
 from django.db import migrations, models
 
 

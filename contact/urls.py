@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: URL routing for the contact application.
+# Responsible for: Mapping public, authentication, admin, and user portal endpoints to view functions.
+# Connected to: contact.views module functions (index, login, logout, panel, message management).
+# Important classes/functions: urlpatterns list
+# Notes: Includes aliases and nested paths for admin and user workflows.
+# =====================================
+"""
+
 from django.urls import path
 from . import views
 

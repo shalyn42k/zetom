@@ -1,3 +1,13 @@
+"""
+# === FILE SUMMARY ===
+# Purpose: Utility helpers for language selection, client IP retrieval, rate limit key generation, and admin secret encryption.
+# Responsible for: Persisting language preference in session, deriving client identifiers, hashing rate limit keys, and encrypting/decrypting sensitive admin values.
+# Connected to: Django settings for defaults and secrets, cryptography.Fernet for encryption, views for request handling.
+# Important classes/functions: get_language(), get_client_ip(), build_rate_limit_key(), encrypt_admin_secret(), decrypt_admin_secret()
+# Notes: Relies on ADMIN_PASSWORD_SECRET/SECRET_KEY to derive encryption keys for admin secrets.
+# =====================================
+"""
+
 from __future__ import annotations
 
 import base64
