@@ -138,14 +138,20 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     user_level = admin_user.level_of_access
     user_departments = list(admin_user.departments.values_list('code', flat=True))
-    allowed_companies = set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
+    allowed_companies: set[str] | None = (
+        set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
+    )
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
     lang = get_language(request)
 
-    company_options = helpers.company_options(lang)
+    # --- company / department options ---
+    company_options = helpers.company_options(lang)  # [{'value': 'firma1', 'label': 'Company 1'}, ...]
     department_labels = helpers.company_labels(lang)
-    department_choices = [(code, department_labels.get(code, code)) for code in user_departments]
+    department_choices = [
+        (code, department_labels.get(code, code)) for code in user_departments
+    ]
 
+    # --- read filters ---
     if user_level == AdminUser.LEVEL_DEPARTMENT:
         filter_data = helpers.resolve_filter_data(
             request,
@@ -153,15 +159,20 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             company_choices=department_choices,
             include_all=len(department_choices) > 1,
         )
-        sort_by = filter_data["sort_by"]
-        company_filter = filter_data["company"]
     else:
         filter_data = helpers.resolve_filter_data(request, lang)
-        sort_by = filter_data["sort_by"]
-        company_filter = filter_data["company"]
 
-    valid_companies = allowed_companies if allowed_companies is not None else set(company_options.keys())
+    sort_by: str | None = filter_data["sort_by"]
+    company_filter: str | None = filter_data["company"]
 
+    # valid companies for level1/3 dropdown protection
+    valid_companies: set[str] = (
+        allowed_companies
+        if allowed_companies is not None
+        else {item["value"] for item in company_options}
+    )
+
+    # --- base querysets ---
     if user_level == AdminUser.LEVEL_DEPARTMENT and not user_departments:
         queryset = ContactMessage.objects.none()
         deleted_queryset = ContactMessage.objects.none()
@@ -181,20 +192,29 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             valid_companies=valid_companies,
         )
 
+    # --- pagination ---
     paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page') or request.POST.get('page') or 1
     page_obj = paginator.get_page(page_number)
 
+    # --- form choices ---
     choices = [(str(message.id), f"#{message.id}") for message in page_obj.object_list]
     deleted_choices = [
-        (str(message.id), f"#{message.id} · {message.email}") for message in deleted_queryset
+        (str(message.id), f"#{message.id} · {message.email}")
+        for message in deleted_queryset
     ]
 
     action_form = MessageBulkActionForm(request.POST or None, message_choices=choices)
     helpers.localise_action_choices(action_form, lang)
+
     email_form = EmailForm(request.POST or None, request.FILES or None)
-    trash_form = TrashActionForm(request.POST or None, message_choices=deleted_choices, language=lang)
-    download_choices_raw = list(queryset.values_list('id', 'email'))
+    trash_form = TrashActionForm(
+        request.POST or None,
+        message_choices=deleted_choices,
+        language=lang,
+    )
+
+    download_choices_raw = list(queryset.values_list("id", "email"))
     download_choices = [
         (str(message_id), f"#{message_id} · {email}")
         for message_id, email in download_choices_raw
@@ -204,29 +224,38 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         message_choices=download_choices,
         language=lang,
     )
+
+    # --- readonly mode ---
     if readonly_mode:
-        action_form.fields['action'].disabled = True
-        action_form.fields['selected'].disabled = True
+        action_form.fields["action"].disabled = True
+        action_form.fields["selected"].disabled = True
         for field in email_form.fields.values():
             field.disabled = True
         for field in trash_form.fields.values():
             field.disabled = True
         for field in download_form.fields.values():
             field.disabled = True
+
+    # --- filter form object (UI) ---
     filter_form = helpers.build_filter_form(
         request,
         lang,
         initial_data=filter_data,
-        company_choices=department_choices if user_level == AdminUser.LEVEL_DEPARTMENT else None,
-        include_all=user_level != AdminUser.LEVEL_DEPARTMENT
-        or len(department_choices) > 1,
+        company_choices=(
+            department_choices if user_level == AdminUser.LEVEL_DEPARTMENT else None
+        ),
+        include_all=(
+            user_level != AdminUser.LEVEL_DEPARTMENT
+            or len(department_choices) > 1
+        ),
     )
 
     if user_level == AdminUser.LEVEL_DEPARTMENT:
-        filter_form.fields['company'].initial = filter_data.get('company')
-        filter_form.fields['company'].widget.attrs['disabled'] = False
+        filter_form.fields["company"].initial = filter_data.get("company")
+        filter_form.fields["company"].widget.attrs["disabled"] = False
 
-    if request.method == 'POST' and readonly_mode:
+    # --- POST handlers ---
+    if request.method == "POST" and readonly_mode:
         return redirect(
             helpers.panel_redirect_url(
                 lang,
@@ -236,9 +265,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             )
         )
 
-    if request.method == 'POST':
-        form_name = (request.POST.get('form_name') or '').strip()
-        if form_name == 'bulk':
+    if request.method == "POST":
+        form_name = (request.POST.get("form_name") or "").strip()
+        if form_name == "bulk":
             action_form, response = _handle_bulk_form(
                 request,
                 lang,
@@ -250,7 +279,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             )
             if response:
                 return response
-        elif form_name == 'trash':
+        elif form_name == "trash":
             trash_form, response = _handle_trash_form(
                 request,
                 lang,
@@ -262,7 +291,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             )
             if response:
                 return response
-        elif form_name == 'download':
+        elif form_name == "download":
             download_form, response = _handle_download_form(
                 request,
                 lang,
@@ -286,51 +315,68 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             if response:
                 return response
 
-    download_fields_total = len(download_form.fields['fields'].choices)
+    # --- extra context for templates / JS ---
+    download_fields_total = len(download_form.fields["fields"].choices)
     selected_download_ids: list[str] = []
     if download_form.is_bound:
-        raw_ids = download_form.data.getlist('messages')
+        raw_ids = download_form.data.getlist("messages")
         selected_download_ids = list(dict.fromkeys(raw_ids))
 
-    settings_departments_json = json.dumps(company_options)
+    # >>> ВАЖНО: здесь ГАРАНТИРОВАННО готовый JSON <<<
     status_options = helpers.status_options(lang)
-    status_meta = {item["value"]: {"label": item["label"], "badge": item["badge"]} for item in status_options}
+    status_meta = {
+        item["value"]: {"label": item["label"], "badge": item["badge"]}
+        for item in status_options
+    }
 
-    if lang == 'pl':
-        detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
-        update_error_message = 'Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie.'
+    status_meta_json = json.dumps(status_meta)
+
+    company_options = helpers.company_options(lang)
+    settings_departments_json = json.dumps(company_options)
+
+    if lang == "pl":
+        detail_error_message = "Nie udało się pobrać danych zgłoszenia."
+        update_error_message = (
+            "Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie."
+        )
     else:
-        detail_error_message = 'Unable to load request data.'
-        update_error_message = 'Could not save changes. Please fix the errors and try again.'
+        detail_error_message = "Unable to load request data."
+        update_error_message = (
+            "Could not save changes. Please fix the errors and try again."
+        )
 
     context = {
-        'lang': lang,
-        'user_level': user_level,
-        'user_departments': user_departments,
-        'readonly_mode': readonly_mode,
-        'messages_page': page_obj,
-        'paginator': paginator,
-        'page_range': list(paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)),
-        'deleted_messages': deleted_queryset,
-        'action_form': action_form,
-        'email_form': email_form,
-        'trash_form': trash_form,
-        'download_form': download_form,
-        'filter_form': filter_form,
-        'current_page': page_obj.number,
-        'current_sort': sort_by,
-        'current_company': company_filter,
-        'download_has_choices': bool(download_choices),
-        'download_fields_total': download_fields_total,
-        'selected_download_ids': selected_download_ids,
-        'company_options': company_options,
-        'settings_departments_json': settings_departments_json,
-        'status_options': status_options,
-        'status_meta_json': json.dumps(status_meta),
-        'request_detail_error_message': detail_error_message,
-        'request_update_error_message': update_error_message,
+        "lang": lang,
+        "user_level": user_level,
+        "user_departments": user_departments,
+        "readonly_mode": readonly_mode,
+        "messages_page": page_obj,
+        "paginator": paginator,
+        "page_range": list(
+            paginator.get_elided_page_range(
+                page_obj.number, on_each_side=1, on_ends=1
+            )
+        ),
+        "deleted_messages": deleted_queryset,
+        "action_form": action_form,
+        "email_form": email_form,
+        "trash_form": trash_form,
+        "download_form": download_form,
+        "filter_form": filter_form,
+        "current_page": page_obj.number,
+        "current_sort": sort_by,
+        "current_company": company_filter,
+        "download_has_choices": bool(download_choices),
+        "download_fields_total": download_fields_total,
+        "selected_download_ids": selected_download_ids,
+        "company_options": company_options,
+        "settings_departments_json": settings_departments_json,
+        "status_options": status_options,
+        "status_meta_json": status_meta_json,
+        "request_detail_error_message": detail_error_message,
+        "request_update_error_message": update_error_message,
     }
-    return render(request, 'contact/admin_panel.html', context)
+    return render(request, "contact/admin_panel.html", context)
 
 
 def _serialise_admin_user(user: AdminUser) -> dict:

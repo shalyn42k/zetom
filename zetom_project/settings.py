@@ -317,3 +317,6 @@ def _validate_environment_configuration() -> None:
 
 
 _validate_environment_configuration()
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"

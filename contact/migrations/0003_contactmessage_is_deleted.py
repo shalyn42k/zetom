@@ -5,6 +5,7 @@
 # Important classes/functions: Migration
 # Notes: Defaults to False for existing records.
 # =====================================
+
 from django.db import migrations, models
 
 
