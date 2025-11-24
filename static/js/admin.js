@@ -911,6 +911,15 @@
         const applyButton = modal.querySelector('[data-settings-apply]');
         const errorBox = modal.querySelector('[data-settings-error]');
         const endpoint = modal.dataset.settingsEndpoint;
+        const departments = (() => {
+            try {
+                return JSON.parse(modal.dataset.settingsDepartments || '[]');
+            } catch (error) {
+                console.error('Unable to parse departments list', error);
+                return [];
+            }
+        })();
+
         const levelOptions = [
             { value: 'level1', label: 'level1' },
             { value: 'level2', label: 'level2' },
@@ -1017,6 +1026,21 @@
                 togglePasswordField(value, passwordCell, passwordInput);
             });
 
+            const departmentSelect = document.createElement('select');
+            departmentSelect.dataset.settingsDepartments = 'true';
+            departmentSelect.multiple = true;
+            departmentSelect.size = Math.min(Math.max(departments.length, 2), 6);
+            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
+            departments.forEach((department) => {
+                const option = document.createElement('option');
+                option.value = department.value;
+                option.textContent = department.label;
+                if (selectedDepartments.includes(department.value)) {
+                    option.selected = true;
+                }
+                departmentSelect.appendChild(option);
+            });
+
             const deleteCell = document.createElement('div');
             deleteCell.className = 'settings-table__delete';
             const deleteButton = document.createElement('button');
@@ -1036,6 +1060,7 @@
                 emailInput,
                 passwordCell,
                 levelSelect,
+                departmentSelect,
                 deleteCell,
             );
             togglePasswordField(user.level, passwordCell, passwordInput);
@@ -1081,7 +1106,9 @@
                         if (levelValue !== 'level1') return false;
                         return row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true';
                     })(),
-                    departments: [],
+                    departments: Array.from(
+                        row.querySelector('[data-settings-departments]')?.selectedOptions || [],
+                    ).map((option) => option.value),
                     marked_for_deletion: row.dataset.markedForDeletion === 'true',
                     is_new: row.dataset.isNew === 'true',
                 })),
