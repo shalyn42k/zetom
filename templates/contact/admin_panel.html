@@ -262,6 +262,13 @@
         </form>
     </div>
 </div>
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="requests">Requests</button>
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="forms">Forms</button>
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="settings">Settings</button>
+    </aside>
+    <div class="admin-main">
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -293,14 +300,7 @@
     </div>
 </header>
 
-<div class="admin-layout">
-    <aside class="admin-sidebar">
-        <button class="button button--ghost button--compact" data-panel-trigger data-panel="requests">Requests</button>
-        <button class="button button--ghost button--compact" data-panel-trigger data-panel="forms">Forms</button>
-        <button class="button button--ghost button--compact" data-panel-trigger data-panel="settings">Settings</button>
-    </aside>
-    <div class="admin-main">
-        <main class="admin-dashboard">
+<main class="admin-dashboard">
     <section class="admin-card panel panel-requests" data-panel-content="requests">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
@@ -639,8 +639,8 @@
         </section>
         {% endif %}
     </section>
-        </main>
-    </div>
+</main>
+</div>
 </div>
 </body>
 </html>
