@@ -47,6 +47,31 @@ body[data-theme='dark'] .panel-email__icon {
     box-shadow: none;
 }
 
+.admin-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.admin-sidebar {
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    top: 1rem;
+    padding: 1rem;
+    background: var(--surface, #ffffff);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 14px 28px rgba(17, 24, 39, 0.14);
+    z-index: 2;
+}
+
+.admin-main {
+    flex: 1;
+}
+
 body[data-theme='dark'] .panel-email__description,
 body[data-theme='dark'] .modal__subtitle,
 body[data-theme='dark'] .trash-item__meta,
