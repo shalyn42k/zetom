@@ -604,35 +604,45 @@
                 <p class="settings-section__meta">
                     {% if lang == 'pl' %}Moje departamenty:{% else %}My departments:{% endif %}
                     <strong>
-                        {% if user_department_labels %}{{ user_department_labels|join:", " }}{% else %}—{% endif %}
+                        {% if user_level == 'level1' %}
+                            {% if lang == 'pl' %}Wszystkie{% else %}All{% endif %}
+                        {% else %}
+                            {% if user_department_labels %}
+                                {{ user_department_labels|join:", " }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        {% endif %}
                     </strong>
                 </p>
 
-                <form class="settings-profile__form" data-profile-form>
-                    <div class="form-grid">
-                        <label class="form-field">
-                            <span class="form-label">Email</span>
-                            <input type="email" class="form-input" value="{{ admin_user_email }}" data-profile-email required>
-                        </label>
-                        <label class="form-field">
-                            <span class="form-label">{% if lang == 'pl' %}Aktualne hasło{% else %}Current password{% endif %}</span>
-                            <input type="password" class="form-input" data-profile-old-password autocomplete="current-password">
-                        </label>
-                        <label class="form-field">
-                            <span class="form-label">{% if lang == 'pl' %}Nowe hasło{% else %}New password{% endif %}</span>
-                            <input type="password" class="form-input" data-profile-new-password autocomplete="new-password">
-                        </label>
-                        <label class="form-field">
-                            <span class="form-label">{% if lang == 'pl' %}Powtórz nowe hasło{% else %}Confirm new password{% endif %}</span>
-                            <input type="password" class="form-input" data-profile-new-password-confirm autocomplete="new-password">
-                        </label>
-                    </div>
-                    <div class="settings-profile__messages">
-                        <div class="form-error" data-profile-errors hidden></div>
-                        <div class="form-success" data-profile-success hidden>{% if lang == 'pl' %}Zapisano zmiany.{% else %}Changes saved.{% endif %}</div>
-                    </div>
-                    <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
-                </form>
+                <div class="settings-card settings-card--profile">
+                    <form class="profile-form" data-profile-form>
+                        <div class="profile-form__grid">
+                            <label class="profile-form__field">
+                                <span class="form-label">Email</span>
+                                <input type="email" class="form-input" value="{{ admin_user_email }}" data-profile-email required>
+                            </label>
+                            <label class="profile-form__field">
+                                <span class="form-label">{% if lang == 'pl' %}Aktualne hasło{% else %}Current password{% endif %}</span>
+                                <input type="password" class="form-input" data-profile-old-password autocomplete="current-password">
+                            </label>
+                            <label class="profile-form__field">
+                                <span class="form-label">{% if lang == 'pl' %}Nowe hasło{% else %}New password{% endif %}</span>
+                                <input type="password" class="form-input" data-profile-new-password autocomplete="new-password">
+                            </label>
+                            <label class="profile-form__field">
+                                <span class="form-label">{% if lang == 'pl' %}Powtórz nowe hasło{% else %}Confirm new password{% endif %}</span>
+                                <input type="password" class="form-input" data-profile-new-password-confirm autocomplete="new-password">
+                            </label>
+                        </div>
+                        <div class="profile-form__messages">
+                            <div class="form-error" data-profile-errors hidden></div>
+                            <div class="form-success" data-profile-success hidden>{% if lang == 'pl' %}Zapisano zmiany.{% else %}Changes saved.{% endif %}</div>
+                        </div>
+                        <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
+                    </form>
+                </div>
             </section>
 
             {% if user_level == 'level1' %}
