@@ -1184,4 +1184,15 @@
             }
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const layout = document.querySelector('.admin-layout');
+        const toggle = document.querySelector('[data-sidebar-toggle]');
+
+        if (layout && toggle) {
+            toggle.addEventListener('click', () => {
+                layout.classList.toggle('admin-layout--collapsed');
+            });
+        }
+    });
 })();
