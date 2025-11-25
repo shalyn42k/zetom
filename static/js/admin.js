@@ -36,40 +36,6 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        const layout = document.querySelector('.admin-layout');
-        if (!layout) {
-            return;
-        }
-
-        const panelButtons = $$('[data-panel-button]', layout);
-        const panels = $$('[data-panel]', layout);
-
-        if (!panelButtons.length || !panels.length) {
-            return;
-        }
-
-        const activatePanel = (target) => {
-            panels.forEach((panel) => {
-                const isActive = panel.dataset.panel === target;
-                panel.hidden = !isActive;
-                panel.classList.toggle('is-active', isActive);
-            });
-
-            panelButtons.forEach((button) => {
-                const isActive = button.dataset.panelButton === target;
-                button.classList.toggle('is-active', isActive);
-                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-        };
-
-        panelButtons.forEach((button) => {
-            button.addEventListener('click', () => activatePanel(button.dataset.panelButton));
-        });
-
-        activatePanel('requests');
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
         const bulkForm = $('[data-bulk-form]');
         if (!bulkForm) {
             return;
