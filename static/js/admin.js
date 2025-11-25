@@ -947,12 +947,17 @@
         });
     });
 
+    
     document.addEventListener('DOMContentLoaded', () => {
         const settingsPanel = document.querySelector('[data-settings-panel]');
         if (!settingsPanel) {
             return;
         }
 
+        const language = document.documentElement.lang || 'en';
+        const profileForm = settingsPanel.querySelector('[data-profile-form]');
+        const profileEndpoint = settingsPanel.getAttribute('data-profile-endpoint');
+        const verifyEndpoint = settingsPanel.getAttribute('data-verify-endpoint');
         const rowsContainer = settingsPanel.querySelector('[data-settings-rows]');
         const emptyState = settingsPanel.querySelector('[data-settings-empty]');
         const addButton = settingsPanel.querySelector('[data-settings-add]');
@@ -963,9 +968,23 @@
         const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
         const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
 
-        if (!rowsContainer || !endpoint) {
-            return;
-        }
+        const adminPasswordSection = settingsPanel.querySelector('[data-admin-password-confirmation]');
+        const adminPasswordInput = settingsPanel.querySelector('[data-admin-password-input]');
+        const adminPasswordSubmit = settingsPanel.querySelector('[data-admin-password-submit]');
+        const adminPasswordError = settingsPanel.querySelector('[data-admin-password-error]');
+        const profileErrors = settingsPanel.querySelector('[data-profile-errors]');
+        const profileSuccess = settingsPanel.querySelector('[data-profile-success]');
+        const profileEmailInput = settingsPanel.querySelector('[data-profile-email]');
+        const profileOldPassword = settingsPanel.querySelector('[data-profile-old-password]');
+        const profileNewPassword = settingsPanel.querySelector('[data-profile-new-password]');
+        const profileNewPasswordConfirm = settingsPanel.querySelector('[data-profile-new-password-confirm]');
+        const profileEmailDisplay = settingsPanel.querySelector('[data-profile-email-display]');
+
+        const PAGE_SIZE = 5;
+        let users = [];
+        let originalLevelMap = new Map();
+        let currentPage = 1;
+        let pendingPayload = null;
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -987,10 +1006,20 @@
             errorBox.hidden = !message;
         };
 
+        const showProfileError = (message) => {
+            if (!profileErrors) return;
+            profileErrors.textContent = message || '';
+            profileErrors.hidden = !message;
+        };
+
+        const showProfileSuccess = (visible) => {
+            if (!profileSuccess) return;
+            profileSuccess.hidden = !visible;
+        };
+
         const updateEmptyState = () => {
             if (!rowsContainer || !emptyState) return;
-            const hasRows = rowsContainer.querySelector('[data-settings-row]');
-            emptyState.style.display = hasRows ? 'none' : 'block';
+            emptyState.style.display = users.length ? 'none' : 'block';
         };
 
         const togglePasswordField = (levelValue, passwordCell, passwordInput) => {
@@ -1014,6 +1043,7 @@
             row.dataset.userId = user.user_id || '';
             row.dataset.isNew = user.is_new ? 'true' : 'false';
             row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
+            row.dataset.index = user.index;
 
             const idCell = document.createElement('span');
             idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
@@ -1022,30 +1052,33 @@
             emailInput.type = 'email';
             emailInput.required = true;
             emailInput.value = user.email || '';
+            emailInput.placeholder = 'user@example.com';
             emailInput.dataset.settingsEmail = 'true';
+            emailInput.addEventListener('input', () => {
+                const targetUser = users[user.index];
+                if (targetUser) {
+                    targetUser.email = emailInput.value;
+                }
+            });
 
-            const passwordCell = document.createElement('div');
+            const passwordCell = document.createElement('span');
             passwordCell.className = 'settings-table__password';
             const passwordInput = document.createElement('input');
             passwordInput.type = 'text';
             passwordInput.value = user.password_plaintext || '';
-            passwordInput.placeholder = 'Password';
-            passwordInput.autocomplete = 'new-password';
-            passwordInput.dataset.settingsPassword = 'true';
+            passwordInput.placeholder = user.has_password ? '••••••••' : '';
             passwordInput.dataset.passwordDirty = 'false';
+            passwordInput.dataset.settingsPassword = 'true';
             passwordInput.addEventListener('input', () => {
-                passwordInput.dataset.passwordDirty = 'true';
+                const targetUser = users[user.index];
+                if (targetUser) {
+                    targetUser.password = passwordInput.value;
+                    targetUser.password_changed = true;
+                }
             });
-            passwordCell.appendChild(passwordInput);
 
             const levelSelect = document.createElement('select');
             levelSelect.dataset.settingsLevel = 'true';
-            const placeholderOption = document.createElement('option');
-            placeholderOption.value = '';
-            placeholderOption.textContent = '—';
-            placeholderOption.disabled = true;
-            placeholderOption.selected = !user.level;
-            levelSelect.appendChild(placeholderOption);
             levelOptions.forEach((option) => {
                 const opt = document.createElement('option');
                 opt.value = option.value;
@@ -1055,21 +1088,38 @@
                 }
                 levelSelect.appendChild(opt);
             });
-            levelSelect.addEventListener('change', (event) => {
-                const value = event.target.value;
-                togglePasswordField(value, passwordCell, passwordInput);
+            levelSelect.addEventListener('change', () => {
+                const targetUser = users[user.index];
+                if (targetUser) {
+                    targetUser.level = levelSelect.value;
+                    if (levelSelect.value !== 'level1') {
+                        targetUser.password = '';
+                        targetUser.password_changed = false;
+                        passwordInput.value = '';
+                        passwordInput.dataset.passwordDirty = 'false';
+                    }
+                    togglePasswordField(levelSelect.value, passwordCell, passwordInput);
+                }
             });
 
             const departmentSelect = document.createElement('select');
-            departmentSelect.dataset.settingsDepartments = 'true';
             departmentSelect.multiple = true;
             departmentSelect.size = departmentsSize;
+            departmentSelect.dataset.settingsDepartments = 'true';
             departmentSelect.innerHTML = departmentsOptionsHTML;
 
             const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
             Array.from(departmentSelect.options).forEach((opt) => {
                 if (selectedDepartments.includes(opt.value)) {
                     opt.selected = true;
+                }
+            });
+            departmentSelect.addEventListener('change', () => {
+                const targetUser = users[user.index];
+                if (targetUser) {
+                    targetUser.departments = Array.from(departmentSelect.selectedOptions).map(
+                        (option) => option.value,
+                    );
                 }
             });
 
@@ -1080,7 +1130,19 @@
             deleteButton.innerHTML = '🗑';
             deleteButton.title = 'Delete user';
             deleteButton.addEventListener('click', () => {
+                const confirmation = window.confirm(
+                    language === 'pl'
+                        ? 'Usunąć tego użytkownika? Zostanie usunięty po kliknięciu Apply.'
+                        : 'Delete this user? They will be removed after clicking Apply.',
+                );
+                if (!confirmation) {
+                    return;
+                }
                 const isMarked = row.dataset.markedForDeletion === 'true';
+                const targetUser = users[user.index];
+                if (targetUser) {
+                    targetUser.marked_for_deletion = !isMarked;
+                }
                 row.dataset.markedForDeletion = (!isMarked).toString();
                 row.classList.toggle('is-marked-for-deletion', !isMarked);
                 deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
@@ -1099,18 +1161,61 @@
             return row;
         };
 
-        const renderRows = (users) => {
+        const renderPagination = () => {
+            const paginationContainer = settingsPanel.querySelector('[data-settings-pagination]');
+            if (!paginationContainer) return;
+            const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+            paginationContainer.innerHTML = '';
+            for (let page = 1; page <= totalPages; page += 1) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = page.toString();
+                button.className = 'pagination__page';
+                if (page === currentPage) {
+                    button.classList.add('is-active');
+                }
+                button.addEventListener('click', () => {
+                    currentPage = page;
+                    renderRows();
+                });
+                paginationContainer.appendChild(button);
+            }
+        };
+
+        const renderRows = () => {
             if (!rowsContainer) return;
             rowsContainer.innerHTML = '';
-            users.forEach((user) => {
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const paginatedUsers = users.slice(start, start + PAGE_SIZE);
+            paginatedUsers.forEach((user) => {
                 const row = buildRow(user);
                 rowsContainer.appendChild(row);
             });
             updateEmptyState();
+            renderPagination();
+        };
+
+        const setUsers = (list) => {
+            users = (list || []).map((user, index) => ({
+                ...user,
+                index,
+                password: '',
+                password_changed: false,
+                marked_for_deletion: Boolean(user.marked_for_deletion),
+                is_new: Boolean(user.is_new),
+            }));
+            originalLevelMap = new Map(
+                users.filter((u) => u.user_id).map((u) => [String(u.user_id), u.level]),
+            );
+            currentPage = 1;
+            renderRows();
         };
 
         const fetchUsers = async () => {
-            if (!endpoint) {
+            if (!endpoint || !rowsContainer) {
                 return;
             }
             const response = await fetch(endpoint);
@@ -1119,36 +1224,36 @@
                 return;
             }
             const data = await response.json();
-            renderRows(data.users || []);
+            setUsers(data.users || []);
+            showError('');
         };
 
-        const applyChanges = async () => {
-            if (!rowsContainer) return;
-            const payload = {
-                users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
-                    user_id: row.dataset.userId || null,
-                    email: row.querySelector('[data-settings-email]')?.value || '',
-                    level: row.querySelector('[data-settings-level]')?.value || '',
-                    password: (() => {
-                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
-                        if (levelValue !== 'level1') return '';
-                        const passwordInput = row.querySelector('[data-settings-password]');
-                        const isDirty = passwordInput?.dataset.passwordDirty === 'true';
-                        return isDirty ? passwordInput?.value || '' : '';
-                    })(),
-                    password_changed: (() => {
-                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
-                        if (levelValue !== 'level1') return false;
-                        return row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true';
-                    })(),
-                    departments: Array.from(
-                        row.querySelector('[data-settings-departments]')?.selectedOptions || [],
-                    ).map((option) => option.value),
-                    marked_for_deletion: row.dataset.markedForDeletion === 'true',
-                    is_new: row.dataset.isNew === 'true',
-                })),
-            };
+        const buildPayload = () => ({
+            users: users.map((user) => ({
+                user_id: user.user_id || null,
+                email: user.email || '',
+                level: user.level || '',
+                password: user.level === 'level1' && user.password_changed ? user.password || '' : '',
+                password_changed: user.level === 'level1' ? Boolean(user.password_changed) : false,
+                departments: Array.isArray(user.departments) ? user.departments : [],
+                marked_for_deletion: Boolean(user.marked_for_deletion),
+                is_new: Boolean(user.is_new),
+            })),
+        });
 
+        const hasDangerousChanges = (payload) =>
+            payload.users.some((user) => {
+                if (user.marked_for_deletion) return true;
+                if (user.user_id && originalLevelMap.has(String(user.user_id))) {
+                    const previousLevel = originalLevelMap.get(String(user.user_id));
+                    if (previousLevel !== user.level) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+        const submitChanges = async (payload) => {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -1164,11 +1269,66 @@
                 return;
             }
             showError('');
-            renderRows(data.users || []);
+            setUsers(data.users || []);
+        };
+
+        const applyChanges = async () => {
+            if (!rowsContainer) return;
+            const payload = buildPayload();
+            const confirmation = window.confirm(
+                language === 'pl'
+                    ? 'Na pewno zastosować zmiany? Zaktualizuje to użytkowników i ich poziomy dostępu.'
+                    : 'Are you sure you want to apply changes? This will update users and access levels.',
+            );
+            if (!confirmation) {
+                return;
+            }
+            const dangerous = hasDangerousChanges(payload);
+            if (dangerous && adminPasswordSection && verifyEndpoint) {
+                pendingPayload = payload;
+                adminPasswordSection.hidden = false;
+                if (adminPasswordError) {
+                    adminPasswordError.hidden = true;
+                }
+                adminPasswordInput && adminPasswordInput.focus();
+                return;
+            }
+            await submitChanges(payload);
+        };
+
+        const verifyAdminPassword = async () => {
+            if (!verifyEndpoint || !pendingPayload) return;
+            const passwordValue = adminPasswordInput ? adminPasswordInput.value : '';
+            const response = await fetch(verifyEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || '',
+                },
+                body: JSON.stringify({ password: passwordValue }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!data.valid) {
+                if (adminPasswordError) {
+                    adminPasswordError.textContent = data.error || 'Invalid password.';
+                    adminPasswordError.hidden = false;
+                }
+                return;
+            }
+            if (adminPasswordError) {
+                adminPasswordError.hidden = true;
+            }
+            if (adminPasswordInput) {
+                adminPasswordInput.value = '';
+            }
+            adminPasswordSection && (adminPasswordSection.hidden = true);
+            const payload = pendingPayload;
+            pendingPayload = null;
+            await submitChanges(payload);
         };
 
         addButton?.addEventListener('click', () => {
-            const row = buildRow({
+            const newUser = {
                 user_id: null,
                 email: '',
                 password_plaintext: '',
@@ -1176,13 +1336,61 @@
                 level: '',
                 is_new: true,
                 marked_for_deletion: false,
-            });
-            rowsContainer.appendChild(row);
-            updateEmptyState();
+                departments: [],
+                password: '',
+                password_changed: false,
+                index: users.length,
+            };
+            users.push(newUser);
+            renderRows();
         });
 
         applyButton?.addEventListener('click', () => {
             applyChanges().catch(() => showError('Unable to save changes.'));
+        });
+
+        adminPasswordSubmit?.addEventListener('click', () => {
+            verifyAdminPassword().catch(() => {
+                if (adminPasswordError) {
+                    adminPasswordError.textContent = 'Unable to verify password.';
+                    adminPasswordError.hidden = false;
+                }
+            });
+        });
+
+        profileForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!profileEndpoint) return;
+            showProfileError('');
+            showProfileSuccess(false);
+            const payload = {
+                email: profileEmailInput ? profileEmailInput.value : '',
+                old_password: profileOldPassword ? profileOldPassword.value : '',
+                new_password: profileNewPassword ? profileNewPassword.value : '',
+                new_password_confirm: profileNewPasswordConfirm ? profileNewPasswordConfirm.value : '',
+            };
+            const response = await fetch(profileEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || '',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                const errorText = Array.isArray(data.errors) ? data.errors.join(', ') : 'Unable to save profile.';
+                showProfileError(errorText);
+                showProfileSuccess(false);
+                return;
+            }
+            if (profileEmailDisplay && data.email) {
+                profileEmailDisplay.textContent = data.email;
+            }
+            if (profileOldPassword) profileOldPassword.value = '';
+            if (profileNewPassword) profileNewPassword.value = '';
+            if (profileNewPasswordConfirm) profileNewPasswordConfirm.value = '';
+            showProfileSuccess(true);
         });
 
         fetchUsers().catch(() => showError('Unable to load settings data.'));
