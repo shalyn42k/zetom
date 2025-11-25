@@ -342,10 +342,14 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             "Could not save changes. Please fix the errors and try again."
         )
 
+    user_department_labels = [department_labels.get(code, code) for code in user_departments]
+
     context = {
         "lang": lang,
         "user_level": user_level,
         "user_departments": user_departments,
+        "user_department_labels": user_department_labels,
+        "admin_user_email": admin_user.email,
         "readonly_mode": readonly_mode,
         "messages_page": page_obj,
         "paginator": paginator,
@@ -606,6 +610,90 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         for user in AdminUser.objects.prefetch_related('departments').all().order_by('id')
     ]
     return JsonResponse({'users': response_users})
+
+
+@require_http_methods(["POST"])
+def admin_profile(request: HttpRequest) -> JsonResponse:
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
+        return JsonResponse({'success': False, 'errors': ['unauthorised']}, status=403)
+
+    language = get_language(request)
+    messages = {
+        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
+        'email_required': 'Email jest wymagany.' if language == 'pl' else 'Email is required.',
+        'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Invalid email format.',
+        'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
+        'old_password_required': 'Podaj aktualne hasło.' if language == 'pl' else 'Current password is required.',
+        'old_password_incorrect': 'Nieprawidłowe aktualne hasło.' if language == 'pl' else 'Current password is incorrect.',
+        'password_mismatch': 'Hasła nie są takie same.' if language == 'pl' else 'New passwords do not match.',
+    }
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        return JsonResponse({'success': False, 'errors': [messages['invalid_payload']]}, status=400)
+
+    email_raw = (payload.get('email') or '').strip()
+    email = email_raw.lower()
+    old_password = (payload.get('old_password') or '').strip()
+    new_password = (payload.get('new_password') or '').strip()
+    new_password_confirm = (payload.get('new_password_confirm') or '').strip()
+
+    errors: list[str] = []
+    email_validator = EmailValidator(message=messages['email_invalid'])
+    if not email:
+        errors.append(messages['email_required'])
+    else:
+        try:
+            email_validator(email)
+        except ValidationError:
+            errors.append(messages['email_invalid'])
+        else:
+            duplicate_qs = AdminUser.objects.filter(email__iexact=email).exclude(id=admin_user.id)
+            if duplicate_qs.exists():
+                errors.append(messages['email_not_unique'])
+
+    wants_password_change = bool(new_password or new_password_confirm)
+    if wants_password_change:
+        if not old_password:
+            errors.append(messages['old_password_required'])
+        elif not admin_user.check_password(old_password):
+            errors.append(messages['old_password_incorrect'])
+        if new_password != new_password_confirm:
+            errors.append(messages['password_mismatch'])
+
+    if errors:
+        return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+    admin_user.email = email
+    if wants_password_change and new_password:
+        admin_user.set_password(new_password)
+    admin_user.save(update_fields=['email', 'password_hash', 'updated_at'])
+    request.session['admin_email'] = admin_user.email
+
+    return JsonResponse({'success': True, 'email': admin_user.email})
+
+
+@require_http_methods(["POST"])
+def admin_verify_password(request: HttpRequest) -> JsonResponse:
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
+        return JsonResponse({'valid': False, 'error': 'unauthorised'}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        return JsonResponse({'valid': False, 'error': 'Invalid payload.'}, status=400)
+
+    password = (payload.get('password') or '').strip()
+    if not password:
+        return JsonResponse({'valid': False, 'error': 'Password is required.'}, status=400)
+
+    if admin_user.check_password(password):
+        return JsonResponse({'valid': True})
+
+    return JsonResponse({'valid': False, 'error': 'Incorrect password.'})
 
 
 def _handle_bulk_form(
