@@ -327,7 +327,7 @@
     </aside>
 
     <main class="admin-dashboard admin-main">
-        <section id="requests" class="admin-card panel" data-panel-content="requests">
+        <section id="requests" class="admin-card panel panel-requests" data-panel-content="requests">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
@@ -395,7 +395,7 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
+                        <th class="checkbox-cell"><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
                         <th>ID</th>
                         <th>{% if lang == 'pl' %}Data{% else %}Date{% endif %}</th>
                         <th>{% if lang == 'pl' %}Klient{% else %}Customer{% endif %}</th>
@@ -410,7 +410,7 @@
                     <tbody>
                     {% for message_item in messages_page %}
                         <tr class="table-row" data-request-row data-request-id="{{ message_item.id }}" tabindex="0">
-                            <td>
+                            <td class="checkbox-cell">
                                 {% with message_id=message_item.id|stringformat:'s' %}
                                 <input type="checkbox"
                                        name="selected"
