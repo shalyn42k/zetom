@@ -68,6 +68,31 @@ body[data-theme='dark'] .panel-email__icon {
     z-index: 2;
 }
 
+.admin-sidebar__link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    text-align: left;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid var(--green);
+    background: #f4fff6;
+    color: var(--green);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-sidebar__link:hover {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.admin-sidebar__link.is-active {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
 .admin-main {
     flex: 1;
 }
