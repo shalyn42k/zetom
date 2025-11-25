@@ -11,7 +11,15 @@
 from .auth import login, logout
 from .portal import panel
 from .public import index
-from .admin import admin_panel, admin_settings, message_detail, rollback_client_change, update_message
+from .admin import (
+    admin_panel,
+    admin_profile,
+    admin_settings,
+    admin_verify_password,
+    message_detail,
+    rollback_client_change,
+    update_message,
+)
 from .user import (
     access_portal,
     restore_access,
@@ -27,7 +35,9 @@ __all__ = [
     'logout',
     'panel',
     'admin_panel',
+    'admin_profile',
     'admin_settings',
+    'admin_verify_password',
     'access_portal',
     'restore_access',
     'message_detail',
