@@ -186,10 +186,6 @@ body[data-theme='dark'] .panel-email__icon {
     margin-left: 0.25rem;
 }
 
-.panel.is-hidden {
-    display: none;
-}
-
 body[data-theme='dark'] .panel-email__description,
 body[data-theme='dark'] .modal__subtitle,
 body[data-theme='dark'] .trash-item__meta,
