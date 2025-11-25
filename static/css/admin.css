@@ -47,6 +47,25 @@ body[data-theme='dark'] .panel-email__icon {
     box-shadow: none;
 }
 
+.admin-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.admin-sidebar {
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    top: 1rem;
+}
+
+.admin-main {
+    flex: 1;
+}
+
 body[data-theme='dark'] .panel-email__description,
 body[data-theme='dark'] .modal__subtitle,
 body[data-theme='dark'] .trash-item__meta,
