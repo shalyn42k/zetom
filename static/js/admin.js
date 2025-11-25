@@ -35,42 +35,6 @@
         return fallbackValue;
     };
 
-    const getCsrfToken = () => {
-        const name = 'csrftoken=';
-        return document.cookie
-            .split(';')
-            .map((cookie) => cookie.trim())
-            .find((cookie) => cookie.startsWith(name))?.slice(name.length);
-    };
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const panels = $$('[data-panel-content]');
-        if (!panels.length) {
-            return;
-        }
-
-        const triggers = $$('[data-panel-trigger]');
-        const showPanel = (panelName) => {
-            panels.forEach((panel) => {
-                const shouldShow = panel.dataset.panelContent === panelName;
-                panel.classList.toggle('is-hidden', !shouldShow);
-            });
-            triggers.forEach((trigger) => {
-                trigger.classList.toggle('is-active', trigger.dataset.panel === panelName);
-            });
-        };
-
-        showPanel('requests');
-
-        triggers.forEach((trigger) => {
-            trigger.addEventListener('click', () => {
-                const targetPanel = trigger.dataset.panel;
-                if (!targetPanel) return;
-                showPanel(targetPanel);
-            });
-        });
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
         const bulkForm = $('[data-bulk-form]');
         if (!bulkForm) {
@@ -957,81 +921,25 @@
         });
     });
 
-    
     document.addEventListener('DOMContentLoaded', () => {
-        const settingsPanel = document.querySelector('[data-settings-panel]');
-        if (!settingsPanel) {
+        const modal = document.querySelector('[data-settings-modal]');
+        const openButton = document.querySelector('[data-settings-open]');
+        if (!modal || !openButton) {
             return;
         }
 
-        const profileForm = settingsPanel.querySelector('[data-profile-form]');
-        const profileEndpoint = settingsPanel.dataset.profileEndpoint;
-        const profileErrors = settingsPanel.querySelector('[data-profile-errors]');
-        const profileSuccess = settingsPanel.querySelector('[data-profile-success]');
-
-        const renderProfileFeedback = (errors = [], showSuccess = false) => {
-            if (profileErrors) {
-                profileErrors.textContent = errors.join(' ');
-                profileErrors.hidden = errors.length === 0;
-            }
-            if (profileSuccess) {
-                profileSuccess.hidden = !showSuccess;
-            }
-        };
-
-        if (profileForm && profileEndpoint) {
-            profileForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(profileForm);
-                const payload = {
-                    email: formData.get('email') || '',
-                    current_password: formData.get('current_password') || '',
-                    new_password: formData.get('new_password') || '',
-                    confirm_password: formData.get('confirm_password') || '',
-                };
-
-                renderProfileFeedback([], false);
-
-                try {
-                    const response = await fetch(profileEndpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCsrfToken() || '',
-                        },
-                        body: JSON.stringify(payload),
-                    });
-                    const data = await response.json().catch(() => ({}));
-                    if (!response.ok) {
-                        renderProfileFeedback(data.errors || ['Unable to update profile.'], false);
-                        return;
-                    }
-                    renderProfileFeedback([], true);
-                } catch (error) {
-                    renderProfileFeedback(['Unable to update profile.']);
-                }
-            });
-        }
-
-        const rowsContainer = settingsPanel.querySelector('[data-settings-rows]');
-        if (!rowsContainer) {
-            return;
-        }
-
-        const settingsEndpoint = settingsPanel.dataset.settingsEndpoint;
-        const verifyEndpoint = settingsPanel.dataset.verifyEndpoint;
-        const addButton = settingsPanel.querySelector('[data-settings-add]');
-        const applyButton = settingsPanel.querySelector('[data-settings-apply]');
-        const errorBox = settingsPanel.querySelector('[data-settings-error]');
-        const paginationContainer = settingsPanel.querySelector('[data-settings-pagination]');
-        const departmentsPrototype = settingsPanel.querySelector('select[data-department-prototype="true"]');
+        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close]')).concat(
+            modal.querySelector('.modal__backdrop'),
+        );
+        const rowsContainer = modal.querySelector('[data-settings-rows]');
+        const emptyState = modal.querySelector('[data-settings-empty]');
+        const addButton = modal.querySelector('[data-settings-add]');
+        const applyButton = modal.querySelector('[data-settings-apply]');
+        const errorBox = modal.querySelector('[data-settings-error]');
+        const endpoint = modal.dataset.settingsEndpoint;
+        const departmentsPrototype = modal.querySelector('select[data-department-prototype="true"]');
         const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
         const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
-        const adminPasswordBlock = settingsPanel.querySelector('[data-admin-password-block]');
-        const adminPasswordInput = settingsPanel.querySelector('[data-admin-password-input]');
-        const adminPasswordSubmit = settingsPanel.querySelector('[data-admin-password-submit]');
-        const adminPasswordError = settingsPanel.querySelector('[data-admin-password-error]');
-        const placeholder = rowsContainer.querySelector('[data-settings-empty]');
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -1039,19 +947,41 @@
             { value: 'level3', label: 'level3' },
         ];
 
-        const pageSize = 5;
-        let usersState = [];
-        let currentPage = 1;
-        let pendingPayload = null;
+        const getCsrfToken = () => {
+            const name = 'csrftoken=';
+            return document.cookie
+                .split(';')
+                .map((cookie) => cookie.trim())
+                .find((cookie) => cookie.startsWith(name))?.slice(name.length);
+        };
 
         const showError = (message) => {
             if (!errorBox) return;
-            errorBox.textContent = message || '';
+            errorBox.textContent = message;
             errorBox.hidden = !message;
         };
 
-        const togglePasswordField = (user, passwordCell, passwordInput) => {
-            const enablePassword = user.level === 'level1';
+        const toggleModal = (shouldOpen) => {
+            if (shouldOpen) {
+                modal.classList.add('is-visible');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } else {
+                modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+                showError('');
+            }
+        };
+
+        const updateEmptyState = () => {
+            if (!rowsContainer || !emptyState) return;
+            const hasRows = rowsContainer.querySelector('[data-settings-row]');
+            emptyState.style.display = hasRows ? 'none' : 'block';
+        };
+
+        const togglePasswordField = (levelValue, passwordCell, passwordInput) => {
+            const enablePassword = levelValue === 'level1';
             if (passwordCell) {
                 passwordCell.style.display = enablePassword ? '' : 'none';
             }
@@ -1059,45 +989,9 @@
                 passwordInput.disabled = !enablePassword;
                 if (!enablePassword) {
                     passwordInput.value = '';
-                    user.password = '';
-                    user.password_changed = false;
+                    passwordInput.dataset.passwordDirty = 'false';
                 }
             }
-        };
-
-        const buildDepartmentsSelect = (user) => {
-            const select = document.createElement('select');
-            select.multiple = true;
-            select.size = departmentsSize;
-            select.innerHTML = departmentsOptionsHTML;
-            select.dataset.settingsDepartments = 'true';
-            select.value = '';
-            if (Array.isArray(user.departments)) {
-                Array.from(select.options).forEach((option) => {
-                    option.selected = user.departments.includes(option.value);
-                });
-            }
-            select.addEventListener('change', () => {
-                user.departments = Array.from(select.selectedOptions).map((option) => option.value);
-            });
-            return select;
-        };
-
-        const buildLevelSelect = (user, passwordCell, passwordInput) => {
-            const levelSelect = document.createElement('select');
-            levelSelect.dataset.settingsLevel = 'true';
-            levelOptions.forEach((option) => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.label;
-                opt.selected = option.value === user.level;
-                levelSelect.appendChild(opt);
-            });
-            levelSelect.addEventListener('change', () => {
-                user.level = levelSelect.value;
-                togglePasswordField(user, passwordCell, passwordInput);
-            });
-            return levelSelect;
         };
 
         const buildRow = (user) => {
@@ -1105,10 +999,8 @@
             row.className = 'settings-table__row';
             row.dataset.settingsRow = 'true';
             row.dataset.userId = user.user_id || '';
-            row.dataset.originalLevel = user.original_level || user.level || '';
-            if (user.marked_for_deletion) {
-                row.classList.add('is-marked-for-deletion');
-            }
+            row.dataset.isNew = user.is_new ? 'true' : 'false';
+            row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
 
             const idCell = document.createElement('span');
             idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
@@ -1118,33 +1010,55 @@
             emailInput.required = true;
             emailInput.value = user.email || '';
             emailInput.dataset.settingsEmail = 'true';
-            emailInput.addEventListener('input', () => {
-                user.email = emailInput.value;
-            });
 
             const passwordCell = document.createElement('div');
             passwordCell.className = 'settings-table__password';
             const passwordInput = document.createElement('input');
-            passwordInput.type = 'password';
-            passwordInput.value = user.password || '';
+            passwordInput.type = 'text';
+            passwordInput.value = user.password_plaintext || '';
             passwordInput.placeholder = 'Password';
             passwordInput.autocomplete = 'new-password';
             passwordInput.dataset.settingsPassword = 'true';
+            passwordInput.dataset.passwordDirty = 'false';
             passwordInput.addEventListener('input', () => {
-                user.password = passwordInput.value;
-                user.password_changed = true;
+                passwordInput.dataset.passwordDirty = 'true';
             });
-            const toggleButton = document.createElement('button');
-            toggleButton.type = 'button';
-            toggleButton.className = 'settings-table__password-toggle';
-            toggleButton.textContent = '👁';
-            toggleButton.addEventListener('click', () => {
-                passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-            });
-            passwordCell.append(passwordInput, toggleButton);
+            passwordCell.appendChild(passwordInput);
 
-            const levelSelect = buildLevelSelect(user, passwordCell, passwordInput);
-            const departmentSelect = buildDepartmentsSelect(user);
+            const levelSelect = document.createElement('select');
+            levelSelect.dataset.settingsLevel = 'true';
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = '—';
+            placeholderOption.disabled = true;
+            placeholderOption.selected = !user.level;
+            levelSelect.appendChild(placeholderOption);
+            levelOptions.forEach((option) => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                if (option.value === user.level) {
+                    opt.selected = true;
+                }
+                levelSelect.appendChild(opt);
+            });
+            levelSelect.addEventListener('change', (event) => {
+                const value = event.target.value;
+                togglePasswordField(value, passwordCell, passwordInput);
+            });
+
+            const departmentSelect = document.createElement('select');
+            departmentSelect.dataset.settingsDepartments = 'true';
+            departmentSelect.multiple = true;
+            departmentSelect.size = departmentsSize;
+            departmentSelect.innerHTML = departmentsOptionsHTML;
+
+            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
+            Array.from(departmentSelect.options).forEach((opt) => {
+                if (selectedDepartments.includes(opt.value)) {
+                    opt.selected = true;
+                }
+            });
 
             const deleteCell = document.createElement('div');
             deleteCell.className = 'settings-table__delete';
@@ -1153,103 +1067,73 @@
             deleteButton.innerHTML = '🗑';
             deleteButton.title = 'Delete user';
             deleteButton.addEventListener('click', () => {
-                if (!user.marked_for_deletion) {
-                    const confirmed = window.confirm(
-                        'Удалить этого пользователя? Пользователь будет удалён после нажатия Apply.',
-                    );
-                    if (!confirmed) return;
-                }
-                user.marked_for_deletion = !user.marked_for_deletion;
-                row.classList.toggle('is-marked-for-deletion', user.marked_for_deletion);
+                const isMarked = row.dataset.markedForDeletion === 'true';
+                row.dataset.markedForDeletion = (!isMarked).toString();
+                row.classList.toggle('is-marked-for-deletion', !isMarked);
+                deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
             });
             deleteCell.appendChild(deleteButton);
 
-            row.append(idCell, emailInput, passwordCell, levelSelect, departmentSelect, deleteCell);
-            togglePasswordField(user, passwordCell, passwordInput);
+            row.append(
+                idCell,
+                emailInput,
+                passwordCell,
+                levelSelect,
+                departmentSelect,
+                deleteCell,
+            );
+            togglePasswordField(user.level, passwordCell, passwordInput);
             return row;
         };
 
-        const renderPagination = () => {
-            if (!paginationContainer) return;
-            paginationContainer.innerHTML = '';
-            const totalPages = Math.max(1, Math.ceil(usersState.length / pageSize));
-            if (totalPages <= 1) {
-                return;
-            }
-            const list = document.createElement('div');
-            list.className = 'settings-pagination__list';
-            for (let page = 1; page <= totalPages; page += 1) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'settings-pagination__button';
-                if (page === currentPage) {
-                    button.classList.add('settings-pagination__button--active');
-                }
-                button.textContent = String(page);
-                button.addEventListener('click', () => {
-                    currentPage = page;
-                    renderUsers(page);
-                    renderPagination();
-                });
-                list.appendChild(button);
-            }
-            paginationContainer.appendChild(list);
-        };
-
-        const renderUsers = (page = 1) => {
-            const startIndex = (page - 1) * pageSize;
-            const visibleUsers = usersState.slice(startIndex, startIndex + pageSize);
+        const renderRows = (users) => {
+            if (!rowsContainer) return;
             rowsContainer.innerHTML = '';
-            if (!visibleUsers.length) {
-                if (placeholder) {
-                    placeholder.style.display = 'block';
-                    rowsContainer.appendChild(placeholder);
-                }
-                return;
-            }
-            if (placeholder) {
-                placeholder.style.display = 'none';
-            }
-            visibleUsers.forEach((user) => {
+            users.forEach((user) => {
                 const row = buildRow(user);
                 rowsContainer.appendChild(row);
             });
+            updateEmptyState();
         };
 
-        const hasDangerousChanges = () =>
-            usersState.some((user) => user.marked_for_deletion) ||
-            usersState.some((user) => !user.is_new && user.level !== user.original_level);
-
-        const serialisePayload = () => ({
-            users: usersState.map((user) => ({
-                user_id: user.user_id ?? null,
-                email: user.email || '',
-                level: user.level || '',
-                password: user.level === 'level1' ? user.password || '' : '',
-                password_changed: user.level === 'level1' ? Boolean(user.password_changed) : false,
-                departments: Array.isArray(user.departments) ? user.departments : [],
-                marked_for_deletion: Boolean(user.marked_for_deletion),
-                is_new: Boolean(user.is_new),
-            })),
-        });
-
-        const resetAdminPasswordPrompt = () => {
-            pendingPayload = null;
-            if (adminPasswordBlock) {
-                adminPasswordBlock.hidden = true;
+        const fetchUsers = async () => {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                showError('Unable to load settings data.');
+                return;
             }
-            if (adminPasswordInput) {
-                adminPasswordInput.value = '';
-            }
-            if (adminPasswordError) {
-                adminPasswordError.hidden = true;
-                adminPasswordError.textContent = '';
-            }
+            const data = await response.json();
+            renderRows(data.users || []);
         };
 
-        const submitSettings = async (payload) => {
-            if (!settingsEndpoint) return;
-            const response = await fetch(settingsEndpoint, {
+        const applyChanges = async () => {
+            if (!rowsContainer) return;
+            const payload = {
+                users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
+                    user_id: row.dataset.userId || null,
+                    email: row.querySelector('[data-settings-email]')?.value || '',
+                    level: row.querySelector('[data-settings-level]')?.value || '',
+                    password: (() => {
+                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
+                        if (levelValue !== 'level1') return '';
+                        const passwordInput = row.querySelector('[data-settings-password]');
+                        const isDirty = passwordInput?.dataset.passwordDirty === 'true';
+                        return isDirty ? passwordInput?.value || '' : '';
+                    })(),
+                    password_changed: (() => {
+                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
+                        if (levelValue !== 'level1') return false;
+                        return row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true';
+                    })(),
+                    departments: Array.from(
+                        row.querySelector('[data-settings-departments]')?.selectedOptions || [],
+                    ).map((option) => option.value),
+                    marked_for_deletion: row.dataset.markedForDeletion === 'true',
+                    is_new: row.dataset.isNew === 'true',
+                })),
+            };
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1257,127 +1141,47 @@
                 },
                 body: JSON.stringify(payload),
             });
+
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                showError((data.errors && data.errors.join(', ')) || 'Unable to save changes.');
+                showError((data.errors && data.errors.join(', ')) || 'Validation error.');
                 return;
             }
             showError('');
-            resetAdminPasswordPrompt();
-            usersState = (data.users || []).map((user) => ({
-                ...user,
-                password: '',
-                password_changed: false,
-                marked_for_deletion: false,
-                is_new: false,
-                original_level: user.level,
-            }));
-            currentPage = 1;
-            renderUsers(currentPage);
-            renderPagination();
+            renderRows(data.users || []);
         };
 
-        const fetchUsers = async () => {
-            if (!settingsEndpoint) return;
-            const response = await fetch(settingsEndpoint);
-            if (!response.ok) {
-                showError('Unable to load settings data.');
-                return;
-            }
-            const data = await response.json();
-            usersState = (data.users || []).map((user) => ({
-                ...user,
-                password: '',
-                password_changed: false,
-                marked_for_deletion: false,
-                is_new: false,
-                original_level: user.level,
-            }));
-            currentPage = 1;
-            renderUsers(currentPage);
-            renderPagination();
-        };
+        openButton.addEventListener('click', () => {
+            toggleModal(true);
+            fetchUsers();
+        });
+
+        closeElements.forEach((el) => {
+            el?.addEventListener('click', () => toggleModal(false));
+        });
 
         addButton?.addEventListener('click', () => {
-            const newUser = {
+            const row = buildRow({
                 user_id: null,
                 email: '',
                 password_plaintext: '',
                 has_password: false,
                 level: '',
-                departments: [],
-                marked_for_deletion: false,
                 is_new: true,
-                password_changed: false,
-                password: '',
-                original_level: '',
-            };
-            usersState.push(newUser);
-            const totalPages = Math.max(1, Math.ceil(usersState.length / pageSize));
-            currentPage = totalPages;
-            renderUsers(currentPage);
-            renderPagination();
+                marked_for_deletion: false,
+            });
+            rowsContainer.appendChild(row);
+            updateEmptyState();
         });
 
         applyButton?.addEventListener('click', () => {
-            resetAdminPasswordPrompt();
-            if (
-                !window.confirm(
-                    'Вы уверены, что хотите применить изменения? Это изменит список пользователей, их уровни доступа и департаменты.',
-                )
-            ) {
-                return;
-            }
-            const payload = serialisePayload();
-            if (hasDangerousChanges() && adminPasswordBlock) {
-                pendingPayload = payload;
-                adminPasswordBlock.hidden = false;
-                if (adminPasswordInput) {
-                    adminPasswordInput.focus();
-                }
-                return;
-            }
-            submitSettings(payload).catch(() => showError('Unable to save changes.'));
+            applyChanges().catch(() => showError('Unable to save changes.'));
         });
 
-        adminPasswordSubmit?.addEventListener('click', async () => {
-            if (!pendingPayload || !verifyEndpoint) {
-                return;
-            }
-            const password = adminPasswordInput?.value.trim() || '';
-            if (!password) {
-                if (adminPasswordError) {
-                    adminPasswordError.textContent = 'Password is required.';
-                    adminPasswordError.hidden = false;
-                }
-                return;
-            }
-            try {
-                const response = await fetch(verifyEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken() || '',
-                    },
-                    body: JSON.stringify({ password }),
-                });
-                const data = await response.json().catch(() => ({}));
-                if (!data.valid) {
-                    if (adminPasswordError) {
-                        adminPasswordError.textContent = data.error || 'Incorrect password.';
-                        adminPasswordError.hidden = false;
-                    }
-                    return;
-                }
-                submitSettings(pendingPayload).catch(() => showError('Unable to save changes.'));
-            } catch (error) {
-                if (adminPasswordError) {
-                    adminPasswordError.textContent = 'Unable to verify password.';
-                    adminPasswordError.hidden = false;
-                }
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
+                toggleModal(false);
             }
         });
-
-        fetchUsers().catch(() => showError('Unable to load settings data.'));
     });
 })();
