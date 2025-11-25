@@ -342,16 +342,10 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             "Could not save changes. Please fix the errors and try again."
         )
 
-    user_department_labels = [
-        department_labels.get(code, code) for code in user_departments
-    ]
-
     context = {
         "lang": lang,
         "user_level": user_level,
         "user_departments": user_departments,
-        "admin_user": admin_user,
-        "user_department_labels": user_department_labels,
         "readonly_mode": readonly_mode,
         "messages_page": page_obj,
         "paginator": paginator,
@@ -813,109 +807,3 @@ def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -
 
     language = get_language(request)
     return JsonResponse(_serialise_admin_message(message, language))
-
-
-@require_POST
-def admin_profile(request: HttpRequest) -> JsonResponse:
-    admin_user = _get_admin_user(request)
-    language = get_language(request)
-    messages = {
-        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
-        'email_required': 'Email jest wymagany.' if language == 'pl' else 'Email is required.',
-        'email_invalid': 'Email jest nieprawidłowy.' if language == 'pl' else 'Email format is invalid.',
-        'email_not_unique': 'Email musi być unikalny.' if language == 'pl' else 'Email must be unique.',
-        'password_required': 'Hasło jest wymagane.' if language == 'pl' else 'Password is required.',
-        'password_mismatch': 'Hasła muszą być identyczne.' if language == 'pl' else 'Passwords must match.',
-        'current_password_required': 'Podaj obecne hasło.' if language == 'pl' else 'Current password is required.',
-        'password_incorrect': 'Nieprawidłowe hasło.' if language == 'pl' else 'Incorrect password.',
-        'unauthorized': 'Brak autoryzacji.' if language == 'pl' else 'Unauthorized.',
-    }
-
-    if not request.session.get('logged_in') or not admin_user:
-        return JsonResponse({'errors': [messages['unauthorized']]}, status=403)
-
-    try:
-        payload = json.loads(request.body.decode('utf-8'))
-    except (TypeError, ValueError, AttributeError):
-        return JsonResponse({'errors': [messages['invalid_payload']]}, status=400)
-
-    email = (payload.get('email') or '').strip().lower()
-    current_password = (payload.get('current_password') or '').strip()
-    new_password = (payload.get('new_password') or '').strip()
-    confirm_password = (payload.get('confirm_password') or '').strip()
-
-    errors: list[str] = []
-    validator = EmailValidator(message=messages['email_invalid'])
-    if not email:
-        errors.append(messages['email_required'])
-    else:
-        try:
-            validator(email)
-        except ValidationError:
-            errors.append(messages['email_invalid'])
-        if (
-            email
-            and AdminUser.objects.filter(email__iexact=email)
-            .exclude(id=admin_user.id)
-            .exists()
-        ):
-            errors.append(messages['email_not_unique'])
-
-    wants_password_change = bool(new_password or confirm_password)
-    if wants_password_change:
-        if not current_password:
-            errors.append(messages['current_password_required'])
-        elif not admin_user.check_password(current_password):
-            errors.append(messages['password_incorrect'])
-        if not new_password:
-            errors.append(messages['password_required'])
-        if new_password != confirm_password:
-            errors.append(messages['password_mismatch'])
-
-    if errors:
-        return JsonResponse({'errors': errors}, status=400)
-
-    updated_fields: list[str] = []
-    if email and email != admin_user.email:
-        admin_user.email = email
-        updated_fields.append('email')
-        request.session['admin_email'] = email
-
-    if wants_password_change and new_password:
-        admin_user.set_password(new_password)
-        updated_fields.append('password_hash')
-
-    if updated_fields:
-        admin_user.save(update_fields=updated_fields + ['updated_at'])
-
-    return JsonResponse({'success': True, 'email': admin_user.email})
-
-
-@require_POST
-def admin_verify_password(request: HttpRequest) -> JsonResponse:
-    admin_user = _get_admin_user(request)
-    language = get_language(request)
-    messages = {
-        'password_required': 'Hasło jest wymagane.' if language == 'pl' else 'Password is required.',
-        'unauthorized': 'Brak autoryzacji.' if language == 'pl' else 'Unauthorized.',
-        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
-        'password_incorrect': 'Nieprawidłowe hasło.' if language == 'pl' else 'Incorrect password.',
-    }
-
-    try:
-        payload = json.loads(request.body.decode('utf-8'))
-    except (TypeError, ValueError, AttributeError):
-        return JsonResponse({'valid': False, 'error': messages['invalid_payload']}, status=400)
-
-    if not request.session.get('logged_in') or not admin_user:
-        return JsonResponse({'valid': False, 'error': messages['unauthorized']}, status=403)
-
-    password = (payload.get('password') or '').strip()
-    if not password:
-        return JsonResponse({'valid': False, 'error': messages['password_required']}, status=400)
-
-    is_valid = admin_user.check_password(password)
-    if not is_valid:
-        return JsonResponse({'valid': False, 'error': messages['password_incorrect']}, status=200)
-
-    return JsonResponse({'valid': True})
