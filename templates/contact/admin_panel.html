@@ -262,42 +262,6 @@
         </form>
     </div>
 </div>
-{% if user_level == 'level1' %}
-    <div class="modal" data-settings-modal aria-hidden="true" data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}">
-        <div class="modal__backdrop" data-settings-close></div>
-        <div class="modal__dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-            <button type="button" class="modal__close" data-settings-close aria-label="{% if lang == 'pl' %}Zamknij ustawienia{% else %}Close settings{% endif %}">×</button>
-            <div class="settings-modal__header">
-                <h2 class="modal__title" id="settings-title">Settings</h2>
-                <div class="settings-modal__header-actions">
-                    <button type="button" class="button button--primary" data-settings-apply>{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
-                </div>
-            </div>
-            <div class="settings-modal__error" data-settings-error hidden></div>
-            <div class="settings-table" data-settings-table>
-                <select data-department-prototype="true" multiple size="4" style="display:none">
-                    {% for opt in company_options %}
-                        <option value="{{ opt.value }}">{{ opt.label }}</option>
-                    {% endfor %}
-                </select>
-                <div class="settings-table__header">
-                    <span>#</span>
-                    <span>Email</span>
-                    <span>Password</span>
-                    <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
-                    <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
-                    <span class="settings-table__actions-label">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</span>
-                </div>
-                <div class="settings-table__body" data-settings-rows>
-                    <p class="settings-table__placeholder" data-settings-empty>{% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}</p>
-                </div>
-            </div>
-            <div class="settings-modal__footer">
-                <button type="button" class="settings-add" data-settings-add title="{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}">+</button>
-            </div>
-        </div>
-    </div>
-{% endif %}
 <header class="site-header">
     <div class="site-branding">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -322,9 +286,6 @@
             <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
             <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
         </div>
-        {% if user_level == 'level1' %}
-            <button type="button" class="button button--ghost button--compact" data-settings-open>Settings</button>
-        {% endif %}
         <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
             {% csrf_token %}
             <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
@@ -332,8 +293,15 @@
     </div>
 </header>
 
-<main class="admin-dashboard">
-    <section class="admin-card panel">
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="requests">Requests</button>
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="forms">Forms</button>
+        <button class="button button--ghost button--compact" data-panel-trigger data-panel="settings">Settings</button>
+    </aside>
+    <div class="admin-main">
+        <main class="admin-dashboard">
+    <section class="admin-card panel panel-requests" data-panel-content="requests">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
@@ -532,7 +500,10 @@
             </nav>
         {% endif %}
 
-        <div class="panel-email">
+    </section>
+
+    <section class="panel panel-forms is-hidden" data-panel-content="forms">
+        <div class="panel-email panel-forms__content">
             <div class="panel-email__header">
                 <div class="panel-email__intro">
                     <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
@@ -579,6 +550,97 @@
             </form>
         </div>
     </section>
-</main>
+
+    <section class="panel settings-panel is-hidden" data-panel-content="settings" data-settings-panel data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}" data-profile-endpoint="{% url 'contact:admin_profile' %}?lang={{ lang }}" data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}">
+        <div class="settings-panel__intro">
+            <h2 class="settings-panel__title">Settings</h2>
+            <p class="settings-panel__description">{% if lang == 'pl' %}Zarządzaj swoim kontem i zespołem{% else %}Manage your account and team{% endif %}</p>
+        </div>
+        <section class="settings-section settings-section--profile">
+            <h3 class="settings-section__title">{% if lang == 'pl' %}Moje dane{% else %}My profile{% endif %}</h3>
+            <p class="settings-section__meta">{% if lang == 'pl' %}Użytkownik:{% else %}Signed in as:{% endif %} <strong data-profile-email-display>{{ admin_user_email }}</strong></p>
+            <p class="settings-section__meta">{% if lang == 'pl' %}Poziom dostępu:{% else %}Access level:{% endif %} <strong>{{ user_level }}</strong></p>
+            <p class="settings-section__meta">{% if lang == 'pl' %}Moje departamenty:{% else %}My departments:{% endif %}
+                <strong>
+                    {% if user_department_labels %}
+                        {{ user_department_labels|join:", " }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+            </p>
+            <form class="profile-form" data-profile-form>
+                {% csrf_token %}
+                <div class="profile-form__grid">
+                    <label class="profile-form__field">
+                        <span class="form-label">Email</span>
+                        <input type="email" name="email" class="form-input" value="{{ admin_user_email }}" data-profile-email>
+                    </label>
+                    <label class="profile-form__field">
+                        <span class="form-label">{% if lang == 'pl' %}Stare hasło{% else %}Current password{% endif %}</span>
+                        <input type="password" name="old_password" class="form-input" autocomplete="current-password" data-profile-old-password>
+                    </label>
+                    <label class="profile-form__field">
+                        <span class="form-label">{% if lang == 'pl' %}Nowe hasło{% else %}New password{% endif %}</span>
+                        <input type="password" name="new_password" class="form-input" autocomplete="new-password" data-profile-new-password>
+                    </label>
+                    <label class="profile-form__field">
+                        <span class="form-label">{% if lang == 'pl' %}Potwierdź hasło{% else %}Confirm password{% endif %}</span>
+                        <input type="password" name="new_password_confirm" class="form-input" autocomplete="new-password" data-profile-new-password-confirm>
+                    </label>
+                </div>
+                <div class="form-error" data-profile-errors hidden></div>
+                <div class="form-success" data-profile-success hidden></div>
+                <button type="submit" class="button button--primary profile-form__submit">{% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}</button>
+            </form>
+        </section>
+
+        {% if user_level == 'level1' %}
+        <section class="settings-section settings-section--admin">
+            <div class="settings-panel__header">
+                <h3 class="settings-section__title">{% if lang == 'pl' %}Zarządzanie użytkownikami{% else %}User management{% endif %}</h3>
+                <div class="settings-panel__actions">
+                    <button type="button" class="settings-add" data-settings-add title="{% if lang == 'pl' %}Dodaj użytkownika{% else %}Add user{% endif %}">+</button>
+                    <button type="button" class="button button--primary" data-settings-apply>{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+                </div>
+            </div>
+            <div class="settings-modal__error" data-settings-error hidden></div>
+            <div class="settings-table" data-settings-table>
+                <select data-department-prototype="true" multiple size="4" style="display:none">
+                    {% for opt in company_options %}
+                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                    {% endfor %}
+                </select>
+                <div class="settings-table__header">
+                    <span>#</span>
+                    <span>Email</span>
+                    <span>Password</span>
+                    <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                    <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
+                    <span class="settings-table__actions-label">{% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}</span>
+                </div>
+                <div class="settings-table__body" data-settings-rows>
+                    <p class="settings-table__placeholder" data-settings-empty>{% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}</p>
+                </div>
+            </div>
+            <div class="settings-pagination" data-settings-pagination></div>
+            <div class="settings-panel__confirmation" data-admin-password-confirmation hidden>
+                <label class="settings-panel__confirmation-field">
+                    <span class="form-label">{% if lang == 'pl' %}Potwierdź hasłem administratora{% else %}Confirm with admin password{% endif %}</span>
+                    <input type="password" class="form-input" autocomplete="current-password" data-admin-password-input>
+                </label>
+                <div class="form-error" data-admin-password-error hidden></div>
+                <button type="button" class="button button--ghost" data-admin-password-submit>{% if lang == 'pl' %}Potwierdź{% else %}Confirm{% endif %}</button>
+            </div>
+        </section>
+        {% else %}
+        <section class="settings-section settings-section--admin">
+            <p class="settings-section__placeholder">{% if lang == 'pl' %}Brak dodatkowych ustawień.{% else %}No additional settings available.{% endif %}</p>
+        </section>
+        {% endif %}
+    </section>
+        </main>
+    </div>
+</div>
 </body>
 </html>
