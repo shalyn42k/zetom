@@ -298,42 +298,52 @@
         </div>
     </div>
 {% endif %}
-<header class="site-header">
-    <div class="site-branding">
-        <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
-        <div>
-            <h1 class="site-title">ZETOM Katowice</h1>
-            <p class="site-subtitle">
-                {% if lang == 'pl' %}
-                    Badania • Certyfikacja • Kontrola techniczna
-                {% else %}
-                    Testing • Certification • Technical inspections
-                {% endif %}
-            </p>
-        </div>
-    </div>
-    <nav class="site-nav">
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-    </nav>
-    <div class="site-header__actions">
-        <div class="lang-switcher">
-            <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
-            <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
-        </div>
-        {% if user_level == 'level1' %}
-            <button type="button" class="button button--ghost button--compact" data-settings-open>Settings</button>
-        {% endif %}
-        <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
-            {% csrf_token %}
-            <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
-        </form>
-    </div>
-</header>
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <nav class="admin-sidebar__nav">
+            <button type="button" class="button button--ghost admin-sidebar__button is-active" data-panel-button="requests">Requests</button>
+            <button type="button" class="button button--ghost admin-sidebar__button" data-panel-button="forms">Forms</button>
+            <button type="button" class="button button--ghost admin-sidebar__button" data-panel-button="settings">Settings</button>
+        </nav>
+    </aside>
 
-<main class="admin-dashboard">
-    <section class="admin-card panel">
+    <div class="admin-layout__content">
+        <header class="site-header">
+            <div class="site-branding">
+                <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
+                <div>
+                    <h1 class="site-title">ZETOM Katowice</h1>
+                    <p class="site-subtitle">
+                        {% if lang == 'pl' %}
+                            Badania • Certyfikacja • Kontrola techniczna
+                        {% else %}
+                            Testing • Certification • Technical inspections
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <nav class="site-nav">
+                <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
+                <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
+                <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+            </nav>
+            <div class="site-header__actions">
+                <div class="lang-switcher">
+                    <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+                    <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+                </div>
+                {% if user_level == 'level1' %}
+                    <button type="button" class="button button--ghost button--compact" data-settings-open>Settings</button>
+                {% endif %}
+                <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
+                    {% csrf_token %}
+                    <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
+                </form>
+            </div>
+        </header>
+
+        <main class="admin-dashboard">
+            <section class="admin-card panel" data-panel="requests">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
@@ -531,54 +541,62 @@
                 </form>
             </nav>
         {% endif %}
+            </section>
 
-        <div class="panel-email">
-            <div class="panel-email__header">
-                <div class="panel-email__intro">
-                    <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
-                    <p class="panel-email__description">
-                        {% if lang == 'pl' %}
-                            Personalizuj odpowiedzi i utrzymuj kontakt, korzystając z gotowych pól poniżej.
-                        {% else %}
-                            Craft a personalised reply and keep the conversation going with the form below.
+            <section class="panel" data-panel="forms" hidden>
+                <div class="panel-email">
+                    <div class="panel-email__header">
+                        <div class="panel-email__intro">
+                            <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
+                            <p class="panel-email__description">
+                                {% if lang == 'pl' %}
+                                    Personalizuj odpowiedzi i utrzymuj kontakt, korzystając z gotowych pól poniżej.
+                                {% else %}
+                                    Craft a personalised reply and keep the conversation going with the form below.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <form method="post" enctype="multipart/form-data" class="panel-email__form">
+                        {% csrf_token %}
+                        <input type="hidden" name="send_email" value="1">
+                        <input type="hidden" name="sort_by" value="{{ current_sort }}">
+                        <input type="hidden" name="company" value="{{ current_company }}">
+                        {% if email_form.non_field_errors %}
+                            <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
                         {% endif %}
-                    </p>
+                        <div class="email-grid">
+                            <div>
+                                <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
+                                {{ email_form.to_email }}
+                                {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
+                                {{ email_form.subject }}
+                                {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="panel-email__body">
+                                <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
+                                {{ email_form.body }}
+                                {% if email_form.body.errors %}<div class="form-error">{{ email_form.body.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
+                                {{ email_form.attachment }}
+                                {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                    </form>
                 </div>
-            </div>
-            <form method="post" enctype="multipart/form-data" class="panel-email__form">
-                {% csrf_token %}
-                <input type="hidden" name="send_email" value="1">
-                <input type="hidden" name="sort_by" value="{{ current_sort }}">
-                <input type="hidden" name="company" value="{{ current_company }}">
-                {% if email_form.non_field_errors %}
-                    <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
-                {% endif %}
-                <div class="email-grid">
-                    <div>
-                        <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
-                        {{ email_form.to_email }}
-                        {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div>
-                        <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
-                        {{ email_form.subject }}
-                        {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="panel-email__body">
-                        <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
-                        {{ email_form.body }}
-                        {% if email_form.body.errors %}<div class="form-error">{{ email_form.body.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div>
-                        <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
-                        {{ email_form.attachment }}
-                        {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
-                    </div>
-                </div>
-                <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
-            </form>
-        </div>
-    </section>
-</main>
+            </section>
+
+            <section class="settings-panel panel" data-panel="settings" hidden>
+                <h2>Settings panel</h2>
+            </section>
+        </main>
+    </div>
+</div>
 </body>
 </html>
