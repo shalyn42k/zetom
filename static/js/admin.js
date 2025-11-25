@@ -1000,10 +1000,40 @@
                 .find((cookie) => cookie.startsWith(name))?.slice(name.length);
         };
 
+        const normaliseErrorMessages = (input) => {
+            const rawMessages = [];
+            if (Array.isArray(input)) {
+                rawMessages.push(...input);
+            } else if (input && typeof input === 'object') {
+                Object.values(input).forEach((value) => {
+                    if (Array.isArray(value)) {
+                        rawMessages.push(...value);
+                    } else if (value) {
+                        rawMessages.push(String(value));
+                    }
+                });
+            } else if (typeof input === 'string' && input.trim()) {
+                rawMessages.push(input);
+            }
+            return Array.from(
+                new Set(
+                    rawMessages
+                        .map((msg) => String(msg).trim())
+                        .filter(Boolean),
+                ),
+            );
+        };
+
         const showError = (message) => {
             if (!errorBox) return;
-            errorBox.textContent = message;
-            errorBox.hidden = !message;
+            const uniqueMessages = normaliseErrorMessages(message);
+            if (uniqueMessages.length) {
+                errorBox.innerHTML = uniqueMessages.map((msg) => `<div>${msg}</div>`).join('');
+                errorBox.hidden = false;
+            } else {
+                errorBox.innerHTML = '';
+                errorBox.hidden = true;
+            }
         };
 
         const showProfileError = (message) => {
@@ -1265,7 +1295,8 @@
 
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                showError((data.errors && data.errors.join(', ')) || 'Validation error.');
+                const errorMessages = normaliseErrorMessages(data.errors);
+                showError(errorMessages.length ? errorMessages : 'Validation error.');
                 return;
             }
             showError('');
