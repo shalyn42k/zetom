@@ -409,6 +409,10 @@ body[data-theme='dark'] .modal__backdrop {
     border-top: 1px solid #edf3ef;
 }
 
+.settings-row--self {
+    background: #f9fcf7;
+}
+
 .settings-table__actions {
     display: inline-flex;
     align-items: center;
@@ -477,6 +481,11 @@ body[data-theme='dark'] .modal__backdrop {
     color: #b91c1c;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-row--self .settings-table__delete button {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .settings-table__delete button:hover,

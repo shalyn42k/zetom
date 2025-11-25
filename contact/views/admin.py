@@ -352,6 +352,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "user_departments": user_departments,
         "user_department_labels": user_department_labels,
         "admin_user_email": admin_user.email,
+        "admin_user_id": admin_user.id,
         "readonly_mode": readonly_mode,
         "messages_page": page_obj,
         "paginator": paginator,
@@ -417,6 +418,9 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         'no_admin_left': 'Musi pozostać co najmniej jeden administrator level1.'
         if language == 'pl'
         else 'At least one level1 admin must remain.',
+        'cannot_delete_self': 'Nie możesz usunąć własnego konta administratora.'
+        if language == 'pl'
+        else 'You cannot delete your own admin account.',
     }
 
     email_validator = EmailValidator(message=error_messages['email_invalid'])
@@ -515,6 +519,20 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
 
     if errors:
         return JsonResponse({'errors': errors}, status=400)
+
+    # Prevent deleting the currently authenticated admin user
+    is_self_deletion_planned = any(
+        row['marked_for_deletion'] and row['user_id'] == str(admin_user.id)
+        for row in validated_rows
+    )
+    if is_self_deletion_planned:
+        return JsonResponse(
+            {
+                'success': False,
+                'errors': {'__all__': [error_messages['cannot_delete_self']]},
+            },
+            status=400,
+        )
 
     # Uniqueness against database excluding rows marked for deletion
     allowed_ids = {row['user_id'] for row in validated_rows if row['user_id']}

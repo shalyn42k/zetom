@@ -965,6 +965,7 @@
         const applyButton = settingsPanel.querySelector('[data-settings-apply]');
         const errorBox = settingsPanel.querySelector('[data-settings-error]');
         const endpoint = settingsPanel.getAttribute('data-settings-endpoint');
+        const currentAdminId = settingsPanel.getAttribute('data-admin-id');
         const departmentsPrototype = settingsPanel.querySelector('select[data-department-prototype="true"]');
         const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
         const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
@@ -1148,24 +1149,31 @@
             deleteButton.type = 'button';
             deleteButton.innerHTML = '🗑';
             deleteButton.title = 'Delete user';
-            deleteButton.addEventListener('click', () => {
-                const confirmation = window.confirm(
-                    language === 'pl'
-                        ? 'Usunąć tego użytkownika? Zostanie usunięty po kliknięciu Apply.'
-                        : 'Delete this user? They will be removed after clicking Apply.',
-                );
-                if (!confirmation) {
-                    return;
-                }
-                const isMarked = row.dataset.markedForDeletion === 'true';
-                const targetUser = users[user.index];
-                if (targetUser) {
-                    targetUser.marked_for_deletion = !isMarked;
-                }
-                row.dataset.markedForDeletion = (!isMarked).toString();
-                row.classList.toggle('is-marked-for-deletion', !isMarked);
-                deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
-            });
+
+            const isCurrentAdmin = String(user.user_id) === String(currentAdminId);
+            if (isCurrentAdmin) {
+                row.classList.add('settings-row--self');
+                deleteButton.disabled = true;
+            } else {
+                deleteButton.addEventListener('click', () => {
+                    const confirmation = window.confirm(
+                        language === 'pl'
+                            ? 'Usunąć tego użytkownika? Zostanie usunięty po kliknięciu Apply.'
+                            : 'Delete this user? They will be removed after clicking Apply.',
+                    );
+                    if (!confirmation) {
+                        return;
+                    }
+                    const isMarked = row.dataset.markedForDeletion === 'true';
+                    const targetUser = users[user.index];
+                    if (targetUser) {
+                        targetUser.marked_for_deletion = !isMarked;
+                    }
+                    row.dataset.markedForDeletion = (!isMarked).toString();
+                    row.classList.toggle('is-marked-for-deletion', !isMarked);
+                    deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
+                });
+            }
             deleteCell.appendChild(deleteButton);
 
             actionsCell.append(hiddenPasswordInput, resetButton, deleteCell);
