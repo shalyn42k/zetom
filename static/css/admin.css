@@ -60,6 +60,12 @@ body[data-theme='dark'] .panel-email__icon {
     gap: 0.5rem;
     position: sticky;
     top: 1rem;
+    padding: 1rem;
+    background: var(--surface, #ffffff);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 14px 28px rgba(17, 24, 39, 0.14);
+    z-index: 2;
 }
 
 .admin-main {
