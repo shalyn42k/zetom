@@ -342,14 +342,29 @@
         </button>
 
         <nav class="admin-sidebar__nav">
-            <a href="#requests" class="admin-sidebar__link is-active">Requests</a>
-            <a href="#forms" class="admin-sidebar__link">Forms</a>
-            <a href="#settings" class="admin-sidebar__link">Settings</a>
+            <button type="button"
+                    class="admin-sidebar__link is-active"
+                    data-panel-trigger
+                    data-panel="requests">
+                Requests
+            </button>
+            <button type="button"
+                    class="admin-sidebar__link"
+                    data-panel-trigger
+                    data-panel="forms">
+                Forms
+            </button>
+            <button type="button"
+                    class="admin-sidebar__link"
+                    data-panel-trigger
+                    data-panel="settings">
+                Settings
+            </button>
         </nav>
     </aside>
 
     <main class="admin-dashboard admin-main">
-        <section id="requests" class="admin-card panel">
+        <section id="requests" class="admin-card panel" data-panel-content="requests">
         <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
             {% if lang %}
@@ -550,7 +565,7 @@
 
         </section>
 
-        <section id="forms">
+        <section id="forms" class="panel panel-forms is-hidden" data-panel-content="forms">
             <div class="panel-email">
                 <div class="panel-email__header">
                     <div class="panel-email__intro">
@@ -599,7 +614,7 @@
             </div>
         </section>
 
-        <section id="settings" class="admin-card panel">
+        <section id="settings" class="admin-card panel settings-panel is-hidden" data-panel-content="settings">
             <h2>Settings</h2>
             {% if user_level == 'level1' %}
                 <button type="button" class="button button--ghost button--compact" data-settings-open>Settings</button>
