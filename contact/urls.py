@@ -27,6 +27,7 @@ urlpatterns = [
         name='rollback_client_change',
     ),
     path('panel/settings/', views.admin_settings, name='admin_settings'),
+    path('panel/reset-password/', views.admin_reset_password, name='admin_reset_password'),
     path('panel/profile/', views.admin_profile, name='admin_profile'),
     path('panel/verify-password/', views.admin_verify_password, name='admin_verify_password'),
     path('requests/', views.user_requests, name='user_requests'),
