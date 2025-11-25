@@ -35,6 +35,16 @@
         return fallbackValue;
     };
 
+    const getCsrfToken = () => {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('csrftoken='));
+        if (!cookieValue) {
+            return '';
+        }
+        return decodeURIComponent(cookieValue.split('=')[1]);
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         const bulkForm = $('[data-bulk-form]');
         if (!bulkForm) {
@@ -712,16 +722,6 @@
             }
         };
 
-        const getCsrfToken = () => {
-            const cookieValue = document.cookie
-                .split('; ')
-                .find((row) => row.startsWith('csrftoken='));
-            if (!cookieValue) {
-                return '';
-            }
-            return decodeURIComponent(cookieValue.split('=')[1]);
-        };
-
         const fetchDetails = (row) => {
             if (!row || isBusy) {
                 return;
@@ -921,216 +921,83 @@
         });
     });
 
+
     document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.querySelector('[data-settings-modal]');
-        const openButton = document.querySelector('[data-settings-open]');
-        if (!modal || !openButton) {
+        const panelButtons = $$('[data-panel-trigger]');
+        const panels = $$('[data-panel-content]');
+        if (!panelButtons.length || !panels.length) {
             return;
         }
 
-        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close]')).concat(
-            modal.querySelector('.modal__backdrop'),
-        );
-        const rowsContainer = modal.querySelector('[data-settings-rows]');
-        const emptyState = modal.querySelector('[data-settings-empty]');
-        const addButton = modal.querySelector('[data-settings-add]');
-        const applyButton = modal.querySelector('[data-settings-apply]');
-        const errorBox = modal.querySelector('[data-settings-error]');
-        const endpoint = modal.dataset.settingsEndpoint;
-        const departmentsPrototype = modal.querySelector('select[data-department-prototype="true"]');
-        const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
-        const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
-
-        const levelOptions = [
-            { value: 'level1', label: 'level1' },
-            { value: 'level2', label: 'level2' },
-            { value: 'level3', label: 'level3' },
-        ];
-
-        const getCsrfToken = () => {
-            const name = 'csrftoken=';
-            return document.cookie
-                .split(';')
-                .map((cookie) => cookie.trim())
-                .find((cookie) => cookie.startsWith(name))?.slice(name.length);
+        const showPanel = (panelName) => {
+            panels.forEach((panel) => {
+                const shouldShow = panel.dataset.panelContent === panelName;
+                panel.classList.toggle('is-hidden', !shouldShow);
+            });
+            panelButtons.forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.panel === panelName);
+            });
         };
+
+        panelButtons.forEach((button) => {
+            button.addEventListener('click', () => showPanel(button.dataset.panel));
+        });
+
+        showPanel('requests');
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const settingsRoot = document.querySelector('[data-settings-panel]');
+        const profileForm = settingsRoot
+            ? settingsRoot.querySelector('[data-profile-form]')
+            : null;
+        if (!settingsRoot || !profileForm) {
+            return;
+        }
+
+        const endpoint = settingsRoot.dataset.profileEndpoint;
+        if (!endpoint) {
+            return;
+        }
+
+        const errorBox = profileForm.querySelector('[data-profile-errors]');
+        const successBox = profileForm.querySelector('[data-profile-success]');
+        const emailDisplay = settingsRoot.querySelector('[data-profile-email-display]');
+        const emailInput = profileForm.querySelector('[data-profile-email]');
+        const oldPasswordInput = profileForm.querySelector('[data-profile-old-password]');
+        const newPasswordInput = profileForm.querySelector('[data-profile-new-password]');
+        const confirmInput = profileForm.querySelector('[data-profile-new-password-confirm]');
 
         const showError = (message) => {
-            if (!errorBox) return;
-            errorBox.textContent = message;
-            errorBox.hidden = !message;
-        };
-
-        const toggleModal = (shouldOpen) => {
-            if (shouldOpen) {
-                modal.classList.add('is-visible');
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('has-modal');
-            } else {
-                modal.classList.remove('is-visible');
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.classList.remove('has-modal');
-                showError('');
+            if (errorBox) {
+                errorBox.textContent = message;
+                errorBox.hidden = !message;
+            }
+            if (successBox) {
+                successBox.hidden = true;
             }
         };
 
-        const updateEmptyState = () => {
-            if (!rowsContainer || !emptyState) return;
-            const hasRows = rowsContainer.querySelector('[data-settings-row]');
-            emptyState.style.display = hasRows ? 'none' : 'block';
-        };
-
-        const togglePasswordField = (levelValue, passwordCell, passwordInput) => {
-            const enablePassword = levelValue === 'level1';
-            if (passwordCell) {
-                passwordCell.style.display = enablePassword ? '' : 'none';
+        const showSuccess = (message) => {
+            if (successBox) {
+                successBox.textContent = message;
+                successBox.hidden = !message;
             }
-            if (passwordInput) {
-                passwordInput.disabled = !enablePassword;
-                if (!enablePassword) {
-                    passwordInput.value = '';
-                    passwordInput.dataset.passwordDirty = 'false';
-                }
+            if (errorBox) {
+                errorBox.hidden = true;
             }
         };
 
-        const buildRow = (user) => {
-            const row = document.createElement('div');
-            row.className = 'settings-table__row';
-            row.dataset.settingsRow = 'true';
-            row.dataset.userId = user.user_id || '';
-            row.dataset.isNew = user.is_new ? 'true' : 'false';
-            row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
+        profileForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showError('');
+            showSuccess('');
 
-            const idCell = document.createElement('span');
-            idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
-
-            const emailInput = document.createElement('input');
-            emailInput.type = 'email';
-            emailInput.required = true;
-            emailInput.value = user.email || '';
-            emailInput.dataset.settingsEmail = 'true';
-
-            const passwordCell = document.createElement('div');
-            passwordCell.className = 'settings-table__password';
-            const passwordInput = document.createElement('input');
-            passwordInput.type = 'text';
-            passwordInput.value = user.password_plaintext || '';
-            passwordInput.placeholder = 'Password';
-            passwordInput.autocomplete = 'new-password';
-            passwordInput.dataset.settingsPassword = 'true';
-            passwordInput.dataset.passwordDirty = 'false';
-            passwordInput.addEventListener('input', () => {
-                passwordInput.dataset.passwordDirty = 'true';
-            });
-            passwordCell.appendChild(passwordInput);
-
-            const levelSelect = document.createElement('select');
-            levelSelect.dataset.settingsLevel = 'true';
-            const placeholderOption = document.createElement('option');
-            placeholderOption.value = '';
-            placeholderOption.textContent = '—';
-            placeholderOption.disabled = true;
-            placeholderOption.selected = !user.level;
-            levelSelect.appendChild(placeholderOption);
-            levelOptions.forEach((option) => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.label;
-                if (option.value === user.level) {
-                    opt.selected = true;
-                }
-                levelSelect.appendChild(opt);
-            });
-            levelSelect.addEventListener('change', (event) => {
-                const value = event.target.value;
-                togglePasswordField(value, passwordCell, passwordInput);
-            });
-
-            const departmentSelect = document.createElement('select');
-            departmentSelect.dataset.settingsDepartments = 'true';
-            departmentSelect.multiple = true;
-            departmentSelect.size = departmentsSize;
-            departmentSelect.innerHTML = departmentsOptionsHTML;
-
-            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
-            Array.from(departmentSelect.options).forEach((opt) => {
-                if (selectedDepartments.includes(opt.value)) {
-                    opt.selected = true;
-                }
-            });
-
-            const deleteCell = document.createElement('div');
-            deleteCell.className = 'settings-table__delete';
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.innerHTML = '🗑';
-            deleteButton.title = 'Delete user';
-            deleteButton.addEventListener('click', () => {
-                const isMarked = row.dataset.markedForDeletion === 'true';
-                row.dataset.markedForDeletion = (!isMarked).toString();
-                row.classList.toggle('is-marked-for-deletion', !isMarked);
-                deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
-            });
-            deleteCell.appendChild(deleteButton);
-
-            row.append(
-                idCell,
-                emailInput,
-                passwordCell,
-                levelSelect,
-                departmentSelect,
-                deleteCell,
-            );
-            togglePasswordField(user.level, passwordCell, passwordInput);
-            return row;
-        };
-
-        const renderRows = (users) => {
-            if (!rowsContainer) return;
-            rowsContainer.innerHTML = '';
-            users.forEach((user) => {
-                const row = buildRow(user);
-                rowsContainer.appendChild(row);
-            });
-            updateEmptyState();
-        };
-
-        const fetchUsers = async () => {
-            const response = await fetch(endpoint);
-            if (!response.ok) {
-                showError('Unable to load settings data.');
-                return;
-            }
-            const data = await response.json();
-            renderRows(data.users || []);
-        };
-
-        const applyChanges = async () => {
-            if (!rowsContainer) return;
             const payload = {
-                users: Array.from(rowsContainer.querySelectorAll('[data-settings-row]')).map((row) => ({
-                    user_id: row.dataset.userId || null,
-                    email: row.querySelector('[data-settings-email]')?.value || '',
-                    level: row.querySelector('[data-settings-level]')?.value || '',
-                    password: (() => {
-                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
-                        if (levelValue !== 'level1') return '';
-                        const passwordInput = row.querySelector('[data-settings-password]');
-                        const isDirty = passwordInput?.dataset.passwordDirty === 'true';
-                        return isDirty ? passwordInput?.value || '' : '';
-                    })(),
-                    password_changed: (() => {
-                        const levelValue = row.querySelector('[data-settings-level]')?.value || '';
-                        if (levelValue !== 'level1') return false;
-                        return row.querySelector('[data-settings-password]')?.dataset.passwordDirty === 'true';
-                    })(),
-                    departments: Array.from(
-                        row.querySelector('[data-settings-departments]')?.selectedOptions || [],
-                    ).map((option) => option.value),
-                    marked_for_deletion: row.dataset.markedForDeletion === 'true',
-                    is_new: row.dataset.isNew === 'true',
-                })),
+                email: emailInput ? emailInput.value : '',
+                old_password: oldPasswordInput ? oldPasswordInput.value : '',
+                new_password: newPasswordInput ? newPasswordInput.value : '',
+                new_password_confirm: confirmInput ? confirmInput.value : '',
             };
 
             const response = await fetch(endpoint, {
@@ -1143,45 +1010,390 @@
             });
 
             const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                const errors = (data && data.errors) || {};
+                const combined = Object.values(errors).join(' ') || 'Unable to update profile.';
+                showError(combined);
+                return;
+            }
+
+            if (emailDisplay && data.email) {
+                emailDisplay.textContent = data.email;
+            }
+            if (emailInput && data.email) {
+                emailInput.value = data.email;
+            }
+
+            [oldPasswordInput, newPasswordInput, confirmInput].forEach((input) => {
+                if (input) {
+                    input.value = '';
+                }
+            });
+
+            showSuccess('Profile updated successfully.');
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const settingsRoot = document.querySelector('[data-settings-panel]');
+        if (!settingsRoot) {
+            return;
+        }
+
+        const rowsContainer = settingsRoot.querySelector('[data-settings-rows]');
+        const emptyState = settingsRoot.querySelector('[data-settings-empty]');
+        const addButton = settingsRoot.querySelector('[data-settings-add]');
+        const applyButton = settingsRoot.querySelector('[data-settings-apply]');
+        const errorBox = settingsRoot.querySelector('[data-settings-error]');
+        const endpoint = settingsRoot.dataset.settingsEndpoint;
+        const verifyEndpoint = settingsRoot.dataset.verifyEndpoint;
+        const paginationContainer = settingsRoot.querySelector('[data-settings-pagination]');
+        const confirmationBlock = settingsRoot.querySelector('[data-admin-password-confirmation]');
+        const passwordInput = settingsRoot.querySelector('[data-admin-password-input]');
+        const passwordConfirmButton = settingsRoot.querySelector('[data-admin-password-submit]');
+        const passwordErrorBox = settingsRoot.querySelector('[data-admin-password-error]');
+        const departmentsPrototype = settingsRoot.querySelector('select[data-department-prototype="true"]');
+
+        if (!rowsContainer || !endpoint) {
+            return;
+        }
+
+        const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
+        const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
+        const levelOptions = [
+            { value: 'level1', label: 'level1' },
+            { value: 'level2', label: 'level2' },
+            { value: 'level3', label: 'level3' },
+        ];
+
+        const pageSize = 5;
+        let allUsers = [];
+        let baselineLevels = new Map();
+        let currentPage = 1;
+        let pendingPayload = null;
+
+        const showError = (message) => {
+            if (!errorBox) return;
+            errorBox.textContent = message;
+            errorBox.hidden = !message;
+        };
+
+        const showPasswordError = (message) => {
+            if (!passwordErrorBox) return;
+            passwordErrorBox.textContent = message;
+            passwordErrorBox.hidden = !message;
+        };
+
+        const updateEmptyState = () => {
+            if (!rowsContainer || !emptyState) return;
+            const hasRows = rowsContainer.querySelector('[data-settings-row]');
+            emptyState.style.display = hasRows ? 'none' : 'block';
+        };
+
+        const togglePasswordField = (user, passwordCell, passwordInputField) => {
+            const enablePassword = user.level === 'level1';
+            if (passwordCell) {
+                passwordCell.style.display = enablePassword ? '' : 'none';
+            }
+            if (passwordInputField) {
+                passwordInputField.disabled = !enablePassword;
+                if (!enablePassword) {
+                    passwordInputField.value = '';
+                    user.password = '';
+                    user.password_changed = false;
+                }
+            }
+        };
+
+        const refreshPagination = () => {
+            if (!paginationContainer) return;
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.max(1, Math.ceil(allUsers.length / pageSize) || 1);
+            const createButton = (label, page, disabled = false) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = label;
+                button.className = 'pagination__page';
+                if (disabled) {
+                    button.disabled = true;
+                }
+                button.addEventListener('click', () => {
+                    currentPage = page;
+                    renderRows(currentPage);
+                });
+                return button;
+            };
+
+            const prevButton = createButton('‹', Math.max(1, currentPage - 1), currentPage === 1);
+            paginationContainer.appendChild(prevButton);
+
+            for (let page = 1; page <= totalPages; page += 1) {
+                const pageButton = createButton(String(page), page, false);
+                if (page === currentPage) {
+                    pageButton.classList.add('pagination__page--active');
+                }
+                paginationContainer.appendChild(pageButton);
+            }
+
+            const nextButton = createButton('›', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
+            paginationContainer.appendChild(nextButton);
+        };
+
+        const buildRow = (user, index) => {
+            const row = document.createElement('div');
+            row.className = 'settings-table__row';
+            row.dataset.settingsRow = 'true';
+            row.dataset.index = String(index);
+            row.classList.toggle('is-marked-for-deletion', Boolean(user.marked_for_deletion));
+
+            const idCell = document.createElement('span');
+            idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
+
+            const emailInput = document.createElement('input');
+            emailInput.type = 'email';
+            emailInput.required = true;
+            emailInput.value = user.email || '';
+            emailInput.addEventListener('input', () => {
+                allUsers[index].email = emailInput.value;
+            });
+
+            const passwordCell = document.createElement('div');
+            passwordCell.className = 'settings-table__password';
+            const passwordInputField = document.createElement('input');
+            passwordInputField.type = 'text';
+            passwordInputField.value = user.password || '';
+            passwordInputField.placeholder = 'Password';
+            passwordInputField.autocomplete = 'new-password';
+            passwordInputField.addEventListener('input', () => {
+                allUsers[index].password = passwordInputField.value;
+                allUsers[index].password_changed = true;
+            });
+            passwordCell.appendChild(passwordInputField);
+
+            const levelSelect = document.createElement('select');
+            levelOptions.forEach((option) => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                opt.selected = option.value === user.level;
+                levelSelect.appendChild(opt);
+            });
+            levelSelect.addEventListener('change', () => {
+                allUsers[index].level = levelSelect.value;
+                togglePasswordField(allUsers[index], passwordCell, passwordInputField);
+                renderRows(currentPage);
+            });
+
+            const departmentSelect = document.createElement('select');
+            departmentSelect.innerHTML = departmentsOptionsHTML;
+            departmentSelect.multiple = true;
+            departmentSelect.size = departmentsSize;
+            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
+            Array.from(departmentSelect.options).forEach((opt) => {
+                opt.selected = selectedDepartments.includes(opt.value);
+            });
+            departmentSelect.addEventListener('change', () => {
+                const selectedValues = Array.from(departmentSelect.selectedOptions).map((opt) => opt.value);
+                allUsers[index].departments = selectedValues;
+            });
+
+            const deleteCell = document.createElement('div');
+            deleteCell.className = 'settings-table__delete';
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.innerHTML = '🗑';
+            deleteButton.title = 'Delete user';
+            deleteButton.addEventListener('click', () => {
+                if (!allUsers[index].marked_for_deletion) {
+                    const confirmed = window.confirm('Delete this user? They will be removed after Apply.');
+                    if (!confirmed) {
+                        return;
+                    }
+                    allUsers[index].marked_for_deletion = true;
+                } else {
+                    allUsers[index].marked_for_deletion = false;
+                }
+                renderRows(currentPage);
+            });
+            deleteCell.appendChild(deleteButton);
+
+            row.append(
+                idCell,
+                emailInput,
+                passwordCell,
+                levelSelect,
+                departmentSelect,
+                deleteCell,
+            );
+            togglePasswordField(user, passwordCell, passwordInputField);
+            return row;
+        };
+
+        const renderRows = (page = 1) => {
+            if (!rowsContainer) return;
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
+            const usersSlice = allUsers.slice(start, end);
+            rowsContainer.innerHTML = '';
+            usersSlice.forEach((user, index) => {
+                const row = buildRow(user, start + index);
+                rowsContainer.appendChild(row);
+            });
+            updateEmptyState();
+            refreshPagination();
+        };
+
+        const setUsers = (users) => {
+            baselineLevels = new Map();
+            allUsers = (users || []).map((user) => {
+                if (user.user_id) {
+                    baselineLevels.set(String(user.user_id), user.level);
+                }
+                return {
+                    user_id: user.user_id || null,
+                    email: user.email || '',
+                    level: user.level || '',
+                    password: '',
+                    password_changed: false,
+                    departments: Array.isArray(user.departments) ? user.departments : [],
+                    marked_for_deletion: Boolean(user.marked_for_deletion),
+                    is_new: Boolean(user.is_new) || !user.user_id,
+                };
+            });
+            currentPage = 1;
+            renderRows(currentPage);
+        };
+
+        const fetchUsers = async () => {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                showError('Unable to load settings data.');
+                return;
+            }
+            const data = await response.json();
+            showError('');
+            setUsers(data.users || []);
+        };
+
+        const buildPayload = () => ({
+            users: allUsers.map((user) => ({
+                user_id: user.user_id || null,
+                email: user.email || '',
+                level: user.level || '',
+                password: user.level === 'level1' && user.password_changed ? user.password || '' : '',
+                password_changed: user.level === 'level1' ? Boolean(user.password_changed) : false,
+                departments: Array.isArray(user.departments) ? user.departments : [],
+                marked_for_deletion: Boolean(user.marked_for_deletion),
+                is_new: Boolean(user.is_new) || !user.user_id,
+            })),
+        });
+
+        const hasDangerousChanges = (payload) => {
+            const removesUser = payload.users.some((user) => user.marked_for_deletion);
+            const levelChanged = payload.users.some((user) => {
+                if (!user.user_id) return false;
+                const baseline = baselineLevels.get(String(user.user_id));
+                return baseline && baseline !== user.level;
+            });
+            return removesUser || levelChanged;
+        };
+
+        const applyChanges = async (payload) => {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || '',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) {
                 showError((data.errors && data.errors.join(', ')) || 'Validation error.');
                 return;
             }
             showError('');
-            renderRows(data.users || []);
+            if (confirmationBlock) {
+                confirmationBlock.hidden = true;
+            }
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+            pendingPayload = null;
+            setUsers(data.users || []);
         };
 
-        openButton.addEventListener('click', () => {
-            toggleModal(true);
-            fetchUsers();
-        });
-
-        closeElements.forEach((el) => {
-            el?.addEventListener('click', () => toggleModal(false));
-        });
-
-        addButton?.addEventListener('click', () => {
-            const row = buildRow({
-                user_id: null,
-                email: '',
-                password_plaintext: '',
-                has_password: false,
-                level: '',
-                is_new: true,
-                marked_for_deletion: false,
-            });
-            rowsContainer.appendChild(row);
-            updateEmptyState();
-        });
-
-        applyButton?.addEventListener('click', () => {
-            applyChanges().catch(() => showError('Unable to save changes.'));
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
-                toggleModal(false);
+        const verifyPassword = async () => {
+            if (!verifyEndpoint || !passwordInput) {
+                return false;
             }
-        });
+            const response = await fetch(verifyEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken() || '',
+                },
+                body: JSON.stringify({ password: passwordInput.value || '' }),
+            });
+            const data = await response.json().catch(() => ({}));
+            return Boolean(data.valid && response.ok);
+        };
+
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                allUsers.push({
+                    user_id: null,
+                    email: '',
+                    level: '',
+                    password: '',
+                    password_changed: false,
+                    departments: [],
+                    marked_for_deletion: false,
+                    is_new: true,
+                });
+                currentPage = Math.ceil(allUsers.length / pageSize) || 1;
+                renderRows(currentPage);
+            });
+        }
+
+        if (applyButton) {
+            applyButton.addEventListener('click', () => {
+                const payload = buildPayload();
+                const confirmed = window.confirm('Apply changes to users? This will update access and departments.');
+                if (!confirmed) {
+                    return;
+                }
+                if (hasDangerousChanges(payload) && verifyEndpoint) {
+                    pendingPayload = payload;
+                    showPasswordError('');
+                    if (confirmationBlock) {
+                        confirmationBlock.hidden = false;
+                    }
+                    if (passwordInput) {
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                    return;
+                }
+                applyChanges(payload).catch(() => showError('Unable to save changes.'));
+            });
+        }
+
+        if (passwordConfirmButton) {
+            passwordConfirmButton.addEventListener('click', async () => {
+                if (!pendingPayload) {
+                    pendingPayload = buildPayload();
+                }
+                const valid = await verifyPassword();
+                if (!valid) {
+                    showPasswordError('Invalid administrator password.');
+                    return;
+                }
+                showPasswordError('');
+                applyChanges(pendingPayload).catch(() => showError('Unable to save changes.'));
+            });
+        }
+
+        fetchUsers().catch(() => showError('Unable to load settings data.'));
     });
 })();
