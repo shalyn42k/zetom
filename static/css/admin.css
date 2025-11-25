@@ -186,6 +186,11 @@ body[data-theme='dark'] .panel-email__icon {
     margin-left: 0.25rem;
 }
 
+.panel-requests {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 .panel.is-hidden {
     display: none;
 }
@@ -655,10 +660,19 @@ body[data-theme='dark'] .panel-email .form-submit {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
+.panel-requests .table-wrapper {
+    overflow-x: auto;
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;
     background: var(--surface);
+}
+
+.panel-requests .table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .table thead {
@@ -670,6 +684,12 @@ body[data-theme='dark'] .panel-email .form-submit {
     padding: 14px 18px;
     text-align: left;
     border-bottom: 1px solid rgba(27, 109, 52, 0.12);
+}
+
+.panel-requests .table th:first-child,
+.panel-requests .table td:first-child {
+    width: 48px;
+    text-align: center;
 }
 
 .table td {
@@ -707,6 +727,17 @@ body[data-theme='dark'] .panel-email .form-submit {
     height: 18px;
     border-radius: 6px;
     accent-color: var(--green);
+}
+
+.panel-requests .checkbox-cell {
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.panel-requests .table-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
 }
 
 .table-email {
