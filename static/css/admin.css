@@ -47,6 +47,133 @@ body[data-theme='dark'] .panel-email__icon {
     box-shadow: none;
 }
 
+.admin-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    transition: margin-left 0.25s ease;
+}
+
+.admin-sidebar {
+    position: relative;
+    min-width: 210px;
+    max-width: 210px;
+    padding: 0.75rem 0.75rem 0.75rem 0.75rem;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: transform 0.25s ease, max-width 0.25s ease, min-width 0.25s ease;
+}
+
+.admin-sidebar__toggle {
+    position: absolute;
+    top: 50%;
+    right: -18px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 72px;
+    border-radius: 999px;
+    border: 1px solid var(--green);
+    background: #ffffff;
+    color: var(--green);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0;
+    line-height: 1;
+}
+
+.admin-sidebar__toggle::after {
+    content: '‹';
+    font-size: 1.2rem;
+}
+
+.admin-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-sidebar__link {
+    display: block;
+    padding: 0.55rem 0.75rem;
+    border-radius: 999px;
+    text-align: left;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid var(--green);
+    background: #f5fff7;
+    color: var(--green);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-sidebar__link:hover {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.admin-sidebar__link.is-active {
+    background: var(--green);
+    color: #fff;
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar {
+    min-width: 48px;
+    max-width: 48px;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar__link {
+    text-indent: -9999px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar__link::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: 1px solid var(--green);
+    margin: 0 auto;
+    background: #f5fff7;
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar__link.is-active::before {
+    background: var(--green);
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar__toggle {
+    right: -14px;
+}
+
+.admin-layout.admin-layout--collapsed .admin-sidebar__toggle::after {
+    content: '›';
+}
+
+.admin-main {
+    flex: 1;
+    transition: margin-left 0.25s ease;
+}
+
+.admin-main {
+    margin-left: 0;
+}
+
+.admin-layout.admin-layout--collapsed .admin-main {
+    margin-left: 0.25rem;
+}
+
 body[data-theme='dark'] .panel-email__description,
 body[data-theme='dark'] .modal__subtitle,
 body[data-theme='dark'] .trash-item__meta,
