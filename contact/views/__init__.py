@@ -14,6 +14,7 @@ from .public import index
 from .admin import (
     admin_panel,
     admin_profile,
+    admin_reset_password,
     admin_settings,
     admin_verify_password,
     message_detail,
@@ -36,6 +37,7 @@ __all__ = [
     'panel',
     'admin_panel',
     'admin_settings',
+    'admin_reset_password',
     'admin_profile',
     'admin_verify_password',
     'access_portal',

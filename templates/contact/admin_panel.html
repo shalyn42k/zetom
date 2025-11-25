@@ -583,7 +583,8 @@
                  data-settings-panel
                  data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}"
                  data-profile-endpoint="{% url 'contact:admin_profile' %}?lang={{ lang }}"
-                 data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}">
+                 data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}"
+                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}">
             <div class="settings-panel__intro">
                 <h2 class="settings-panel__title">Settings</h2>
                 <p class="settings-panel__description">
@@ -668,7 +669,6 @@
                     <div class="settings-table__header">
                         <span>#</span>
                         <span>Email</span>
-                        <span>Password</span>
                         <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
                         <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
                         <span class="settings-table__actions-label">

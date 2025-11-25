@@ -958,6 +958,7 @@
         const profileForm = settingsPanel.querySelector('[data-profile-form]');
         const profileEndpoint = settingsPanel.getAttribute('data-profile-endpoint');
         const verifyEndpoint = settingsPanel.getAttribute('data-verify-endpoint');
+        const resetEndpoint = settingsPanel.getAttribute('data-reset-endpoint');
         const rowsContainer = settingsPanel.querySelector('[data-settings-rows]');
         const emptyState = settingsPanel.querySelector('[data-settings-empty]');
         const addButton = settingsPanel.querySelector('[data-settings-add]');
@@ -1052,20 +1053,6 @@
             emptyState.style.display = users.length ? 'none' : 'block';
         };
 
-        const togglePasswordField = (levelValue, passwordCell, passwordInput) => {
-            const enablePassword = levelValue === 'level1';
-            if (passwordCell) {
-                passwordCell.style.display = enablePassword ? '' : 'none';
-            }
-            if (passwordInput) {
-                passwordInput.disabled = !enablePassword;
-                if (!enablePassword) {
-                    passwordInput.value = '';
-                    passwordInput.dataset.passwordDirty = 'false';
-                }
-            }
-        };
-
         const buildRow = (user) => {
             const row = document.createElement('div');
             row.className = 'settings-table__row';
@@ -1091,22 +1078,6 @@
                 }
             });
 
-            const passwordCell = document.createElement('span');
-            passwordCell.className = 'settings-table__password';
-            const passwordInput = document.createElement('input');
-            passwordInput.type = 'text';
-            passwordInput.value = user.password_plaintext || '';
-            passwordInput.placeholder = user.has_password ? '••••••••' : '';
-            passwordInput.dataset.passwordDirty = 'false';
-            passwordInput.dataset.settingsPassword = 'true';
-            passwordInput.addEventListener('input', () => {
-                const targetUser = users[user.index];
-                if (targetUser) {
-                    targetUser.password = passwordInput.value;
-                    targetUser.password_changed = true;
-                }
-            });
-
             const levelSelect = document.createElement('select');
             levelSelect.dataset.settingsLevel = 'true';
             levelOptions.forEach((option) => {
@@ -1125,10 +1096,7 @@
                     if (levelSelect.value !== 'level1') {
                         targetUser.password = '';
                         targetUser.password_changed = false;
-                        passwordInput.value = '';
-                        passwordInput.dataset.passwordDirty = 'false';
                     }
-                    togglePasswordField(levelSelect.value, passwordCell, passwordInput);
                 }
             });
 
@@ -1152,6 +1120,27 @@
                     );
                 }
             });
+
+            const actionsCell = document.createElement('div');
+            actionsCell.className = 'settings-table__actions';
+
+            const hiddenPasswordInput = document.createElement('input');
+            hiddenPasswordInput.type = 'hidden';
+            hiddenPasswordInput.value = user.password_plaintext || '';
+            hiddenPasswordInput.dataset.settingsPassword = 'true';
+
+            const resetButton = document.createElement('button');
+            resetButton.type = 'button';
+            resetButton.className = 'settings-table__reset';
+            resetButton.dataset.userReset = 'true';
+            resetButton.dataset.userId = user.user_id || '';
+            resetButton.title = language === 'pl'
+                ? 'Wyślij nowe hasło e-mailem'
+                : 'Send new password via email';
+            resetButton.textContent = '↻';
+            if (!user.user_id) {
+                resetButton.disabled = true;
+            }
 
             const deleteCell = document.createElement('div');
             deleteCell.className = 'settings-table__delete';
@@ -1179,15 +1168,15 @@
             });
             deleteCell.appendChild(deleteButton);
 
+            actionsCell.append(hiddenPasswordInput, resetButton, deleteCell);
+
             row.append(
                 idCell,
                 emailInput,
-                passwordCell,
                 levelSelect,
                 departmentSelect,
-                deleteCell,
+                actionsCell,
             );
-            togglePasswordField(user.level, passwordCell, passwordInput);
             return row;
         };
 
@@ -1422,6 +1411,67 @@
             if (profileNewPassword) profileNewPassword.value = '';
             if (profileNewPasswordConfirm) profileNewPasswordConfirm.value = '';
             showProfileSuccess(true);
+        });
+
+        const resetMessages = {
+            confirm:
+                language === 'pl'
+                    ? 'Wysłać nowe hasło do tego użytkownika? Można to robić raz dziennie.'
+                    : 'Send a new password to this user? This can be done only once per day.',
+            success:
+                language === 'pl'
+                    ? 'Hasło zostało wysłane do użytkownika.'
+                    : 'Password has been sent to the user.',
+            failure:
+                language === 'pl'
+                    ? 'Nie udało się zresetować hasła.'
+                    : 'Unable to reset password.',
+            network:
+                language === 'pl'
+                    ? 'Błąd sieci podczas resetowania hasła.'
+                    : 'Network error while resetting password.',
+        };
+
+        settingsPanel.addEventListener('click', async (event) => {
+            const resetButton = event.target.closest('[data-user-reset]');
+            if (!resetButton) return;
+
+            const userId = resetButton.getAttribute('data-user-id');
+            if (!userId || !resetEndpoint) return;
+
+            const confirmed = window.confirm(resetMessages.confirm);
+            if (!confirmed) {
+                return;
+            }
+
+            resetButton.disabled = true;
+
+            try {
+                const response = await fetch(resetEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken() || '',
+                    },
+                    body: JSON.stringify({ user_id: userId }),
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data.success) {
+                    const message = data.message || data.error || resetMessages.failure;
+                    showError(message);
+                    if (data.error !== 'too_frequent') {
+                        resetButton.disabled = false;
+                    }
+                    return;
+                }
+
+                showError(resetMessages.success);
+            } catch (error) {
+                showError(resetMessages.network);
+                resetButton.disabled = false;
+            }
         });
 
         fetchUsers().catch(() => showError('Unable to load settings data.'));

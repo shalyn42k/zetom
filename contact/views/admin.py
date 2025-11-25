@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import EmailValidator
@@ -18,6 +19,7 @@ from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_POST, require_http_methods
 
 from ..forms import (
@@ -610,6 +612,49 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         for user in AdminUser.objects.prefetch_related('departments').all().order_by('id')
     ]
     return JsonResponse({'users': response_users})
+
+
+@require_POST
+def admin_reset_password(request: HttpRequest) -> JsonResponse:
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
+        return JsonResponse({'error': 'unauthorised'}, status=403)
+
+    if admin_user.level_of_access != AdminUser.LEVEL_ADMIN:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        payload = request.POST
+
+    user_id = payload.get('user_id') if hasattr(payload, 'get') else None
+    if not user_id:
+        return JsonResponse({'error': 'user_id_required'}, status=400)
+
+    try:
+        target = AdminUser.objects.get(id=user_id)
+    except AdminUser.DoesNotExist:
+        return JsonResponse({'error': 'not_found'}, status=404)
+
+    now = timezone.now()
+    if target.last_password_reset_at and now - target.last_password_reset_at < timedelta(days=1):
+        return JsonResponse(
+            {
+                'error': 'too_frequent',
+                'message': 'Password was already reset in the last 24 hours.',
+            },
+            status=400,
+        )
+
+    new_password = get_random_string(length=10)
+    target.set_password(new_password)
+    target.last_password_reset_at = now
+    target.save(update_fields=['password_hash', 'last_password_reset_at'])
+
+    send_admin_user_credentials(email=target.email, token=new_password, user=target)
+
+    return JsonResponse({'success': True})
 
 
 @require_http_methods(["POST"])

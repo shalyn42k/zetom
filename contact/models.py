@@ -157,6 +157,7 @@ class AdminUser(models.Model):
     departments = models.ManyToManyField(Department, related_name="admins", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_password_reset_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
