@@ -36,6 +36,32 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
+        const panelButtons = document.querySelectorAll('[data-panel-trigger]');
+        const panels = document.querySelectorAll('[data-panel-content]');
+
+        if (panelButtons.length && panels.length) {
+            panelButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-panel');
+                    if (!target) return;
+
+                    panelButtons.forEach((b) => b.classList.remove('is-active'));
+                    btn.classList.add('is-active');
+
+                    panels.forEach((panel) => {
+                        const name = panel.getAttribute('data-panel-content');
+                        if (name === target) {
+                            panel.classList.remove('is-hidden');
+                        } else {
+                            panel.classList.add('is-hidden');
+                        }
+                    });
+                });
+            });
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
         const bulkForm = $('[data-bulk-form]');
         if (!bulkForm) {
             return;
@@ -922,24 +948,24 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.querySelector('[data-settings-modal]');
-        const openButton = document.querySelector('[data-settings-open]');
-        if (!modal || !openButton) {
+        const settingsPanel = document.querySelector('[data-settings-panel]');
+        if (!settingsPanel) {
             return;
         }
 
-        const closeElements = Array.from(modal.querySelectorAll('[data-settings-close]')).concat(
-            modal.querySelector('.modal__backdrop'),
-        );
-        const rowsContainer = modal.querySelector('[data-settings-rows]');
-        const emptyState = modal.querySelector('[data-settings-empty]');
-        const addButton = modal.querySelector('[data-settings-add]');
-        const applyButton = modal.querySelector('[data-settings-apply]');
-        const errorBox = modal.querySelector('[data-settings-error]');
-        const endpoint = modal.dataset.settingsEndpoint;
-        const departmentsPrototype = modal.querySelector('select[data-department-prototype="true"]');
+        const rowsContainer = settingsPanel.querySelector('[data-settings-rows]');
+        const emptyState = settingsPanel.querySelector('[data-settings-empty]');
+        const addButton = settingsPanel.querySelector('[data-settings-add]');
+        const applyButton = settingsPanel.querySelector('[data-settings-apply]');
+        const errorBox = settingsPanel.querySelector('[data-settings-error]');
+        const endpoint = settingsPanel.getAttribute('data-settings-endpoint');
+        const departmentsPrototype = settingsPanel.querySelector('select[data-department-prototype="true"]');
         const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
         const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
+
+        if (!rowsContainer || !endpoint) {
+            return;
+        }
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -959,19 +985,6 @@
             if (!errorBox) return;
             errorBox.textContent = message;
             errorBox.hidden = !message;
-        };
-
-        const toggleModal = (shouldOpen) => {
-            if (shouldOpen) {
-                modal.classList.add('is-visible');
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('has-modal');
-            } else {
-                modal.classList.remove('is-visible');
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.classList.remove('has-modal');
-                showError('');
-            }
         };
 
         const updateEmptyState = () => {
@@ -1097,6 +1110,9 @@
         };
 
         const fetchUsers = async () => {
+            if (!endpoint) {
+                return;
+            }
             const response = await fetch(endpoint);
             if (!response.ok) {
                 showError('Unable to load settings data.');
@@ -1151,15 +1167,6 @@
             renderRows(data.users || []);
         };
 
-        openButton.addEventListener('click', () => {
-            toggleModal(true);
-            fetchUsers();
-        });
-
-        closeElements.forEach((el) => {
-            el?.addEventListener('click', () => toggleModal(false));
-        });
-
         addButton?.addEventListener('click', () => {
             const row = buildRow({
                 user_id: null,
@@ -1178,11 +1185,7 @@
             applyChanges().catch(() => showError('Unable to save changes.'));
         });
 
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
-                toggleModal(false);
-            }
-        });
+        fetchUsers().catch(() => showError('Unable to load settings data.'));
     });
 
     document.addEventListener('DOMContentLoaded', () => {
