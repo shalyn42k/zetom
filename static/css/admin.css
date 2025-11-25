@@ -58,13 +58,13 @@ body[data-theme='dark'] .panel-email__icon {
     --sidebar-width: 230px;
     position: sticky;
     top: 1.25rem;
-    align-self: stretch;
+    align-self: flex-start;
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
     flex: 0 0 var(--sidebar-width);
     padding: 1rem;
-    background: linear-gradient(135deg, rgba(18, 77, 45, 0.08) 0%, rgba(18, 77, 45, 0.02) 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f3fff7 100%);
     border: 1px solid rgba(18, 64, 30, 0.12);
     border-radius: 24px;
     box-shadow: 0 22px 46px rgba(18, 64, 30, 0.1);
@@ -81,23 +81,22 @@ body[data-theme='dark'] .panel-email__icon {
     top: 50%;
     right: -18px;
     transform: translateY(-50%);
-    width: 30px;
-    height: 80px;
-    z-index: 2;
+    width: 28px;
+    height: 72px;
     border-radius: 999px;
-    border: none;
-    background: linear-gradient(135deg, var(--green), var(--green-dark));
-    color: #ffffff;
+    border: 1px solid rgba(18, 64, 30, 0.16);
+    background: linear-gradient(180deg, #ffffff 0%, #f3fff7 100%);
+    color: var(--green);
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 14px 35px rgba(18, 77, 45, 0.32);
+    box-shadow: 0 12px 26px rgba(18, 64, 30, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
     font-size: 0;
     line-height: 1;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .admin-sidebar__toggle::after {
@@ -112,29 +111,28 @@ body[data-theme='dark'] .panel-email__icon {
 }
 
 .admin-sidebar__link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    padding: 0.65rem 0.95rem;
+    display: block;
+    padding: 0.65rem 0.85rem;
     border-radius: 999px;
     text-align: left;
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
-    border: none;
-    background: linear-gradient(135deg, var(--green), var(--green-dark));
-    color: #ffffff;
-    box-shadow: 0 14px 35px rgba(18, 77, 45, 0.24);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    border: 1px solid rgba(18, 64, 30, 0.28);
+    background: #f5fff7;
+    color: var(--green);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .admin-sidebar__link:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 16px 36px rgba(18, 77, 45, 0.3);
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .admin-sidebar__link.is-active {
-    box-shadow: 0 18px 40px rgba(18, 77, 45, 0.38);
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(18, 64, 30, 0.16);
 }
 
 .admin-layout.admin-layout--collapsed .admin-sidebar {
@@ -144,7 +142,7 @@ body[data-theme='dark'] .panel-email__icon {
     padding-left: 0;
     padding-right: 0;
     width: 0;
-    transform: translateX(calc(-1 * var(--sidebar-width) + 46px));
+    transform: translateX(calc(-1 * var(--sidebar-width) + 18px));
 }
 
 .admin-layout.admin-layout--collapsed .admin-sidebar__toggle {
