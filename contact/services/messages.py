@@ -14,7 +14,7 @@ from typing import Iterable, Sequence
 
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import Case, IntegerField, QuerySet, When
 
 from ..departments import normalize_department_code
 from ..models import ContactAttachment, ContactMessage
@@ -67,9 +67,7 @@ def get_messages(*, sort_by: str | None = None, company: str | None = None) -> Q
         else:
             queryset = queryset.filter(company=company)
 
-    order_by = _resolve_ordering(sort_by)
-    if order_by:
-        queryset = queryset.order_by(*order_by)
+    queryset = _apply_sorting(queryset, sort_by)
 
     return queryset
 
@@ -96,13 +94,40 @@ def add_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> N
 
 
 def _resolve_ordering(sort_by: str | None) -> list[str]:
+    """Legacy helper kept for backwards compatibility."""
+    # NOTE: Retained for imports elsewhere; admin panel now uses _apply_sorting
+    # for explicit ordering rules. This function mirrors those rules.
     if sort_by == "oldest":
-        return ["created_at"]
+        return ["created_at", "id"]
     if sort_by == "status":
-        return ["status", "-created_at"]
+        return ["status", "-created_at", "-id"]
     if sort_by == "company":
-        return ["company", "-created_at"]
-    return ["-created_at"]
+        return ["company", "-created_at", "-id"]
+    return ["-created_at", "-id"]
+
+
+def _apply_sorting(queryset: QuerySet[ContactMessage], sort_by: str | None) -> QuerySet[ContactMessage]:
+    """Apply explicit ORM ordering for admin panel sorting options."""
+
+    if sort_by == "oldest":
+        return queryset.order_by("created_at", "id")
+
+    if sort_by == "status":
+        status_order = Case(
+            When(status=ContactMessage.STATUS_NEW, then=0),
+            When(status=ContactMessage.STATUS_IN_PROGRESS, then=1),
+            When(status=ContactMessage.STATUS_READY, then=2),
+            default=99,
+            output_field=IntegerField(),
+        )
+        return queryset.annotate(_status_order=status_order).order_by(
+            "_status_order", "-created_at", "-id"
+        )
+
+    if sort_by == "company":
+        return queryset.order_by("company", "-created_at", "-id")
+
+    return queryset.order_by("-created_at", "-id")
 
 
 def _create_attachments(message: ContactMessage, files: Sequence[UploadedFile]) -> None:
