@@ -16,6 +16,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import QuerySet
 
+from ..departments import normalize_department_code
 from ..models import ContactAttachment, ContactMessage
 
 
@@ -29,6 +30,7 @@ def add_message(
     message: str,
     attachments: Sequence | None = None,
 ) -> tuple[ContactMessage, str]:
+    company = normalize_department_code(company)
     files: list[UploadedFile] = list(attachments or [])
     with transaction.atomic():
         contact_message = ContactMessage.objects.create(

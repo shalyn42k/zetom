@@ -349,6 +349,7 @@
                     <label class="user-request-modal__field">
                         <span class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
                         <select name="company" class="form-input" required>
+                            <option value="">{% if lang == 'pl' %}-- wybierz dział --{% else %}-- select department --{% endif %}</option>
                             {% for option in company_options %}
                                 <option value="{{ option.value }}">{{ option.label }}</option>
                             {% endfor %}

@@ -147,7 +147,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
 
     # --- company / department options ---
-    company_options = helpers.company_options(lang)  # [{'value': 'firma1', 'label': 'Company 1'}, ...]
+    company_options = helpers.company_options(lang)  # [{'value': 'Elektrotechniczne', 'label': 'Elektrotechniczne'}, ...]
     department_labels = helpers.company_labels(lang)
     department_choices = [
         (code, department_labels.get(code, code)) for code in user_departments

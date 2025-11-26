@@ -21,14 +21,14 @@ from contact.models import AdminUser, ContactMessage, Department
 class AdminPanelTests(TestCase):
     def setUp(self) -> None:
         self.department, _ = Department.objects.get_or_create(
-            code='firma1',
-            defaults={'name_pl': 'Firma 1', 'name_en': 'Company 1'},
+            code='Elektrotechniczne',
+            defaults={'name_pl': 'Elektrotechniczne', 'name_en': 'Electrotechnical'},
         )
         self.message = ContactMessage.objects.create(
             full_name='Jane Doe',
             phone='+48123123123',
             email='jane@example.com',
-            company='firma1',
+            company='Elektrotechniczne',
             company_name='JD Consulting',
             message='Need help',
         )
@@ -96,16 +96,16 @@ class AdminPanelTests(TestCase):
 class Level2AdminPanelTests(TestCase):
     def setUp(self) -> None:
         self.department1, _ = Department.objects.get_or_create(
-            code='firma1',
-            defaults={'name_pl': 'Firma 1', 'name_en': 'Company 1'},
+            code='Elektrotechniczne',
+            defaults={'name_pl': 'Elektrotechniczne', 'name_en': 'Electrotechnical'},
         )
         self.department2, _ = Department.objects.get_or_create(
-            code='firma2',
-            defaults={'name_pl': 'Firma 2', 'name_en': 'Company 2'},
+            code='Dlugosci i Kąta',
+            defaults={'name_pl': 'Dlugosci i Kąta', 'name_en': 'Length and Angle'},
         )
         self.department_other, _ = Department.objects.get_or_create(
-            code='inna',
-            defaults={'name_pl': 'Inna', 'name_en': 'Other'},
+            code='inne',
+            defaults={'name_pl': 'Inne', 'name_en': 'Other'},
         )
 
         self.message_dept1 = ContactMessage.objects.create(
@@ -154,7 +154,7 @@ class Level2AdminPanelTests(TestCase):
 
     def test_level2_filtering_respects_assigned_departments(self) -> None:
         url = reverse('contact:panel')
-        response = self.client.get(url, {'company': 'inna'})
+        response = self.client.get(url, {'company': 'inne'})
 
         self.assertEqual(response.status_code, 200)
         companies = {

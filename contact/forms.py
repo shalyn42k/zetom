@@ -13,7 +13,9 @@ from pathlib import Path
 
 from django import forms
 from django.conf import settings
+from django.http import QueryDict
 
+from .departments import normalize_department_code
 from .models import ContactMessage, Department, ensure_default_departments
 
 
@@ -113,6 +115,23 @@ def _validate_attachments(files: list, language: str | None = None) -> list:
     return files
 
 
+def _prepare_company_data(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
+    data_source = args[0] if args else kwargs.get("data")
+    if data_source is None:
+        return args, kwargs
+
+    mutable_data = data_source.copy() if isinstance(data_source, QueryDict) else dict(data_source)
+    mutable_data["company"] = normalize_department_code(mutable_data.get("company"))
+
+    if args:
+        args = list(args)
+        args[0] = mutable_data
+        return tuple(args), kwargs
+
+    kwargs["data"] = mutable_data
+    return args, kwargs
+
+
 class ContactForm(forms.ModelForm):
     bot_check = forms.BooleanField(
         required=False,
@@ -134,6 +153,7 @@ class ContactForm(forms.ModelForm):
     attachments = MultipleFileField(required=False)
 
     def __init__(self, *args, language: str | None = None, **kwargs):
+        args, kwargs = _prepare_company_data(args, kwargs)
         self.language = language
         super().__init__(*args, **kwargs)
         self.fields["company"] = forms.ChoiceField(
@@ -502,6 +522,7 @@ class MessageUpdateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        args, kwargs = _prepare_company_data(args, kwargs)
         super().__init__(*args, **kwargs)
         self.fields["company"].choices = ContactForm.department_choices()
         self.fields["status"].choices = ContactMessage.STATUS_CHOICES
@@ -530,6 +551,7 @@ class UserMessageUpdateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        args, kwargs = _prepare_company_data(args, kwargs)
         super().__init__(*args, **kwargs)
         self.fields["company"].choices = ContactForm.department_choices()
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})

@@ -18,6 +18,8 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
 
+from .departments import DEFAULT_DEPARTMENTS
+
 
 
 def _generate_access_token() -> str:
@@ -119,16 +121,6 @@ class Department(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - representation helper
         return f"Department({self.code})"
-
-
-DEFAULT_DEPARTMENTS: list[tuple[str, str, str]] = [
-    ("firma1", "Firma 1", "Company 1"),
-    ("firma2", "Firma 2", "Company 2"),
-    ("firma3", "Firma 3", "Company 3"),
-    ("inna", "Inna", "Other"),
-]
-
-
 def ensure_default_departments() -> None:
     existing_codes = set(Department.objects.values_list("code", flat=True))
     missing = [
