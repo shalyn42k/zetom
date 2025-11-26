@@ -8,6 +8,7 @@
 # =====================================
 """
 
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 from . import views
 
@@ -18,18 +19,35 @@ urlpatterns = [
     path('index/', views.index, name='index_alias'),  # ← добавили
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
-    path('panel/', views.panel, name='panel'),
-    path('panel/messages/<int:message_id>/detail/', views.message_detail, name='message_detail'),
-    path('panel/messages/<int:message_id>/update/', views.update_message, name='update_message'),
+    path('requests/access/', views.access_portal, name='access_portal'),
+    path('panel/', login_required(views.panel, login_url='/login/'), name='panel'),
+    path(
+        'panel/messages/<int:message_id>/detail/',
+        login_required(views.message_detail, login_url='/login/'),
+        name='message_detail',
+    ),
+    path(
+        'panel/messages/<int:message_id>/update/',
+        login_required(views.update_message, login_url='/login/'),
+        name='update_message',
+    ),
     path(
         'panel/messages/<int:message_id>/logs/<int:log_id>/rollback/',
-        views.rollback_client_change,
+        login_required(views.rollback_client_change, login_url='/login/'),
         name='rollback_client_change',
     ),
-    path('panel/settings/', views.admin_settings, name='admin_settings'),
-    path('panel/reset-password/', views.admin_reset_password, name='admin_reset_password'),
-    path('panel/profile/', views.admin_profile, name='admin_profile'),
-    path('panel/verify-password/', views.admin_verify_password, name='admin_verify_password'),
+    path('panel/settings/', login_required(views.admin_settings, login_url='/login/'), name='admin_settings'),
+    path(
+        'panel/reset-password/',
+        login_required(views.admin_reset_password, login_url='/login/'),
+        name='admin_reset_password',
+    ),
+    path('panel/profile/', login_required(views.admin_profile, login_url='/login/'), name='admin_profile'),
+    path(
+        'panel/verify-password/',
+        login_required(views.admin_verify_password, login_url='/login/'),
+        name='admin_verify_password',
+    ),
     path('requests/', views.user_requests, name='user_requests'),
     path('requests/restore/', views.restore_access, name='restore_access'),
     path('requests/<int:message_id>/detail/', views.user_message_detail, name='user_message_detail'),

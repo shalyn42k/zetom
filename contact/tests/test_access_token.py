@@ -42,7 +42,7 @@ class AccessTokenTests(TestCase):
         self.message.save(update_fields=['access_token_expires_at'])
 
         response = self.client.post(
-            reverse('contact:panel'),
+            reverse('contact:access_portal'),
             {
                 'request_id': str(self.message.id),
                 'access_token': self.token,
@@ -50,6 +50,11 @@ class AccessTokenTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Token wygasł', status_code=200)
+
+    def test_panel_redirects_to_login_when_logged_out(self) -> None:
+        response = self.client.get(reverse('contact:panel'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response['Location'])
 
     def test_restore_access_endpoint_returns_session_data(self) -> None:
         response = self.client.post(
