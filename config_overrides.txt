@@ -275,7 +275,7 @@ Current value: Parsed JSON from environment variable (default empty).
 Controls: Mapping of company codes to notification recipient email lists.
 If changed: Directs which emails receive company notifications per department.
 Valid format: JSON object mapping strings to comma-separated strings or lists of emails.
-Example: '{"default": ["alerts@company.com"], "firma1": "lead@company.com,backup@company.com"}'
+Example: '{"default": ["alerts@company.com"], "Elektrotechniczne": "lead@company.com,backup@company.com"}'
 -----------------------------------------
 [PARAMETER]
 Name: COMPANY_NOTIFICATION_LINK
@@ -414,8 +414,8 @@ Example: 0.25
 -----------------------------------------
 [PARAMETER]
 Name: DEFAULT_DEPARTMENTS
-File: contact/forms.py:125-129
-Current value: [("firma1", "Firma 1", "Company 1"), ("firma2", "Firma 2", "Company 2"), ("firma3", "Firma 3", "Company 3"), ("inna", "Inna", "Other")]
+File: contact/departments.py:21-32
+Current value: [("Elektrotechniczne", "Elektrotechniczne", "Electrotechnical"), ("Dlugosci i Kąta", "Dlugosci i Kąta", "Length and Angle"), ("Mechaniczna", "Mechaniczna", "Mechanical"), ("inne", "Inne", "Other")]
 Controls: Seed department codes and display names when no departments exist.
 If changed: Updates default options shown in company dropdown and initial data seeding.
 Valid format: List of tuples (code, Polish name, English name).

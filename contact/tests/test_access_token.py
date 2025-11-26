@@ -22,7 +22,7 @@ class AccessTokenTests(TestCase):
             full_name='Alice Smith',
             phone='+48111111111',
             email='alice@example.com',
-            company='firma1',
+            company='Elektrotechniczne',
             company_name='Alice Labs',
             message='Question about services',
         )

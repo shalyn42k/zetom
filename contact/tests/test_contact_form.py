@@ -33,7 +33,7 @@ class ContactFormTests(TestCase):
             'full_name': 'John Doe',
             'phone': '+48123123123',
             'email': 'john@example.com',
-            'company': 'firma1',
+            'company': 'Elektrotechniczne',
             'company_name': 'Acme Sp. z o.o.',
             'message': 'Hello there!',
             'bot_check': True,
@@ -49,6 +49,17 @@ class ContactFormTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Proszę poczekać', status_code=200)
         self.assertEqual(ContactMessage.objects.count(), 1)
+
+    def test_department_normalisation_falls_back_to_inne(self) -> None:
+        url = reverse('contact:index')
+        payload = self._valid_payload()
+        payload['company'] = ''
+
+        response = self.client.post(url, payload)
+
+        self.assertEqual(response.status_code, 302)
+        message = ContactMessage.objects.get()
+        self.assertEqual(message.company, 'inne')
 
     def test_attachment_validation_rejects_empty_file(self) -> None:
         url = reverse('contact:index')
@@ -67,7 +78,7 @@ class ContactFormTests(TestCase):
             full_name='Jane Doe',
             phone='+48123456789',
             email='jane@example.com',
-            company='firma1',
+            company='Elektrotechniczne',
             company_name='Example Sp. z o.o.',
             message='Need assistance',
         )
@@ -88,7 +99,7 @@ class ContactFormTests(TestCase):
             full_name='Old Entry',
             phone='+48111222333',
             email='old@example.com',
-            company='firma1',
+            company='Elektrotechniczne',
             company_name='Old Co',
             message='Archived',
             is_deleted=True,
