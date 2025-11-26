@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from datetime import timedelta
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import EmailValidator
@@ -133,6 +134,7 @@ def _apply_company_filter(
 
 
 @require_http_methods(["GET", "POST"])
+@login_required(login_url='/login/')
 def admin_panel(request: HttpRequest) -> HttpResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
@@ -394,6 +396,7 @@ def _serialise_admin_user(user: AdminUser) -> dict:
 
 
 @require_http_methods(["GET", "POST"])
+@login_required(login_url='/login/')
 def admin_settings(request: HttpRequest) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
@@ -633,6 +636,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
 
 
 @require_POST
+@login_required(login_url='/login/')
 def admin_reset_password(request: HttpRequest) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
@@ -676,6 +680,7 @@ def admin_reset_password(request: HttpRequest) -> JsonResponse:
 
 
 @require_http_methods(["POST"])
+@login_required(login_url='/login/')
 def admin_profile(request: HttpRequest) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
@@ -739,6 +744,7 @@ def admin_profile(request: HttpRequest) -> JsonResponse:
 
 
 @require_http_methods(["POST"])
+@login_required(login_url='/login/')
 def admin_verify_password(request: HttpRequest) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
@@ -891,6 +897,7 @@ def _handle_email_form(
     return form, None
 
 
+@login_required(login_url='/login/')
 @require_http_methods(["GET"])
 def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)
@@ -904,6 +911,7 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     return JsonResponse(_serialise_admin_message(message, language))
 
 
+@login_required(login_url='/login/')
 @require_POST
 def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)
@@ -924,6 +932,7 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     return JsonResponse({'errors': form.errors}, status=400)
 
 
+@login_required(login_url='/login/')
 @require_POST
 def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)

@@ -35,8 +35,7 @@
         <a href="#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
         <a href="#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
         <a href="#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
-        <a href="#"
-           data-open-user-requests
+        <a href="{% url 'contact:user_requests' %}"
            aria-haspopup="dialog"
            role="button">
             {% if lang == 'pl' %}Moje zgłoszenia{% else %}My requests{% endif %}
