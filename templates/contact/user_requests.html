@@ -33,9 +33,9 @@
         </div>
     </a>
     <nav class="site-nav">
-        <a href="{% url 'contact:index' %}">{% trans "Strona główna" %}</a>
-        <a href="{% url 'contact:index' %}#contact">{% trans "Nowa wiadomość" %}</a>
-        <a class="is-active" href="{% url 'contact:user_requests' %}">{% trans "Moje zgłoszenia" %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}">{% trans "Strona główna" %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% trans "Nowa wiadomość" %}</a>
+        <a class="is-active" href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% trans "Moje zgłoszenia" %}</a>
     </nav>
     <div class="site-header__actions"></div>
 </header>
@@ -52,9 +52,9 @@
     {% trans "Wyślij nowe zgłoszenie" as requests_empty_action_label %}
     <section class="requests-section"
              data-requests-section
-             data-empty-message="{{ requests_empty_message }}"
-             data-empty-action-label="{{ requests_empty_action_label }}"
-             data-empty-action-url="{% url 'contact:index' %}#contact">
+             data-empty-message="{% trans "Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki." %}"
+             data-empty-action-label="{% trans "Wyślij nowe zgłoszenie" %}"
+             data-empty-action-url="{% url 'contact:index' %}?lang={{ lang }}#contact">
         {% if request_cards %}
             <div class="requests-carousel" data-request-carousel>
                 <button type="button" class="carousel-button" data-carousel-prev aria-label="{% trans "Poprzednie zgłoszenie" %}">‹</button>
@@ -78,7 +78,7 @@
         {% else %}
             <div class="requests-empty">
                 <p>{% trans "Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki." %}</p>
-                <a class="button button--primary" href="{% url 'contact:index' %}#contact">{% trans "Wyślij nowe zgłoszenie" %}</a>
+                <a class="button button--primary" href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% trans "Wyślij nowe zgłoszenie" %}</a>
             </div>
         {% endif %}
     </section>
@@ -92,7 +92,7 @@
      data-delete-template="{% url 'contact:user_delete_message' 0 %}"
      data-detail-error="{{ detail_error_message|escape }}"
      data-update-error="{{ update_error_message|escape }}"
-     data-locked-message="{{ locked_message|escape }}"
+     data-locked-message="{% trans "Zgłoszenie jest już w trakcie obsługi i nie można go edytować." %}"
      data-delete-confirm="{{ delete_confirm_message|escape }}"
      data-language="{{ lang }}">
     <div class="modal__backdrop" data-user-request-close></div>
@@ -152,7 +152,7 @@
             {% trans "Odpowiedź pojawi się tutaj." as final_response_empty_text %}
             <section class="user-request-modal__attachments">
                 <h3>{% trans "Załączniki" %}</h3>
-                <ul class="attachment-list" data-user-request-attachments data-empty="{{ attachments_empty_text }}"></ul>
+                <ul class="attachment-list" data-user-request-attachments data-empty="{% trans "Brak załączników." %}"></ul>
             </section>
             <section class="user-request-modal__final">
                 <h3>{% trans "Finalne informacje" %}</h3>
@@ -160,14 +160,14 @@
                     <article>
                         <h4>{% trans "Wprowadzone zmiany" %}</h4>
                         <p data-user-request-final-changes
-                           data-empty="{{ final_changes_empty_text }}">
+                           data-empty="{% trans "Brak dodatkowych zmian." %}">
                             {% trans "Brak dodatkowych zmian." %}
                         </p>
                     </article>
                     <article>
                         <h4>{% trans "Odpowiedź zespołu" %}</h4>
                         <p data-user-request-final-response
-                           data-empty="{{ final_response_empty_text }}">
+                           data-empty="{% trans "Odpowiedź pojawi się tutaj." %}">
                             {% trans "Odpowiedź pojawi się tutaj." %}
                         </p>
                     </article>

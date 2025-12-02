@@ -120,9 +120,9 @@
                   class="contact-form"
                   enctype="multipart/form-data"
                   data-contact-form
-                  data-bot-required-message="{{ bot_required_message }}"
+                  data-bot-required-message="{% trans "Potwierdź, że nie jesteś botem." %}"
                   data-submit-cooldown-seconds="{{ throttle_seconds }}"
-                  data-submit-cooldown-message="{{ submit_cooldown_message }}"
+                  data-submit-cooldown-message="{% trans "Odczekaj {seconds} s przed ponownym wysłaniem." %}"
                   data-submit-cooldown-storage="contactFormCooldownEndsAt">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -357,7 +357,7 @@
                 {% trans "Odpowiedź pojawi się tutaj." as final_response_empty_text %}
                 <section class="user-request-modal__attachments">
                     <h3>{% trans "Załączniki" %}</h3>
-                    <ul class="attachment-list" data-user-request-attachments data-empty="{{ attachments_empty_text }}"></ul>
+                    <ul class="attachment-list" data-user-request-attachments data-empty="{% trans "Brak załączników." %}"></ul>
                 </section>
                 <section class="user-request-modal__final">
                     <h3>{% trans "Finalne informacje" %}</h3>
@@ -365,14 +365,14 @@
                         <article>
                             <h4>{% trans "Wprowadzone zmiany" %}</h4>
                             <p data-user-request-final-changes
-                               data-empty="{{ final_changes_empty_text }}">
+                               data-empty="{% trans "Brak dodatkowych zmian." %}">
                                 {% trans "Brak dodatkowych zmian." %}
                             </p>
                         </article>
                         <article>
                             <h4>{% trans "Odpowiedź zespołu" %}</h4>
                             <p data-user-request-final-response
-                               data-empty="{{ final_response_empty_text }}">
+                               data-empty="{% trans "Odpowiedź pojawi się tutaj." %}">
                                 {% trans "Odpowiedź pojawi się tutaj." %}
                             </p>
                         </article>
@@ -420,7 +420,7 @@
             </div>
             <div>
                 <strong>{% trans "Panel admina" %}</strong><br>
-                <a href="{% url 'contact:login' %}">{% trans "Zaloguj się" %}</a>
+                <a href="{% url 'contact:login' %}?lang={{ lang }}">{% trans "Zaloguj się" %}</a>
             </div>
         </div>
     </div>

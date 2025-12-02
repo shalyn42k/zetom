@@ -30,9 +30,9 @@
         </div>
     </div>
     <nav class="site-nav">
-        <a href="{% url 'contact:index' %}#about">{% trans "O nas" %}</a>
-        <a href="{% url 'contact:index' %}#services">{% trans "Usługi" %}</a>
-        <a href="{% url 'contact:index' %}#contact">{% trans "Kontakt" %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% trans "O nas" %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% trans "Usługi" %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% trans "Kontakt" %}</a>
     </nav>
     <div class="site-header__actions"></div>
 </header>
