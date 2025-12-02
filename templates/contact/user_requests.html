@@ -23,7 +23,7 @@
 </head>
 <body class="user-requests">
 <header class="site-header">
-    <a href="{% url 'contact:login' %}"
+    <a href="{% url 'contact:login' %}?lang={{ lang }}"
        class="site-branding site-branding--link"
        aria-label="{% trans "Panel administracyjny" %}">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -37,7 +37,12 @@
         <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% trans "Nowa wiadomość" %}</a>
         <a class="is-active" href="{% url 'contact:user_requests' %}?lang={{ lang }}">{% trans "Moje zgłoszenia" %}</a>
     </nav>
-    <div class="site-header__actions"></div>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:user_requests' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:user_requests' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+    </div>
 </header>
 <main class="user-requests__content">
     <section class="requests-header">
@@ -48,8 +53,6 @@
             {% endblocktrans %}
         </p>
     </section>
-    {% trans "Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki." as requests_empty_message %}
-    {% trans "Wyślij nowe zgłoszenie" as requests_empty_action_label %}
     <section class="requests-section"
              data-requests-section
              data-empty-message="{% trans "Nie masz jeszcze żadnych zgłoszeń z tej przeglądarki." %}"
@@ -83,7 +86,6 @@
         {% endif %}
     </section>
 </main>
-{% trans "Zgłoszenie jest już w trakcie obsługi i nie można go edytować." as locked_message %}
 <div class="modal" data-user-request-modal
      aria-hidden="true"
      data-status-map="{{ status_meta_json|escapejs }}"
@@ -147,9 +149,6 @@
                     </small>
                 </label>
             </div>
-            {% trans "Brak załączników." as attachments_empty_text %}
-            {% trans "Brak dodatkowych zmian." as final_changes_empty_text %}
-            {% trans "Odpowiedź pojawi się tutaj." as final_response_empty_text %}
             <section class="user-request-modal__attachments">
                 <h3>{% trans "Załączniki" %}</h3>
                 <ul class="attachment-list" data-user-request-attachments data-empty="{% trans "Brak załączników." %}"></ul>
