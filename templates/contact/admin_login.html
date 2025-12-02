@@ -34,7 +34,12 @@
         <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% trans "Usługi" %}</a>
         <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% trans "Kontakt" %}</a>
     </nav>
-    <div class="site-header__actions"></div>
+    <div class="site-header__actions">
+        <div class="lang-switcher">
+            <a href="{% url 'contact:login' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="{% url 'contact:login' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+    </div>
 </header>
 <main class="admin-login-page__main">
     <section class="admin-login" aria-labelledby="admin-login-title">
@@ -69,7 +74,7 @@
 {% endif %}
 
         </div>
-        <form method="post" action="{% url 'contact:login' %}" class="admin-login__form">
+        <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ back_url }}">
             <label class="admin-login__label" for="{{ form.email.id_for_label }}">Email</label>
