@@ -150,14 +150,6 @@ TIME_ZONE = 'Europe/Warsaw'
 USE_I18N = True
 USE_TZ = True
 
-LANGUAGES = [
-    ('pl', 'Polski'),
-    ('en', 'English'),
-    ('uk', 'Українська'),
-]
-
-LOCALE_PATHS = [BASE_DIR / 'locale']
-
 # --- Static / Media ---
 STATIC_URL = '/static/'
 
