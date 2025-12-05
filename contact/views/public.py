@@ -30,7 +30,7 @@ from ..services.email_service import (
     send_company_notification,
     send_contact_email,
 )
-from ..utils import build_rate_limit_key, get_client_ip, get_request_language
+from ..utils import build_rate_limit_key, get_client_ip, get_language
 from . import helpers
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 @require_http_methods(["GET", "POST"])
 def index(request: HttpRequest) -> HttpResponse:
-    lang = get_request_language(request)
+    lang = get_language(request)
     form = ContactForm(request.POST or None, request.FILES or None, language=lang)
     success_message = request.session.pop('contact_success', None)
 
