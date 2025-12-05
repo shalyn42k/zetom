@@ -150,7 +150,7 @@ python manage.py test
 1. Создайте PostgreSQL базу на Render и скопируйте значение переменной `Internal Database URL`.
 2. Создайте **Web Service → Build & deploy from repository**.
 3. Укажите команды:
-   - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput`
+   - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput && python manage.py compilemessages`
    - **Start Command**: `gunicorn zetom_project.wsgi:application`
 4. Добавьте переменные окружения:
    - `PYTHON_VERSION=3.11.9`
