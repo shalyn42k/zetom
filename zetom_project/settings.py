@@ -88,6 +88,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # WhiteNoise добавим ниже условно в проде
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -145,10 +146,21 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- I18N ---
-LANGUAGE_CODE = 'pl'
+LANGUAGE_CODE = 'ru'
+
+LANGUAGES = (
+    ('ru', 'Russian'),
+    ('uk', 'Ukrainian'),
+    ('en', 'English'),
+    ('pl', 'Polish'),
+)
+
 TIME_ZONE = 'Europe/Warsaw'
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 # --- Static / Media ---
 STATIC_URL = '/static/'

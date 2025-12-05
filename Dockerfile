@@ -9,9 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# System packages for psycopg2-binary and building wheels
+# System packages for psycopg2-binary, gettext, and building wheels
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev gettext \
     && pip install --no-cache-dir --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
