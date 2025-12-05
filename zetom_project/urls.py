@@ -6,7 +6,6 @@
 # Notes: Extends media serving only when DEBUG is enabled.
 # =====================================
 from django.conf import settings
-from django.conf.urls.i18n import set_language
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
@@ -14,10 +13,6 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('contact.urls', namespace='contact')),
-]
-
-urlpatterns += [
-    path("set-language/", set_language, name="set_language"),
 ]
 
 if settings.DEBUG:
