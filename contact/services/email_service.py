@@ -193,21 +193,22 @@ def _send_message(msg) -> None:
 
 @contextmanager
 def _smtp_connection():
+
+    host = settings.SMTP_SERVER
+    port = int(settings.SMTP_PORT)
+
     timeout = getattr(settings, "SMTP_TIMEOUT", 30)
     use_ssl = getattr(settings, "EMAIL_USE_SSL", False)
-    use_tls = getattr(settings, "EMAIL_USE_TLS", True)
 
     if use_ssl:
-        server: smtplib.SMTP = smtplib.SMTP_SSL(
-            settings.SMTP_SERVER, settings.SMTP_PORT, timeout=timeout
-        )
+        server: smtplib.SMTP_SSL(host, port, timeout=timeout)
     else:
-        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, timeout=timeout)
+        server = smtplib.SMTP(host, port, timeout=timeout)
 
     try:
         server.ehlo()
 
-        if not use_ssl and use_tls:
+        if  port == 587:
             context = ssl.create_default_context()
             server.starttls(context=context)
             server.ehlo()
@@ -219,5 +220,5 @@ def _smtp_connection():
     finally:
         try:
             server.quit()
-        except smtplib.SMTPException:
+        except:
             server.close()
