@@ -3,7 +3,7 @@
 # Purpose: Utility helpers for language selection, client IP retrieval, rate limit key generation, and admin secret encryption.
 # Responsible for: Persisting language preference in session, deriving client identifiers, hashing rate limit keys, and encrypting/decrypting sensitive admin values.
 # Connected to: Django settings for defaults and secrets, cryptography.Fernet for encryption, views for request handling.
-# Important classes/functions: get_request_language(), get_client_ip(), build_rate_limit_key(), encrypt_admin_secret(), decrypt_admin_secret()
+# Important classes/functions: get_language(), get_client_ip(), build_rate_limit_key(), encrypt_admin_secret(), decrypt_admin_secret()
 # Notes: Relies on ADMIN_PASSWORD_SECRET/SECRET_KEY to derive encryption keys for admin secrets.
 # =====================================
 """
@@ -15,13 +15,17 @@ import hashlib
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
-from django.utils.translation import get_language
 
 
-def get_request_language(request) -> str:
-    """Return the active language code resolved by Django's LocaleMiddleware."""
-
-    return getattr(request, "LANGUAGE_CODE", None) or get_language() or settings.DEFAULT_LANGUAGE
+def get_language(request) -> str:
+    lang = request.GET.get('lang')
+    if lang:
+        request.session['lang'] = lang
+        return lang
+    session_lang = request.session.get('lang')
+    if session_lang:
+        return session_lang
+    return settings.DEFAULT_LANGUAGE
 
 
 def get_client_ip(request) -> str:
