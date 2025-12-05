@@ -67,10 +67,9 @@ def access_portal(request: HttpRequest) -> HttpResponse:
                 else 'Access granted. You can now manage the request.'
             )
             messages.success(request, success)
-            return redirect(f"{reverse('contact:user_requests')}?lang={lang}")
+            return redirect(reverse('contact:user_requests'))
 
     context = {
-        'lang': lang,
         'form': form,
         'stored_ids': stored_ids,
     }
@@ -179,7 +178,6 @@ def user_requests(request: HttpRequest) -> HttpResponse:
         delete_confirm_message = 'Are you sure you want to delete this request?'
 
     context = {
-        'lang': lang,
         'request_cards': request_cards,
         'status_meta_json': json.dumps(status_meta),
         'company_options': helpers.company_options(lang),
