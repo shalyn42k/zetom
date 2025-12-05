@@ -109,6 +109,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -146,14 +147,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- I18N ---
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'pl'
 
-LANGUAGES = (
-    ('ru', 'Russian'),
-    ('uk', 'Ukrainian'),
+LANGUAGES = [
+    ('pl', 'Polski'),
+    ('uk', 'Українська'),
     ('en', 'English'),
-    ('pl', 'Polish'),
-)
+]
 
 TIME_ZONE = 'Europe/Warsaw'
 USE_I18N = True
