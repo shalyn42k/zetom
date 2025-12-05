@@ -10,7 +10,7 @@
 {% load static %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="{{ request.LANGUAGE_CODE|default:lang }}">
+<html lang="{{ request.LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +23,7 @@
 </head>
 <body>
 <header class="site-header">
-    <a href="{% url 'contact:login' %}?lang={{ lang }}"
+    <a href="{% url 'contact:login' %}"
        class="site-branding site-branding--link"
        aria-label="{% trans "Panel administracyjny" %}">
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
@@ -118,7 +118,7 @@
             </aside>
 
             <form method="post"
-                  action="{% url 'contact:index' %}?lang={{ lang }}"
+                  action="{% url 'contact:index' %}"
                   class="contact-form"
                   enctype="multipart/form-data"
                   data-contact-form
@@ -245,7 +245,7 @@
     <div class="modal"
      data-user-request-modal
      aria-hidden="true"
-     data-language="{{ lang }}"
+     data-language="{{ request.LANGUAGE_CODE }}"
      data-status-map="{{ status_meta_json|escapejs }}"
      data-detail-template="{% url 'contact:user_message_detail' 0 %}"
      data-update-template="{% url 'contact:user_update_message' 0 %}"
@@ -419,7 +419,7 @@
             </div>
             <div>
                 <strong>{% trans "Panel admina" %}</strong><br>
-                <a href="{% url 'contact:login' %}?lang={{ lang }}">{% trans "Zaloguj się" %}</a>
+                <a href="{% url 'contact:login' %}">{% trans "Zaloguj się" %}</a>
             </div>
         </div>
     </div>
