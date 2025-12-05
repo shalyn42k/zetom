@@ -1,4 +1,4 @@
-{% load static %}
+{% load i18n static %}
 <!--
 # === FILE SUMMARY ===
 # Purpose: Admin login page template for the contact management portal.
@@ -9,10 +9,11 @@
 # =====================================
 -->
 <!DOCTYPE html>
-<html lang="{{ lang }}">
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
-    <title>{% if lang == 'pl' %}Panel Admina - Logowanie{% else %}Admin Login{% endif %}</title>
+    <title>{% trans "Admin Login" %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
@@ -23,41 +24,34 @@
         <img src="{% static 'img/zet3.avif' %}" alt="ZETOM Katowice" class="site-logo">
         <div>
             <h1 class="site-title">ZETOM Katowice</h1>
-            <p class="site-subtitle">
-                {% if lang == 'pl' %}
-                    Badania • Certyfikacja • Kontrola techniczna
-                {% else %}
-                    Testing • Certification • Technical inspections
-                {% endif %}
-            </p>
+            <p class="site-subtitle">{% trans "Testing • Certification • Technical inspections" %}</p>
         </div>
     </div>
     <nav class="site-nav">
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
-        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:index' %}#about">{% trans "About" %}</a>
+        <a href="{% url 'contact:index' %}#services">{% trans "Services" %}</a>
+        <a href="{% url 'contact:index' %}#contact">{% trans "Contact" %}</a>
     </nav>
     <div class="site-header__actions">
-        <div class="lang-switcher">
-            <a href="{% url 'contact:login' %}?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
-            <a href="{% url 'contact:login' %}?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
-        </div>
+        <form method="post" action="{% url 'set_language' %}" class="lang-switcher">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" name="language" value="ru" class="{% if LANGUAGE_CODE == 'ru' %}is-active{% endif %}">RU</button>
+            <button type="submit" name="language" value="uk" class="{% if LANGUAGE_CODE == 'uk' %}is-active{% endif %}">UK</button>
+            <button type="submit" name="language" value="en" class="{% if LANGUAGE_CODE == 'en' %}is-active{% endif %}">EN</button>
+            <button type="submit" name="language" value="pl" class="{% if LANGUAGE_CODE == 'pl' %}is-active{% endif %}">PL</button>
+        </form>
     </div>
 </header>
 <main class="admin-login-page__main">
     <section class="admin-login" aria-labelledby="admin-login-title">
         <div class="admin-login__intro">
-            <h2 class="admin-login__title" id="admin-login-title">{% if lang == 'pl' %}Panel administratora{% else %}Admin panel{% endif %}</h2>
-            <p class="admin-login__description">{% if lang == 'pl' %}Zaloguj się za pomocą emaila i hasła, aby uzyskać dostęp do panelu.{% else %}Sign in with your email and password to access the panel.{% endif %}</p>
+            <h2 class="admin-login__title" id="admin-login-title">{% trans "Admin panel" %}</h2>
+            <p class="admin-login__description">{% trans "Sign in with your email and password to access the panel." %}</p>
             {% if blocked %}
     <div class="admin-login__blocked">
-        {% if lang == 'pl' %}
-            <p style="color:red;">Zablokowano logowanie na 5 minut.</p>
-            <p>Pozostały czas: <span id="timeLeft">{{ time_left }}</span></p>
-        {% else %}
-            <p style="color:red;">Login temporarily blocked for 5 minutes.</p>
-            <p>Time left: <span id="timeLeft">{{ time_left }}</span></p>
-        {% endif %}
+        <p style="color:red;">{% trans "Login temporarily blocked for 5 minutes." %}</p>
+        <p>{% trans "Time left" %}: <span id="timeLeft">{{ time_left }}</span></p>
     </div>
     <script>
         // Обратный отсчёт в реальном времени
@@ -82,7 +76,7 @@
 {% endif %}
 
         </div>
-        <form method="post" action="{% url 'contact:login' %}?lang={{ lang }}" class="admin-login__form">
+        <form method="post" action="{% url 'contact:login' %}" class="admin-login__form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ back_url }}">
             <label class="admin-login__label" for="{{ form.email.id_for_label }}">Email</label>
@@ -90,7 +84,7 @@
             {% if form.email.errors %}
                 <div class="admin-login__error">{{ form.email.errors.0 }}</div>
             {% endif %}
-            <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</label>
+            <label class="admin-login__label" for="{{ form.password.id_for_label }}">{% trans "Password" %}</label>
             {{ form.password }}
             {% if form.password.errors %}
                 <div class="admin-login__error">{{ form.password.errors.0 }}</div>
@@ -99,12 +93,11 @@
                 <div class="admin-login__error">{{ form.non_field_errors.0 }}</div>
             {% endif %}
             <div class="admin-login__actions">
-                <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zaloguj{% else %}Log in{% endif %}</button>
-                <a href="{{ back_url }}" class="admin-login__back">{% if lang == 'pl' %}Wróć{% else %}Go back{% endif %}</a>
+                <button type="submit" class="button button--primary">{% trans "Log in" %}</button>
+                <a href="{{ back_url }}" class="admin-login__back">{% trans "Go back" %}</a>
             </div>
         </form>
     </section>
 </main>
 </body>
 </html>
-

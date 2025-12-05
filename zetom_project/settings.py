@@ -88,6 +88,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # WhiteNoise добавим ниже условно в проде
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -145,10 +146,21 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- I18N ---
-LANGUAGE_CODE = 'pl'
+LANGUAGE_CODE = 'ru'
+
+LANGUAGES = (
+    ('ru', 'Russian'),
+    ('uk', 'Ukrainian'),
+    ('en', 'English'),
+    ('pl', 'Polish'),
+)
+
 TIME_ZONE = 'Europe/Warsaw'
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 # --- Static / Media ---
 STATIC_URL = '/static/'
@@ -258,7 +270,7 @@ COMPANY_NOTIFICATION_LINK = os.environ.get(
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
-DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'pl')
+DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'ru')
 LOGIN_URL = '/login/'
 
 CONTACT_FORM_THROTTLE_SECONDS = int(os.getenv('CONTACT_FORM_THROTTLE_SECONDS', '30'))

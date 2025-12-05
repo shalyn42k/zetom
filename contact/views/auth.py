@@ -23,7 +23,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 
 from ..models import AdminUser
 from ..forms import LoginForm
-from ..utils import get_language
+from ..utils import get_request_language
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ blocked_ips: dict[str, timezone.datetime] = {}
 
 @require_http_methods(["GET", "POST"])
 def login(request: HttpRequest) -> HttpResponse:
-    lang = get_language(request)
+    lang = get_request_language(request)
     form = LoginForm(request.POST or None)
     ip = request.META.get('REMOTE_ADDR', 'unknown')
 
@@ -125,7 +125,6 @@ def login(request: HttpRequest) -> HttpResponse:
         'contact/admin_login.html',
         {
             'form': form,
-            'lang': lang,
             'blocked': blocked,
             'time_left': time_left,
             'back_url': back_url,
@@ -135,6 +134,5 @@ def login(request: HttpRequest) -> HttpResponse:
 
 @require_POST
 def logout(request: HttpRequest) -> HttpResponse:
-    lang = request.session.get('lang', settings.DEFAULT_LANGUAGE)
     request.session.flush()
-    return redirect(f"{reverse('contact:index')}?lang={lang}")
+    return redirect(reverse('contact:index'))

@@ -46,7 +46,7 @@ from ..services.email_service import (
     send_email_with_attachment,
 )
 from ..services.pdf_service import build_messages_pdf
-from ..utils import get_language
+from ..utils import get_request_language
 from . import helpers
 
 
@@ -146,7 +146,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
     )
     readonly_mode = user_level == AdminUser.LEVEL_TESTER
-    lang = get_language(request)
+    lang = get_request_language(request)
 
     # --- company / department options ---
     company_options = helpers.company_options(lang)  # [{'value': 'Elektrotechniczne', 'label': 'Elektrotechniczne'}, ...]
@@ -405,7 +405,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
     if admin_user.level_of_access != AdminUser.LEVEL_ADMIN:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
-    language = get_language(request)
+    language = get_request_language(request)
     allowed_departments = set(Department.objects.values_list('code', flat=True))
     error_messages = {
         'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
@@ -686,7 +686,7 @@ def admin_profile(request: HttpRequest) -> JsonResponse:
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'success': False, 'errors': ['unauthorised']}, status=403)
 
-    language = get_language(request)
+    language = get_request_language(request)
     messages = {
         'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
         'email_required': 'Email jest wymagany.' if language == 'pl' else 'Email is required.',
@@ -907,7 +907,7 @@ def message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     if not _can_access_message(admin_user, message):
         return JsonResponse({'error': 'forbidden'}, status=403)
-    language = get_language(request)
+    language = get_request_language(request)
     return JsonResponse(_serialise_admin_message(message, language))
 
 
@@ -923,7 +923,7 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
     if not _can_access_message(admin_user, message):
         return JsonResponse({'error': 'forbidden'}, status=403)
-    language = get_language(request)
+    language = get_request_language(request)
     form = MessageUpdateForm(request.POST, instance=message)
     if form.is_valid():
         updated_message = form.save()
@@ -965,5 +965,5 @@ def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -
         description=f"Rolled back field {field_name}",
     )
 
-    language = get_language(request)
+    language = get_request_language(request)
     return JsonResponse(_serialise_admin_message(message, language))
