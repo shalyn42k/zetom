@@ -21,7 +21,6 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from ..forms import ContactForm
@@ -74,13 +73,14 @@ def index(request: HttpRequest) -> HttpResponse:
             if elapsed < throttle_seconds:
                 remaining_durations.append(throttle_seconds - elapsed)
 
-            if remaining_durations:
-                remaining_seconds = max(1, int(math.ceil(max(remaining_durations))))
-                error_message = _("Please wait %(seconds)s s before submitting the form again.") % {
-                    "seconds": remaining_seconds,
-                }
-                form.add_error(None, error_message)
-                throttle_error = True
+        if remaining_durations:
+            remaining_seconds = max(1, int(math.ceil(max(remaining_durations))))
+            if lang == 'pl':
+                error_message = f'Proszę poczekać {remaining_seconds} s przed ponownym wysłaniem formularza.'
+            else:
+                error_message = f'Please wait {remaining_seconds} s before submitting the form again.'
+            form.add_error(None, error_message)
+            throttle_error = True
 
         form_valid = form.is_valid()
 
@@ -101,7 +101,10 @@ def index(request: HttpRequest) -> HttpResponse:
             )
         except DatabaseError:
             logger.exception('Failed to persist contact message')
-            error_text = _("Unable to save the request right now. Please try again later.")
+            if lang == 'pl':
+                error_text = 'Nie udało się zapisać zgłoszenia. Spróbuj ponownie później.'
+            else:
+                error_text = 'Unable to save the request right now. Please try again later.'
             form.add_error(None, error_text)
         else:
             try:
@@ -116,20 +119,29 @@ def index(request: HttpRequest) -> HttpResponse:
             except smtplib.SMTPException:
                 logger.exception('Failed to send contact form emails')
                 message.delete()
-                error_text = _("Unable to send the email right now. Please try again later.")
+                if lang == 'pl':
+                    error_text = 'Nie udało się wysłać wiadomości e-mail. Spróbuj ponownie później.'
+                else:
+                    error_text = 'Unable to send the email right now. Please try again later.'
                 form.add_error(None, error_text)
             else:
                 helpers.remember_user_message(request, message.id)
                 if submission_timestamp is not None:
                     for key in cache_keys:
                         cache.set(key, submission_timestamp, throttle_seconds)
-                success_message = _(
-                    "Your request has been sent. We will process it within 48 hours and contact you afterwards. "
-                    "Request number: #%(request_id)s. The access token was sent to your e-mail."
-                ) % {"request_id": message.id}
+                if lang == 'pl':
+                    success_message = (
+                        'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy. '
+                        f'Numer zgłoszenia: #{message.id}. Token dostępu wysłano na e-mail.'
+                    )
+                else:
+                    success_message = (
+                        'Your request has been sent. We will process it within 48 hours and contact you afterwards. '
+                        f'Request number: #{message.id}. The access token was sent to your e-mail.'
+                    )
                 messages.success(request, success_message)
                 request.session['contact_success'] = success_message
-                return redirect(reverse('contact:index'))
+                return redirect(f"{reverse('contact:index')}?lang={lang}")
 
     allowed_types = [
         content_type.strip()
@@ -161,11 +173,18 @@ def index(request: HttpRequest) -> HttpResponse:
         for item in helpers.status_options(lang)
     }
 
-    detail_error_message = _("Unable to load request details.")
-    update_error_message = _("Could not save changes. Please fix the errors and try again.")
-    locked_message = _("This request is being processed and can no longer be edited.")
-    restore_error_message = _("Could not restore access. Please check the details and try again.")
-    restore_success_message = _("Access restored. You can continue working on your request.")
+    if lang == 'pl':
+        detail_error_message = 'Nie udało się pobrać danych zgłoszenia.'
+        update_error_message = 'Nie udało się zapisać zmian. Popraw błędy i spróbuj ponownie.'
+        locked_message = 'Zgłoszenie jest już w trakcie obsługi i nie można go edytować.'
+        restore_error_message = 'Nie udało się przywrócić dostępu. Sprawdź dane i spróbuj ponownie.'
+        restore_success_message = 'Dostęp przywrócono. Możesz kontynuować edycję zgłoszenia.'
+    else:
+        detail_error_message = 'Unable to load request details.'
+        update_error_message = 'Could not save changes. Please fix the errors and try again.'
+        locked_message = 'This request is being processed and can no longer be edited.'
+        restore_error_message = 'Could not restore access. Please check the details and try again.'
+        restore_success_message = 'Access restored. You can continue working on your request.'
 
     context = {
         'form': form,
