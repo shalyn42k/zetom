@@ -24,13 +24,13 @@ from django.db.models import Q
 from ..forms import RequestAccessForm, UserMessageUpdateForm
 from ..models import ClientChangeLog, ContactMessage
 from ..services import messages as message_service
-from ..utils import get_language
+from ..utils import get_request_language
 from . import helpers
 
 
 @require_http_methods(["GET", "POST"])
 def access_portal(request: HttpRequest) -> HttpResponse:
-    lang = get_language(request)
+    lang = get_request_language(request)
     stored_ids = helpers.get_user_message_ids(request)
     form = RequestAccessForm(request.POST or None, stored_ids=stored_ids, language=lang)
 
@@ -79,7 +79,7 @@ def access_portal(request: HttpRequest) -> HttpResponse:
 
 @require_POST
 def restore_access(request: HttpRequest) -> JsonResponse:
-    language = get_language(request)
+    language = get_request_language(request)
     try:
         payload = json.loads(request.body.decode('utf-8'))
     except (TypeError, ValueError, AttributeError):
@@ -124,7 +124,7 @@ def restore_access(request: HttpRequest) -> JsonResponse:
 
 @require_http_methods(["GET"])
 def user_requests(request: HttpRequest) -> HttpResponse:
-    lang = get_language(request)
+    lang = get_request_language(request)
     stored_ids = helpers.get_user_message_ids(request)
     queryset = (
         ContactMessage.objects.filter(id__in=stored_ids, is_deleted=False, access_enabled=True)
@@ -201,7 +201,7 @@ def user_message_detail(request: HttpRequest, message_id: int) -> JsonResponse:
         ContactMessage.objects.filter(pk=message_id, is_deleted=False, access_enabled=True)
         .filter(Q(access_token_expires_at__isnull=True) | Q(access_token_expires_at__gt=timezone.now()))
     )
-    language = get_language(request)
+    language = get_request_language(request)
     data = helpers.serialise_client_message(message, language=language)
     return JsonResponse(data)
 
@@ -217,7 +217,7 @@ def user_update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     )
     if message.status != ContactMessage.STATUS_NEW:
         return JsonResponse({'error': 'locked'}, status=403)
-    language = get_language(request)
+    language = get_request_language(request)
     form = UserMessageUpdateForm(request.POST, request.FILES, instance=message)
     if form.is_valid():
         tracked_fields = {
