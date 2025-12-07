@@ -37,7 +37,7 @@ def login(request: HttpRequest) -> HttpResponse:
     form = LoginForm(request.POST or None)
     ip = request.META.get('REMOTE_ADDR', 'unknown')
 
-    back_url = request.GET.get('next') or reverse('contact:index')
+    back_url = request.GET.get('next') or f"{reverse('contact:index')}?lang={lang}"
 
     blocked = False
     time_left = None
@@ -73,6 +73,7 @@ def login(request: HttpRequest) -> HttpResponse:
                 "contact/admin_login.html",
                 {
                     "form": form,
+                    "lang": lang,
                     "blocked": blocked,
                     "time_left": time_left,
                     "back_url": back_url,
@@ -88,8 +89,11 @@ def login(request: HttpRequest) -> HttpResponse:
                 user.departments.values_list('code', flat=True)
             )
             request.session['admin_email'] = user.email
+            request.session['lang'] = lang
             failed_attempts[ip] = 0
             panel_url = reverse('contact:panel')
+            if lang:
+                panel_url = f"{panel_url}?lang={lang}"
             return redirect(panel_url)
 
         failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
@@ -121,6 +125,7 @@ def login(request: HttpRequest) -> HttpResponse:
         'contact/admin_login.html',
         {
             'form': form,
+            'lang': lang,
             'blocked': blocked,
             'time_left': time_left,
             'back_url': back_url,
@@ -130,5 +135,6 @@ def login(request: HttpRequest) -> HttpResponse:
 
 @require_POST
 def logout(request: HttpRequest) -> HttpResponse:
+    lang = request.session.get('lang', settings.DEFAULT_LANGUAGE)
     request.session.flush()
-    return redirect(reverse('contact:index'))
+    return redirect(f"{reverse('contact:index')}?lang={lang}")
