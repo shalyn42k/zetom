@@ -14,7 +14,6 @@ from pathlib import Path
 from django import forms
 from django.conf import settings
 from django.http import QueryDict
-from django.utils.translation import gettext as _
 
 from .departments import normalize_department_code
 from .models import ContactMessage, Department, ensure_default_departments
@@ -70,11 +69,11 @@ def _scan_attachment_for_malware(uploaded) -> str | None:
 
     if process.returncode != 0:
         output = process.stderr.decode() or process.stdout.decode()
-        return output.strip() or _('Attachment failed antivirus scanning.')
+        return output.strip() or 'Attachment failed antivirus scanning.'
     return None
 
 
-def _validate_attachments(files: list) -> list:
+def _validate_attachments(files: list, language: str | None = None) -> list:
     max_size = getattr(settings, "ATTACH_MAX_SIZE_MB", 25) * 1024 * 1024
     allowed_types = [ctype.strip() for ctype in getattr(settings, "ATTACH_ALLOWED_TYPES", []) if ctype.strip()]
     allowed_extensions = [ext.strip().lower() for ext in getattr(settings, "ATTACH_ALLOWED_EXTENSIONS", []) if ext.strip()]
@@ -83,31 +82,34 @@ def _validate_attachments(files: list) -> list:
         size = getattr(uploaded, "size", 0) or 0
         if size > max_size:
             limit = getattr(settings, "ATTACH_MAX_SIZE_MB", 25)
-            errors.append(
-                _("File %(name)s exceeds the %(limit)s MB limit.")
-                % {"name": uploaded.name, "limit": limit}
-            )
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} przekracza limit {limit} MB.")
+            else:
+                errors.append(f"File {uploaded.name} exceeds the {limit} MB limit.")
         if size == 0:
-            errors.append(_("File %(name)s is empty.") % {"name": uploaded.name})
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} jest pusty.")
+            else:
+                errors.append(f"File {uploaded.name} is empty.")
         content_type = getattr(uploaded, "content_type", "") or ""
         if allowed_types and content_type and content_type not in allowed_types:
-            errors.append(
-                _("File %(name)s has a forbidden type (%(content_type)s).")
-                % {"name": uploaded.name, "content_type": content_type}
-            )
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolony typ ({content_type}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden type ({content_type}).")
         extension = Path(getattr(uploaded, "name", "") or "").suffix.lower()
         if allowed_extensions and extension and extension not in allowed_extensions:
-            errors.append(
-                _("File %(name)s has a forbidden extension (%(extension)s).")
-                % {"name": uploaded.name, "extension": extension}
-            )
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} ma niedozwolone rozszerzenie ({extension}).")
+            else:
+                errors.append(f"File {uploaded.name} has a forbidden extension ({extension}).")
 
         scan_error = _scan_attachment_for_malware(uploaded)
         if scan_error:
-            errors.append(
-                _("File %(name)s failed security checks: %(error)s.")
-                % {"name": uploaded.name, "error": scan_error}
-            )
+            if language == "pl":
+                errors.append(f"Plik {uploaded.name} nie przeszedł kontroli bezpieczeństwa: {scan_error}.")
+            else:
+                errors.append(f"File {uploaded.name} failed security checks: {scan_error}.")
     if errors:
         raise forms.ValidationError(errors)
     return files
@@ -217,7 +219,7 @@ class ContactForm(forms.ModelForm):
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
-        return _validate_attachments(files)
+        return _validate_attachments(files, self.language)
 
 
 class LoginForm(forms.Form):
@@ -556,7 +558,7 @@ class UserMessageUpdateForm(forms.ModelForm):
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
-        return _validate_attachments(files)
+        return _validate_attachments(files, None)
 
 
 class RequestAccessForm(forms.Form):
