@@ -9,11 +9,11 @@
 -->
 {% load static %}
 <!DOCTYPE html>
-<html lang="{{ request.LANGUAGE_CODE }}">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if request.LANGUAGE_CODE == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</title>
+    <title>{% if lang == 'pl' %}Panel administracyjny{% else %}Admin panel{% endif %}</title>
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
@@ -23,8 +23,8 @@
 <div class="modal{% if trash_form.errors %} is-visible{% endif %}" data-trash-modal aria-hidden="{% if trash_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-trash-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="trash-title">
-        <button type="button" class="modal__close" data-trash-close aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Zamknij kosz{% else %}Close trash{% endif %}">×</button>
-        <h2 class="modal__title" id="trash-title">{% if request.LANGUAGE_CODE == 'pl' %}Kosz{% else %}Trash{% endif %}</h2>
+        <button type="button" class="modal__close" data-trash-close aria-label="{% if lang == 'pl' %}Zamknij kosz{% else %}Close trash{% endif %}">×</button>
+        <h2 class="modal__title" id="trash-title">{% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}</h2>
         <form method="post" class="modal__form" data-trash-form>
             {% csrf_token %}
             {{ trash_form.form_name }}
@@ -35,7 +35,7 @@
             <div class="modal__toolbar">
                 <label class="checkbox-pill">
                     <input type="checkbox" data-trash-select-all {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
-                    <span>{% if request.LANGUAGE_CODE == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}</span>
+                    <span>{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}</span>
                 </label>
                 {% if trash_form.non_field_errors %}
                     <div class="form-error form-error--inline">{{ trash_form.non_field_errors.0 }}</div>
@@ -57,7 +57,7 @@
                         <span class="trash-item__date">{{ message_item.created_at|date:'Y-m-d H:i' }}</span>
                     </label>
                 {% empty %}
-                    <p class="trash-empty">{% if request.LANGUAGE_CODE == 'pl' %}Kosz jest pusty.{% else %}Trash is empty.{% endif %}</p>
+                    <p class="trash-empty">{% if lang == 'pl' %}Kosz jest pusty.{% else %}Trash is empty.{% endif %}</p>
                 {% endfor %}
             </div>
             <div class="modal__actions">
@@ -67,7 +67,7 @@
                         data-trash-action-value="restore"
                         data-requires-selection="true"
                         {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Przywróć zaznaczone{% else %}Restore selected{% endif %}
+                    {% if lang == 'pl' %}Przywróć zaznaczone{% else %}Restore selected{% endif %}
                 </button>
                 <button type="submit"
                         class="button button--danger"
@@ -75,7 +75,7 @@
                         data-trash-action-value="delete"
                         data-requires-selection="true"
                         {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Usuń zaznaczone{% else %}Delete selected{% endif %}
+                    {% if lang == 'pl' %}Usuń zaznaczone{% else %}Delete selected{% endif %}
                 </button>
                 <button type="submit"
                         class="button button--outline"
@@ -83,7 +83,7 @@
                         data-trash-action-value="empty"
                         data-requires-selection="false"
                         {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Opróżnij kosz{% else %}Empty trash{% endif %}
+                    {% if lang == 'pl' %}Opróżnij kosz{% else %}Empty trash{% endif %}
                 </button>
             </div>
         </form>
@@ -91,12 +91,12 @@
 </div>
 <div class="modal{% if download_form.errors %} is-visible{% endif %}"
      data-download-modal
-     data-language="{{ request.LANGUAGE_CODE }}"
+     data-language="{{ lang }}"
      aria-hidden="{% if download_form.errors %}false{% else %}true{% endif %}">
     <div class="modal__backdrop" data-download-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="download-title">
-        <button type="button" class="modal__close" data-download-close aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
-        <h2 class="modal__title" id="download-title">{% if request.LANGUAGE_CODE == 'pl' %}Eksportuj zgłoszenia{% else %}Export requests{% endif %}</h2>
+        <button type="button" class="modal__close" data-download-close aria-label="{% if lang == 'pl' %}Zamknij eksport{% else %}Close export{% endif %}">×</button>
+        <h2 class="modal__title" id="download-title">{% if lang == 'pl' %}Eksportuj zgłoszenia{% else %}Export requests{% endif %}</h2>
         <form method="post" class="modal__form" data-download-form>
             {% csrf_token %}
             {{ download_form.form_name }}
@@ -105,7 +105,7 @@
             <input type="hidden" name="company" value="{{ current_company }}">
             <div class="download-summary" data-download-summary>
                 <article class="download-summary__card">
-                    <h3 class="download-summary__title">{% if request.LANGUAGE_CODE == 'pl' %}Wybrane zgłoszenia{% else %}Selected requests{% endif %}</h3>
+                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane zgłoszenia{% else %}Selected requests{% endif %}</h3>
                     <p class="download-summary__value">
                         <span data-download-requests-count>0</span>
                         <span class="download-summary__total">/
@@ -114,27 +114,27 @@
                     </p>
                     <p class="download-summary__hint"
                        data-download-requests-hint
-                       data-empty="{% if request.LANGUAGE_CODE == 'pl' %}Zaznacz zgłoszenia na liście przed eksportem.{% else %}Select requests in the table before exporting.{% endif %}"
-                       data-selected="{% if request.LANGUAGE_CODE == 'pl' %}Zaznaczone zgłoszenia: {count}.{% else %}Requests selected: {count}.{% endif %}">
-                        {% if request.LANGUAGE_CODE == 'pl' %}Zaznacz zgłoszenia na liście przed eksportem.{% else %}Select requests in the table before exporting.{% endif %}
+                       data-empty="{% if lang == 'pl' %}Zaznacz zgłoszenia na liście przed eksportem.{% else %}Select requests in the table before exporting.{% endif %}"
+                       data-selected="{% if lang == 'pl' %}Zaznaczone zgłoszenia: {count}.{% else %}Requests selected: {count}.{% endif %}">
+                        {% if lang == 'pl' %}Zaznacz zgłoszenia na liście przed eksportem.{% else %}Select requests in the table before exporting.{% endif %}
                     </p>
                 </article>
                 <article class="download-summary__card">
-                    <h3 class="download-summary__title">{% if request.LANGUAGE_CODE == 'pl' %}Wybrane pola{% else %}Selected fields{% endif %}</h3>
+                    <h3 class="download-summary__title">{% if lang == 'pl' %}Wybrane pola{% else %}Selected fields{% endif %}</h3>
                     <p class="download-summary__value">
                         <span data-download-fields-count>0</span>
                         <span class="download-summary__total">/ {{ download_fields_total|default:0 }}</span>
                     </p>
                     <p class="download-summary__hint"
                        data-download-fields-hint
-                       data-empty="{% if request.LANGUAGE_CODE == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}"
-                       data-partial="{% if request.LANGUAGE_CODE == 'pl' %}Wybrano {count} z {total} pól.{% else %}Selected {count} of {total} fields.{% endif %}"
-                       data-all="{% if request.LANGUAGE_CODE == 'pl' %}Wszystkie pola zostaną dołączone do raportu.{% else %}All fields will be included in the report.{% endif %}">
-                        {% if request.LANGUAGE_CODE == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}
+                       data-empty="{% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}"
+                       data-partial="{% if lang == 'pl' %}Wybrano {count} z {total} pól.{% else %}Selected {count} of {total} fields.{% endif %}"
+                       data-all="{% if lang == 'pl' %}Wszystkie pola zostaną dołączone do raportu.{% else %}All fields will be included in the report.{% endif %}">
+                        {% if lang == 'pl' %}Wybierz pola, które mają znaleźć się w raporcie.{% else %}Choose the fields that should appear in the report.{% endif %}
                     </p>
                     <div class="download-summary__chips"
                          data-download-fields-preview
-                         data-empty="{% if request.LANGUAGE_CODE == 'pl' %}Pola pojawią się tutaj po zaznaczeniu.{% else %}Selected fields will appear here.{% endif %}"
+                         data-empty="{% if lang == 'pl' %}Pola pojawią się tutaj po zaznaczeniu.{% else %}Selected fields will appear here.{% endif %}"
                          data-max="5"></div>
                 </article>
             </div>
@@ -149,7 +149,7 @@
             </div>
             <div class="download-grid">
                 <div class="download-column">
-                    <h3 class="download-heading">{% if request.LANGUAGE_CODE == 'pl' %}Wybierz pola{% else %}Choose fields{% endif %}</h3>
+                    <h3 class="download-heading">{% if lang == 'pl' %}Wybierz pola{% else %}Choose fields{% endif %}</h3>
                     {% if download_form.fields.errors %}
                         <div class="form-error">{{ download_form.fields.errors.0 }}</div>
                     {% endif %}
@@ -162,7 +162,7 @@
             </div>
             <div class="modal__actions">
                 <button type="submit" class="button button--primary" data-download-submit {% if not download_has_choices %}disabled{% endif %}>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Pobierz PDF{% else %}Download PDF{% endif %}
+                    {% if lang == 'pl' %}Pobierz PDF{% else %}Download PDF{% endif %}
                 </button>
             </div>
         </form>
@@ -176,21 +176,21 @@
      data-rollback-template="{% url 'contact:rollback_client_change' 0 0 %}"
      data-detail-error="{{ request_detail_error_message|escape }}"
      data-update-error="{{ request_update_error_message|escape }}"
-     data-language="{{ request.LANGUAGE_CODE }}">
+     data-language="{{ lang }}">
     <div class="modal__backdrop" data-request-close></div>
     <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
-        <button type="button" class="modal__close" data-request-close aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
-        <h2 class="modal__title" id="request-modal-title" data-request-title>{% if request.LANGUAGE_CODE == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
+        <button type="button" class="modal__close" data-request-close aria-label="{% if lang == 'pl' %}Zamknij podgląd{% else %}Close preview{% endif %}">×</button>
+        <h2 class="modal__title" id="request-modal-title" data-request-title>{% if lang == 'pl' %}Szczegóły zgłoszenia{% else %}Request details{% endif %}</h2>
         <p class="modal__subtitle" data-request-created></p>
         <form method="post" class="modal__form" data-request-form>
             {% csrf_token %}
             <div class="request-modal__grid">
                 <label class="request-modal__field request-modal__field--full">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
                     <input type="text" name="full_name" class="form-input" required>
                 </label>
                 <label class="request-modal__field">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</span>
                     <input type="text" name="phone" class="form-input" required>
                 </label>
                 <label class="request-modal__field">
@@ -198,7 +198,7 @@
                     <input type="email" name="email" class="form-input" required>
                 </label>
                 <label class="request-modal__field">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Firma{% else %}Company{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</span>
                     <select name="company" class="form-input" required>
                         {% for option in company_options %}
                             <option value="{{ option.value }}">{{ option.label }}</option>
@@ -206,11 +206,11 @@
                     </select>
                 </label>
                 <label class="request-modal__field">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
                     <input type="text" name="company_name" class="form-input">
                 </label>
                 <label class="request-modal__field">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Status{% else %}Status{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Status{% else %}Status{% endif %}</span>
                     <select name="status" class="form-input" required>
                         {% for option in status_options %}
                             <option value="{{ option.value }}">{{ option.label }}</option>
@@ -218,34 +218,34 @@
                     </select>
                 </label>
                 <label class="request-modal__field request-modal__field--full">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
                     <textarea name="message" rows="6" class="form-input" required></textarea>
                 </label>
                 <label class="request-modal__field request-modal__field--full">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
                     <textarea name="final_changes" rows="4" class="form-input"></textarea>
                 </label>
                 <label class="request-modal__field request-modal__field--full">
-                    <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Odpowiedź dla klienta{% else %}Client response{% endif %}</span>
+                    <span class="form-label">{% if lang == 'pl' %}Odpowiedź dla klienta{% else %}Client response{% endif %}</span>
                     <textarea name="final_response" rows="4" class="form-input"></textarea>
                 </label>
             </div>
             <section class="request-modal__attachments">
-                <h3>{% if request.LANGUAGE_CODE == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
-                <ul class="attachment-list" data-request-attachments data-empty="{% if request.LANGUAGE_CODE == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
+                <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
+                <ul class="attachment-list" data-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
             </section>
             <section class="request-modal__client-log">
-                <h3>{% if request.LANGUAGE_CODE == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
-                <ul class="client-log" data-request-client-log data-empty="{% if request.LANGUAGE_CODE == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
+                <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
+                <ul class="client-log" data-request-client-log data-empty="{% if lang == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
             </section>
             <section class="request-modal__access">
-                <h3>{% if request.LANGUAGE_CODE == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
+                <h3>{% if lang == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
                 <p class="request-modal__token">
-                    <strong>{% if request.LANGUAGE_CODE == 'pl' %}Hash tokenu:{% else %}Token hash:{% endif %}</strong>
+                    <strong>{% if lang == 'pl' %}Hash tokenu:{% else %}Token hash:{% endif %}</strong>
                     <span data-request-token-hash>—</span>
                 </p>
                 <p class="request-modal__access-status">
-                    <strong>{% if request.LANGUAGE_CODE == 'pl' %}Dostęp aktywny:{% else %}Access enabled:{% endif %}</strong>
+                    <strong>{% if lang == 'pl' %}Dostęp aktywny:{% else %}Access enabled:{% endif %}</strong>
                     <span data-request-access-enabled>—</span>
                 </p>
             </section>
@@ -253,10 +253,10 @@
             <div class="form-success" data-request-feedback hidden></div>
             <div class="modal__actions">
                 <button type="button" class="button button--ghost" data-request-close>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Zamknij{% else %}Close{% endif %}
+                    {% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}
                 </button>
                 <button type="submit" class="button button--primary" data-request-save {% if readonly_mode %}disabled{% endif %}>
-                    {% if request.LANGUAGE_CODE == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}
+                    {% if lang == 'pl' %}Zapisz zmiany{% else %}Save changes{% endif %}
                 </button>
             </div>
         </form>
@@ -268,7 +268,7 @@
         <div>
             <h1 class="site-title">ZETOM Katowice</h1>
             <p class="site-subtitle">
-                {% if request.LANGUAGE_CODE == 'pl' %}
+                {% if lang == 'pl' %}
                     Badania • Certyfikacja • Kontrola techniczna
                 {% else %}
                     Testing • Certification • Technical inspections
@@ -277,20 +277,18 @@
         </div>
     </div>
     <nav class="site-nav">
-        <a href="{% url 'contact:index' %}#about">{% if request.LANGUAGE_CODE == 'pl' %}O nas{% else %}About{% endif %}</a>
-        <a href="{% url 'contact:index' %}#services">{% if request.LANGUAGE_CODE == 'pl' %}Usługi{% else %}Services{% endif %}</a>
-        <a href="{% url 'contact:index' %}#contact">{% if request.LANGUAGE_CODE == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#about">{% if lang == 'pl' %}O nas{% else %}About{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#services">{% if lang == 'pl' %}Usługi{% else %}Services{% endif %}</a>
+        <a href="{% url 'contact:index' %}?lang={{ lang }}#contact">{% if lang == 'pl' %}Kontakt{% else %}Contact{% endif %}</a>
     </nav>
     <div class="site-header__actions">
-        <form class="lang-switcher" action="{% url 'set_language' %}" method="post">
+        <div class="lang-switcher">
+            <a href="?lang=pl" class="{% if lang == 'pl' %}is-active{% endif %}">PL</a>
+            <a href="?lang=en" class="{% if lang != 'pl' %}is-active{% endif %}">EN</a>
+        </div>
+        <form method="post" action="{% url 'contact:logout' %}?lang={{ lang }}">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button type="submit" name="language" value="pl" class="{% if request.LANGUAGE_CODE == 'pl' %}is-active{% endif %}">PL</button>
-            <button type="submit" name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}is-active{% endif %}">EN</button>
-        </form>
-        <form method="post" action="{% url 'contact:logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="button button--ghost button--compact">{% if request.LANGUAGE_CODE == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
+            <button type="submit" class="button button--ghost button--compact">{% if lang == 'pl' %}Wyloguj{% else %}Log out{% endif %}</button>
         </form>
     </div>
 </header>
@@ -330,25 +328,28 @@
 
     <main class="admin-dashboard admin-main">
         <section id="requests" class="admin-card panel panel-requests" data-panel-content="requests">
-        <h2>{% if request.LANGUAGE_CODE == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
+        <h2>{% if lang == 'pl' %}Zgłoszenia kontaktowe{% else %}Contact messages{% endif %}</h2>
         <form method="get" class="panel-filters">
+            {% if lang %}
+                <input type="hidden" name="lang" value="{{ lang }}">
+            {% endif %}
             <div class="panel-filters__field">
-                <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Sortuj{% else %}Sort{% endif %}</label>
+                <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">{% if lang == 'pl' %}Sortuj{% else %}Sort{% endif %}</label>
                 {{ filter_form.sort_by }}
             </div>
             {% if user_level != 'level2' or user_departments|length > 1 %}
                 <div class="panel-filters__field">
-                    <label for="{{ filter_form.company.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Departament{% else %}Department{% endif %}</label>
+                    <label for="{{ filter_form.company.id_for_label }}" class="form-label">{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</label>
                     {{ filter_form.company }}
                 </div>
             {% else %}
                 <input type="hidden" name="company" value="{{ current_company }}">
             {% endif %}
-            <button type="submit" class="button button--primary button--compact">{% if request.LANGUAGE_CODE == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
+            <button type="submit" class="button button--primary button--compact">{% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}</button>
         </form>
         {% if readonly_mode %}
             <div class="panel__notice">
-                {% if request.LANGUAGE_CODE == 'pl' %}
+                {% if lang == 'pl' %}
                     Dostęp tylko do podglądu. Zgłoszenia są nieedytowalne dla Twojej roli.
                 {% else %}
                     View-only access. Requests cannot be modified for your role.
@@ -358,7 +359,7 @@
         <form method="post"
               class="panel-form"
               data-bulk-form
-              data-empty-selection="{% if request.LANGUAGE_CODE == 'pl' %}Wybierz co najmniej jedną wiadomość.{% else %}Select at least one message.{% endif %}">
+              data-empty-selection="{% if lang == 'pl' %}Wybierz co najmniej jedną wiadomość.{% else %}Select at least one message.{% endif %}">
             {% csrf_token %}
             <input type="hidden" name="form_name" value="bulk">
             <input type="hidden" name="page" value="{{ current_page }}">
@@ -366,23 +367,23 @@
             <input type="hidden" name="company" value="{{ current_company }}">
             <div class="panel-form-row">
                 <div class="panel-form-field">
-                    <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Akcja{% else %}Action{% endif %}</label>
+                    <label for="{{ action_form.action.id_for_label }}" class="form-label">{% if lang == 'pl' %}Akcja{% else %}Action{% endif %}</label>
                     {{ action_form.action }}
                     {% if action_form.action.errors %}<div class="form-error">{{ action_form.action.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="panel-form-actions">
                     <button type="submit" class="button button--primary button--compact" data-bulk-submit {% if readonly_mode %}disabled{% endif %}>
-                        {% if request.LANGUAGE_CODE == 'pl' %}Wykonaj{% else %}Apply{% endif %}
+                        {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
                     </button>
                     <button type="button"
                             class="button button--ghost button--compact button--download"
                             data-download-open
                             data-download-available="{{ download_has_choices|yesno:'true,false' }}"
                             {% if not download_has_choices or not selected_download_ids or readonly_mode %}disabled{% endif %}>
-                        {% if request.LANGUAGE_CODE == 'pl' %}Pobierz{% else %}Download{% endif %}
+                        {% if lang == 'pl' %}Pobierz{% else %}Download{% endif %}
                     </button>
                     <button type="button" class="button button--ghost button--compact button--trash" data-trash-open {% if readonly_mode %}disabled{% endif %}>
-                        {% if request.LANGUAGE_CODE == 'pl' %}Kosz{% else %}Trash{% endif %}
+                        {% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}
                     </button>
                 </div>
             </div>
@@ -394,16 +395,16 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th class="checkbox-cell"><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
+                        <th class="checkbox-cell"><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
                         <th>ID</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Data{% else %}Date{% endif %}</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Klient{% else %}Customer{% endif %}</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Telefon{% else %}Phone{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Data{% else %}Date{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Klient{% else %}Customer{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Telefon{% else %}Phone{% endif %}</th>
                         <th>E-mail</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Firma{% else %}Company{% endif %}</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Treść{% else %}Message{% endif %}</th>
-                        <th>{% if request.LANGUAGE_CODE == 'pl' %}Status{% else %}Status{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Firma{% else %}Company{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</th>
+                        <th>{% if lang == 'pl' %}Status{% else %}Status{% endif %}</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -418,7 +419,7 @@
                                        data-row-checkbox
                                        {% if message_id in selected_download_ids %}checked{% endif %}
                                        {% if readonly_mode %}disabled{% endif %}
-                                       aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Zaznacz wiadomość o ID {{ message_item.id }}{% else %}Select message with ID {{ message_item.id }}{% endif %}">
+                                       aria-label="{% if lang == 'pl' %}Zaznacz wiadomość o ID {{ message_item.id }}{% else %}Select message with ID {{ message_item.id }}{% endif %}">
                                 {% endwith %}
                             </td>
                             <td data-cell="id">#{{ message_item.id }}</td>
@@ -437,17 +438,17 @@
                             <td data-cell="message">{{ message_item.message|linebreaksbr }}</td>
                             <td data-cell="status">
                                 {% if message_item.status == message_item.STATUS_NEW %}
-                                    <span class="badge badge--success" data-status-badge>{% if request.LANGUAGE_CODE == 'pl' %}Nowe{% else %}New{% endif %}</span>
+                                    <span class="badge badge--success" data-status-badge>{% if lang == 'pl' %}Nowe{% else %}New{% endif %}</span>
                                 {% elif message_item.status == message_item.STATUS_IN_PROGRESS %}
-                                    <span class="badge badge--warning" data-status-badge>{% if request.LANGUAGE_CODE == 'pl' %}W trakcie{% else %}In progress{% endif %}</span>
+                                    <span class="badge badge--warning" data-status-badge>{% if lang == 'pl' %}W trakcie{% else %}In progress{% endif %}</span>
                                 {% else %}
-                                    <span class="badge badge--info" data-status-badge>{% if request.LANGUAGE_CODE == 'pl' %}Gotowe{% else %}Ready{% endif %}</span>
+                                    <span class="badge badge--info" data-status-badge>{% if lang == 'pl' %}Gotowe{% else %}Ready{% endif %}</span>
                                 {% endif %}
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="10" class="empty-state">{% if request.LANGUAGE_CODE == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
+                            <td colspan="10" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -457,15 +458,15 @@
         </form>
 
         {% if paginator.num_pages > 1 %}
-            <nav class="pagination" aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Paginacja wiadomości{% else %}Message pagination{% endif %}">
+            <nav class="pagination" aria-label="{% if lang == 'pl' %}Paginacja wiadomości{% else %}Message pagination{% endif %}">
                 <div class="pagination__buttons">
                     {% if messages_page.has_previous %}
-                        <a class="pagination__button" href="?page={{ messages_page.previous_page_number }}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
-                            ‹ {% if request.LANGUAGE_CODE == 'pl' %}Poprzednia{% else %}Previous{% endif %}
+                        <a class="pagination__button" href="?page={{ messages_page.previous_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
+                            ‹ {% if lang == 'pl' %}Poprzednia{% else %}Previous{% endif %}
                         </a>
                     {% else %}
                         <span class="pagination__button pagination__button--disabled">
-                            ‹ {% if request.LANGUAGE_CODE == 'pl' %}Poprzednia{% else %}Previous{% endif %}
+                            ‹ {% if lang == 'pl' %}Poprzednia{% else %}Previous{% endif %}
                         </span>
                     {% endif %}
 
@@ -478,7 +479,7 @@
                                     <li><span class="pagination__page pagination__page--active">{{ page_number }}</span></li>
                                 {% else %}
                                     <li>
-                                        <a class="pagination__page" href="?page={{ page_number }}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">{{ page_number }}</a>
+                                        <a class="pagination__page" href="?page={{ page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">{{ page_number }}</a>
                                     </li>
                                 {% endif %}
                             {% endif %}
@@ -486,17 +487,20 @@
                     </ul>
 
                     {% if messages_page.has_next %}
-                        <a class="pagination__button" href="?page={{ messages_page.next_page_number }}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
-                            {% if request.LANGUAGE_CODE == 'pl' %}Następna{% else %}Next{% endif %} ›
+                        <a class="pagination__button" href="?page={{ messages_page.next_page_number }}{% if lang %}&amp;lang={{ lang }}{% endif %}{% if current_sort %}&amp;sort_by={{ current_sort }}{% endif %}{% if current_company %}&amp;company={{ current_company }}{% endif %}">
+                            {% if lang == 'pl' %}Następna{% else %}Next{% endif %} ›
                         </a>
                     {% else %}
                         <span class="pagination__button pagination__button--disabled">
-                            {% if request.LANGUAGE_CODE == 'pl' %}Następna{% else %}Next{% endif %} ›
+                            {% if lang == 'pl' %}Następna{% else %}Next{% endif %} ›
                         </span>
                     {% endif %}
                 </div>
 
-                <form method="get" class="pagination__goto" aria-label="{% if request.LANGUAGE_CODE == 'pl' %}Przejdź do strony{% else %}Go to page{% endif %}">
+                <form method="get" class="pagination__goto" aria-label="{% if lang == 'pl' %}Przejdź do strony{% else %}Go to page{% endif %}">
+                    {% if lang %}
+                        <input type="hidden" name="lang" value="{{ lang }}">
+                    {% endif %}
                     {% if current_sort %}
                         <input type="hidden" name="sort_by" value="{{ current_sort }}">
                     {% endif %}
@@ -504,7 +508,7 @@
                         <input type="hidden" name="company" value="{{ current_company }}">
                     {% endif %}
                     <label class="pagination__label" for="pagination-page">
-                        {% if request.LANGUAGE_CODE == 'pl' %}Idź do{% else %}Go to{% endif %}
+                        {% if lang == 'pl' %}Idź do{% else %}Go to{% endif %}
                     </label>
                     <input
                             type="number"
@@ -516,7 +520,7 @@
                             class="pagination__input"
                         >
                         <button type="submit" class="pagination__submit button button--ghost button--compact">
-                            {% if request.LANGUAGE_CODE == 'pl' %}Przejdź{% else %}Go{% endif %}
+                            {% if lang == 'pl' %}Przejdź{% else %}Go{% endif %}
                         </button>
                 </form>
             </nav>
@@ -528,9 +532,9 @@
             <div class="panel-email">
                 <div class="panel-email__header">
                     <div class="panel-email__intro">
-                        <h3 class="panel-email__title">{% if request.LANGUAGE_CODE == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
+                        <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
                         <p class="panel-email__description">
-                            {% if request.LANGUAGE_CODE == 'pl' %}
+                            {% if lang == 'pl' %}
                                 Personalizuj odpowiedzi i utrzymuj kontakt, korzystając z gotowych pól poniżej.
                             {% else %}
                                 Craft a personalised reply and keep the conversation going with the form below.
@@ -553,22 +557,22 @@
                             {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
                         </div>
                         <div>
-                            <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Temat{% else %}Subject{% endif %}</label>
+                            <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
                             {{ email_form.subject }}
                             {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="panel-email__body">
-                            <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Treść{% else %}Message{% endif %}</label>
+                            <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
                             {{ email_form.body }}
                             {% if email_form.body.errors %}<div class="form-error">{{ email_form.body.errors.0 }}</div>{% endif %}
                         </div>
                         <div>
-                            <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
+                            <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
                             {{ email_form.attachment }}
                             {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
-                    <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if request.LANGUAGE_CODE == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                    <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
                 </form>
             </div>
         </section>
@@ -578,32 +582,32 @@
                  data-panel-content="settings"
                  data-settings-panel
                  data-admin-id="{{ admin_user_id }}"
-     data-settings-endpoint="{% url 'contact:admin_settings' %}"
-     data-profile-endpoint="{% url 'contact:admin_profile' %}"
-     data-verify-endpoint="{% url 'contact:admin_verify_password' %}"
-     data-reset-endpoint="{% url 'contact:admin_reset_password' %}">
+                 data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}"
+                 data-profile-endpoint="{% url 'contact:admin_profile' %}?lang={{ lang }}"
+                 data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}"
+                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}">
             <div class="settings-panel__intro">
                 <h2 class="settings-panel__title">Settings</h2>
                 <p class="settings-panel__description">
-                    {% if request.LANGUAGE_CODE == 'pl' %}Zarządzaj swoim kontem i zespołem{% else %}Manage your account and team{% endif %}
+                    {% if lang == 'pl' %}Zarządzaj swoim kontem i zespołem{% else %}Manage your account and team{% endif %}
                 </p>
             </div>
 
             <section class="settings-section settings-section--profile">
-                <h3 class="settings-section__title">{% if request.LANGUAGE_CODE == 'pl' %}Moje dane{% else %}My profile{% endif %}</h3>
+                <h3 class="settings-section__title">{% if lang == 'pl' %}Moje dane{% else %}My profile{% endif %}</h3>
                 <p class="settings-section__meta">
-                    {% if request.LANGUAGE_CODE == 'pl' %}Użytkownik:{% else %}Signed in as:{% endif %}
+                    {% if lang == 'pl' %}Użytkownik:{% else %}Signed in as:{% endif %}
                     <strong data-profile-email-display>{{ admin_user_email }}</strong>
                 </p>
                 <p class="settings-section__meta">
-                    {% if request.LANGUAGE_CODE == 'pl' %}Poziom dostępu:{% else %}Access level:{% endif %}
+                    {% if lang == 'pl' %}Poziom dostępu:{% else %}Access level:{% endif %}
                     <strong>{{ user_level }}</strong>
                 </p>
                 <p class="settings-section__meta">
-                    {% if request.LANGUAGE_CODE == 'pl' %}Moje departamenty:{% else %}My departments:{% endif %}
+                    {% if lang == 'pl' %}Moje departamenty:{% else %}My departments:{% endif %}
                     <strong>
                         {% if user_level == 'level1' %}
-                            {% if request.LANGUAGE_CODE == 'pl' %}Wszystkie{% else %}All{% endif %}
+                            {% if lang == 'pl' %}Wszystkie{% else %}All{% endif %}
                         {% else %}
                             {% if user_department_labels %}
                                 {{ user_department_labels|join:", " }}
@@ -622,23 +626,23 @@
                                 <input type="email" class="form-input" value="{{ admin_user_email }}" data-profile-email required>
                             </label>
                             <label class="profile-form__field">
-                                <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Aktualne hasło{% else %}Current password{% endif %}</span>
+                                <span class="form-label">{% if lang == 'pl' %}Aktualne hasło{% else %}Current password{% endif %}</span>
                                 <input type="password" class="form-input" data-profile-old-password autocomplete="current-password">
                             </label>
                             <label class="profile-form__field">
-                                <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Nowe hasło{% else %}New password{% endif %}</span>
+                                <span class="form-label">{% if lang == 'pl' %}Nowe hasło{% else %}New password{% endif %}</span>
                                 <input type="password" class="form-input" data-profile-new-password autocomplete="new-password">
                             </label>
                             <label class="profile-form__field">
-                                <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Powtórz nowe hasło{% else %}Confirm new password{% endif %}</span>
+                                <span class="form-label">{% if lang == 'pl' %}Powtórz nowe hasło{% else %}Confirm new password{% endif %}</span>
                                 <input type="password" class="form-input" data-profile-new-password-confirm autocomplete="new-password">
                             </label>
                         </div>
                         <div class="profile-form__messages">
                             <div class="form-error" data-profile-errors hidden></div>
-                            <div class="form-success" data-profile-success hidden>{% if request.LANGUAGE_CODE == 'pl' %}Zapisano zmiany.{% else %}Changes saved.{% endif %}</div>
+                            <div class="form-success" data-profile-success hidden>{% if lang == 'pl' %}Zapisano zmiany.{% else %}Changes saved.{% endif %}</div>
                         </div>
-                        <button type="submit" class="button button--primary">{% if request.LANGUAGE_CODE == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
+                        <button type="submit" class="button button--primary">{% if lang == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
                     </form>
                 </div>
             </section>
@@ -647,12 +651,12 @@
             <section class="settings-section settings-section--admin">
                 <div class="settings-panel__header">
                     <h3 class="settings-section__title">
-                        {% if request.LANGUAGE_CODE == 'pl' %}Zarządzanie użytkownikami{% else %}User management{% endif %}
+                        {% if lang == 'pl' %}Zarządzanie użytkownikami{% else %}User management{% endif %}
                     </h3>
                     <div class="settings-panel__actions">
                         <button type="button" class="settings-add" data-settings-add>+</button>
                         <button type="button" class="button button--primary" data-settings-apply>
-                            {% if request.LANGUAGE_CODE == 'pl' %}Zastosuj{% else %}Apply{% endif %}
+                            {% if lang == 'pl' %}Zastosuj{% else %}Apply{% endif %}
                         </button>
                     </div>
                 </div>
@@ -666,15 +670,15 @@
                     <div class="settings-table__header">
                         <span>#</span>
                         <span>Email</span>
-                        <span>{% if request.LANGUAGE_CODE == 'pl' %}Poziom{% else %}Level{% endif %}</span>
-                        <span>{% if request.LANGUAGE_CODE == 'pl' %}Departament{% else %}Department{% endif %}</span>
+                        <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                        <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
                         <span class="settings-table__actions-label">
-                            {% if request.LANGUAGE_CODE == 'pl' %}Usuń{% else %}Delete{% endif %}
+                            {% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}
                         </span>
                     </div>
                     <div class="settings-table__body" data-settings-rows>
                         <p class="settings-table__placeholder" data-settings-empty>
-                            {% if request.LANGUAGE_CODE == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}
+                            {% if lang == 'pl' %}Brak użytkowników.{% else %}No users yet.{% endif %}
                         </p>
                     </div>
                 </div>
@@ -683,19 +687,19 @@
                 </div>
                 <div class="settings-panel__admin-password" data-admin-password-confirmation hidden>
                     <label class="form-field">
-                        <span class="form-label">{% if request.LANGUAGE_CODE == 'pl' %}Potwierdź hasło administratora{% else %}Confirm admin password{% endif %}</span>
+                        <span class="form-label">{% if lang == 'pl' %}Potwierdź hasło administratora{% else %}Confirm admin password{% endif %}</span>
                         <input type="password" class="form-input" data-admin-password-input autocomplete="current-password">
                     </label>
                     <div class="form-error" data-admin-password-error hidden></div>
                     <button type="button" class="button" data-admin-password-submit>
-                        {% if request.LANGUAGE_CODE == 'pl' %}Potwierdź{% else %}Confirm{% endif %}
+                        {% if lang == 'pl' %}Potwierdź{% else %}Confirm{% endif %}
                     </button>
                 </div>
             </section>
             {% else %}
             <section class="settings-section settings-section--admin">
                 <p class="settings-section__placeholder">
-                    {% if request.LANGUAGE_CODE == 'pl' %}Brak dodatkowych ustawień.{% else %}No additional settings available.{% endif %}
+                    {% if lang == 'pl' %}Brak dodatkowych ustawień.{% else %}No additional settings available.{% endif %}
                 </p>
             </section>
             {% endif %}
