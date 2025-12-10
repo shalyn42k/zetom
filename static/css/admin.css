@@ -1312,12 +1312,12 @@ body[data-theme='dark'] .panel-email .form-submit {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
-    z-index: 10000;
+    z-index: 0;
 }
 
 .modal__dialog {
     position: relative;
-    z-index: 10001;
+    z-index: 1;
     width: min(720px, 92vw);
     max-height: 90vh;
     overflow-y: auto;
