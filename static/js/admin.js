@@ -1195,6 +1195,7 @@
             if (isCurrentAdmin) {
                 row.classList.add('settings-row--self');
                 deleteButton.disabled = true;
+                deleteButton.setAttribute('aria-disabled', 'true');
             } else {
                 deleteButton.addEventListener('click', (event) => {
                     event.stopPropagation();
@@ -1216,6 +1217,9 @@
                     deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
                 });
             }
+            editButton.disabled = false;
+            resetButton.disabled = !user.user_id;
+
             actionsCell.append(editButton, resetButton, deleteButton);
 
             row.append(
