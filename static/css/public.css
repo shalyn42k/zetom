@@ -379,12 +379,26 @@ a:focus {
 
 .password-input {
     position: relative;
-    display: inline-block;
+    display: block;
     width: 100%;
 }
 
 .password-input__field {
-    padding-right: 3rem;
+    width: 100%;
+    padding: 12px 14px;
+    padding-right: 3.2rem;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-background);
+    color: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.password-input__field:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.18);
 }
 
 .password-input__toggle {
@@ -399,15 +413,16 @@ a:focus {
     align-items: center;
     justify-content: center;
     padding: 6px;
-    color: #6b7280;
+    color: var(--green);
     border-radius: 8px;
     transition: color 0.2s ease, background-color 0.2s ease;
+    z-index: 1;
 }
 
 .password-input__toggle:hover,
 .password-input__toggle:focus-visible {
-    color: #111827;
-    background: #f3f4f6;
+    color: var(--green-dark);
+    background: rgba(47, 168, 79, 0.1);
     outline: none;
 }
 
