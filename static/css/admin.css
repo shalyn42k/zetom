@@ -573,9 +573,8 @@ body[data-theme='dark'] .modal__backdrop {
 }
 
 .modal--user .modal__dialog {
-    width: min(540px, 92vw);
-    max-width: 550px;
-    min-width: auto;
+    width: min(720px, 92vw);
+    max-height: 90vh;
 }
 
 .user-modal__form {
@@ -872,6 +871,12 @@ body[data-theme='dark'] .panel-email .form-submit {
 
 .admin-page.has-modal {
     overflow: hidden;
+}
+
+.admin-page.has-modal .site-header,
+.admin-page.has-modal .admin-layout {
+    pointer-events: none;
+    user-select: none;
 }
 
 .admin-dashboard {
