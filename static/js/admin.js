@@ -995,7 +995,6 @@
         const userModalError = userModal?.querySelector('[data-user-modal-error]');
         const userEmailInput = userModal?.querySelector('[data-user-email]');
         const userLevelSelect = userModal?.querySelector('[data-user-level]');
-        const manualPasswordToggleWrapper = userModal?.querySelector('[data-user-password-toggle-wrapper]');
         const manualPasswordToggle = userModal?.querySelector('[data-user-password-toggle]');
         const manualPasswordRow = userModal?.querySelector('[data-user-password-row]');
         const manualPasswordInput = userModal?.querySelector('[data-user-password]');
@@ -1017,7 +1016,6 @@
         let pendingPayload = null;
         let activeUserIndex = null;
         let isManualPassword = false;
-        let isEditingUser = false;
 
         const getCsrfToken = () => {
             const name = 'csrftoken=';
@@ -1386,15 +1384,11 @@
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
             isManualPassword = Boolean(user.is_manual_password);
-            isEditingUser = Boolean(user.user_id);
-            if (manualPasswordToggleWrapper) {
-                manualPasswordToggleWrapper.hidden = isEditingUser;
-            }
             if (manualPasswordToggle) {
-                manualPasswordToggle.checked = !isEditingUser && isManualPassword;
+                manualPasswordToggle.checked = isManualPassword;
             }
             if (manualPasswordInput) {
-                manualPasswordInput.value = !isEditingUser && isManualPassword ? user.password || '' : '';
+                manualPasswordInput.value = isManualPassword ? user.password || '' : '';
             }
             updateManualPasswordVisibility();
             populateDepartmentSelect(user.departments);
@@ -1495,26 +1489,6 @@
 
         const updateManualPasswordVisibility = () => {
             if (!manualPasswordRow || !manualPasswordToggle || !userGrid || !emailRow) return;
-
-            if (isEditingUser) {
-                isManualPassword = false;
-                if (manualPasswordToggleWrapper) {
-                    manualPasswordToggleWrapper.hidden = true;
-                }
-                manualPasswordToggle.checked = false;
-                if (manualPasswordInput) {
-                    manualPasswordInput.toggleAttribute('required', false);
-                    manualPasswordInput.value = '';
-                }
-                if (manualPasswordRow.parentElement) {
-                    manualPasswordRow.parentElement.removeChild(manualPasswordRow);
-                }
-                return;
-            }
-
-            if (manualPasswordToggleWrapper) {
-                manualPasswordToggleWrapper.hidden = false;
-            }
 
             const shouldShow = manualPasswordToggle.checked;
             isManualPassword = shouldShow;
