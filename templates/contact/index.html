@@ -403,7 +403,13 @@
         <div class="review-modal__fields" data-review-fields></div>
         <div class="form-checkbox-group review-modal__checkbox">
             <label class="form-checkbox">
-                {{ form.bot_check.as_widget(attrs={'form': 'contact-form'}) }}
+                <input type="checkbox" 
+                       name="{{ form.bot_check.name }}" 
+                       id="{{ form.bot_check.id_for_label }}" 
+                       form="contact-form" 
+                       {% if form.bot_check.value %}checked{% endif %}
+                       {% if form.bot_check.field.required %}required{% endif %}>
+                
                 <span>{% if lang == 'pl' %}Potwierdzam, że nie jestem botem{% else %}I confirm that I am not a bot{% endif %}</span>
             </label>
             {% if form.bot_check.errors %}
