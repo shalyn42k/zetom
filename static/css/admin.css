@@ -395,6 +395,9 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__row > :nth-child(3) {
     text-align: center;
     justify-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .settings-table__header span:nth-child(6),
@@ -456,7 +459,7 @@ body[data-theme='dark'] .modal__backdrop {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 10px;
 }
 
 .settings-row--self {
@@ -1235,8 +1238,7 @@ body[data-theme='dark'] .panel-email .form-submit {
 
 .modal {
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     display: flex;
