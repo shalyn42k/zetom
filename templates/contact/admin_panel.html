@@ -34,7 +34,7 @@
             {{ trash_form.action }}
             <div class="modal__toolbar">
                 <label class="checkbox-pill">
-                    <input type="checkbox" data-trash-select-all {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
+                    <input type="checkbox" data-trash-select-all {% if not deleted_messages or not can_delete_messages %}disabled{% endif %}>
                     <span>{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}</span>
                 </label>
                 {% if trash_form.non_field_errors %}
@@ -49,7 +49,7 @@
                                value="{{ message_item.id }}"
                                class="trash-item__checkbox"
                                data-trash-row
-                               {% if readonly_mode %}disabled{% endif %}>
+                               {% if not can_delete_messages %}disabled{% endif %}>
                         <span class="trash-item__content">
                             <span class="trash-item__meta">#{{ message_item.id }} · {{ message_item.email }}</span>
                             <span class="trash-item__preview">{{ message_item.message|truncatechars:120 }}</span>
@@ -66,7 +66,7 @@
                         data-trash-action
                         data-trash-action-value="restore"
                         data-requires-selection="true"
-                        {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
+                        {% if not deleted_messages or not can_delete_messages %}disabled{% endif %}>
                     {% if lang == 'pl' %}Przywróć zaznaczone{% else %}Restore selected{% endif %}
                 </button>
                 <button type="submit"
@@ -74,7 +74,7 @@
                         data-trash-action
                         data-trash-action-value="delete"
                         data-requires-selection="true"
-                        {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
+                        {% if not deleted_messages or not can_delete_messages %}disabled{% endif %}>
                     {% if lang == 'pl' %}Usuń zaznaczone{% else %}Delete selected{% endif %}
                 </button>
                 <button type="submit"
@@ -82,7 +82,7 @@
                         data-trash-action
                         data-trash-action-value="empty"
                         data-requires-selection="false"
-                        {% if not deleted_messages or readonly_mode %}disabled{% endif %}>
+                        {% if not deleted_messages or not can_delete_messages %}disabled{% endif %}>
                     {% if lang == 'pl' %}Opróżnij kosz{% else %}Empty trash{% endif %}
                 </button>
             </div>
@@ -372,17 +372,17 @@
                     {% if action_form.action.errors %}<div class="form-error">{{ action_form.action.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="panel-form-actions">
-                    <button type="submit" class="button button--primary button--compact" data-bulk-submit {% if readonly_mode %}disabled{% endif %}>
+                    <button type="submit" class="button button--primary button--compact" data-bulk-submit {% if not can_edit_messages and not can_delete_messages %}disabled{% endif %}>
                         {% if lang == 'pl' %}Wykonaj{% else %}Apply{% endif %}
                     </button>
                     <button type="button"
                             class="button button--ghost button--compact button--download"
                             data-download-open
                             data-download-available="{{ download_has_choices|yesno:'true,false' }}"
-                            {% if not download_has_choices or not selected_download_ids or readonly_mode %}disabled{% endif %}>
+                            {% if not download_has_choices or not selected_download_ids or not can_export_messages %}disabled{% endif %}>
                         {% if lang == 'pl' %}Pobierz{% else %}Download{% endif %}
                     </button>
-                    <button type="button" class="button button--ghost button--compact button--trash" data-trash-open {% if readonly_mode %}disabled{% endif %}>
+                    <button type="button" class="button button--ghost button--compact button--trash" data-trash-open {% if not can_delete_messages %}disabled{% endif %}>
                         {% if lang == 'pl' %}Kosz{% else %}Trash{% endif %}
                     </button>
                 </div>
@@ -395,7 +395,7 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th class="checkbox-cell"><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if readonly_mode %}disabled{% endif %}></th>
+                        <th class="checkbox-cell"><input type="checkbox" class="table-checkbox" data-select-all aria-label="{% if lang == 'pl' %}Zaznacz wszystkie{% else %}Select all{% endif %}" {% if not can_edit_messages and not can_delete_messages %}disabled{% endif %}></th>
                         <th>ID</th>
                         <th>{% if lang == 'pl' %}Data{% else %}Date{% endif %}</th>
                         <th>{% if lang == 'pl' %}Klient{% else %}Customer{% endif %}</th>
@@ -572,7 +572,7 @@
                             {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
-                    <button type="submit" class="form-submit" {% if readonly_mode %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                    <button type="submit" class="form-submit" {% if not can_send_emails %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
                 </form>
             </div>
         </section>
@@ -585,7 +585,9 @@
                  data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}"
                  data-profile-endpoint="{% url 'contact:admin_profile' %}?lang={{ lang }}"
                  data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}"
-                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}">
+                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}"
+                 data-permissions-defaults="{{ permission_defaults_json|escapejs }}"
+                 data-permission-profile="{{ permission_profile_json|escapejs }}">
             <div class="settings-panel__intro">
                 <h2 class="settings-panel__title">Settings</h2>
                 <p class="settings-panel__description">
@@ -672,6 +674,7 @@
                         <span>Email</span>
                         <span>{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
                         <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
+                        <span>{% if lang == 'pl' %}Uprawnienia{% else %}Permissions{% endif %}</span>
                         <span class="settings-table__actions-label">
                             {% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}
                         </span>
@@ -684,6 +687,54 @@
                 </div>
                 <div class="settings-modal__footer">
                     <div class="settings-modal__pagination" data-settings-pagination></div>
+                </div>
+                <div class="modal" data-user-modal aria-hidden="true">
+                    <div class="modal__backdrop" data-user-modal-close></div>
+                    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="user-modal-title">
+                        <button type="button" class="modal__close" data-user-modal-close aria-label="{% if lang == 'pl' %}Zamknij edycję{% else %}Close edit{% endif %}">×</button>
+                        <h2 class="modal__title" id="user-modal-title" data-user-modal-title>
+                            {% if lang == 'pl' %}Edycja użytkownika{% else %}Edit user{% endif %}
+                        </h2>
+                        <form class="modal__form" data-user-form>
+                            <div class="settings-modal__error" data-user-modal-error hidden></div>
+                            <div class="request-modal__grid">
+                                <label class="request-modal__field">
+                                    <span class="form-label">Email</span>
+                                    <input type="email" class="form-input" data-user-email required>
+                                </label>
+                                <label class="request-modal__field">
+                                    <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                                    <select class="form-input" data-user-level>
+                                        <option value="level1">level1</option>
+                                        <option value="level2">level2</option>
+                                        <option value="level3">level3</option>
+                                    </select>
+                                </label>
+                                <label class="request-modal__field request-modal__field--full">
+                                    <span class="form-label">{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</span>
+                                    <select class="form-input" data-user-departments multiple size="4"></select>
+                                </label>
+                            </div>
+                            <div class="settings-modal__permissions">
+                                <p class="form-label">{% if lang == 'pl' %}Prawa dostępu{% else %}Permissions{% endif %}</p>
+                                <div class="form-field form-field--inline">
+                                    <label class="checkbox-pill">
+                                        <input type="radio" name="permission_mode" value="inherit" data-permission-mode>
+                                        <span>{% if lang == 'pl' %}Domyślne dla roli{% else %}Use role defaults{% endif %}</span>
+                                    </label>
+                                    <label class="checkbox-pill">
+                                        <input type="radio" name="permission_mode" value="custom" data-permission-mode>
+                                        <span>{% if lang == 'pl' %}Ustaw ręcznie{% else %}Configure manually{% endif %}</span>
+                                    </label>
+                                </div>
+                                <div class="settings-modal__permissions-list" data-user-permissions></div>
+                            </div>
+                            <div class="modal__actions">
+                                <button type="button" class="button" data-user-modal-close>{% if lang == 'pl' %}Anuluj{% else %}Cancel{% endif %}</button>
+                                <button type="submit" class="button button--primary" data-user-modal-save>{% if lang == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <div class="settings-panel__admin-password" data-admin-password-confirmation hidden>
                     <label class="form-field">

@@ -147,6 +147,7 @@ class AdminUser(models.Model):
     password_hash = models.CharField(max_length=128)
     level_of_access = models.CharField(max_length=20, choices=LEVEL_CHOICES)
     departments = models.ManyToManyField(Department, related_name="admins", blank=True)
+    permissions_override = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_password_reset_at = models.DateTimeField(null=True, blank=True)
@@ -162,6 +163,65 @@ class AdminUser(models.Model):
 
     def check_password(self, raw: str) -> bool:
         return check_password(raw, self.password_hash)
+
+
+PERMISSION_KEYS: tuple[str, ...] = (
+    "can_edit_messages",
+    "can_delete_messages",
+    "can_export_messages",
+    "can_send_emails",
+)
+
+
+ROLE_PERMISSION_PROFILES: dict[str, dict[str, bool]] = {
+    AdminUser.LEVEL_ADMIN: {
+        "can_edit_messages": True,
+        "can_delete_messages": True,
+        "can_export_messages": True,
+        "can_send_emails": True,
+    },
+    AdminUser.LEVEL_DEPARTMENT: {
+        "can_edit_messages": True,
+        "can_delete_messages": True,
+        "can_export_messages": True,
+        "can_send_emails": True,
+    },
+    AdminUser.LEVEL_TESTER: {
+        "can_edit_messages": False,
+        "can_delete_messages": False,
+        "can_export_messages": False,
+        "can_send_emails": False,
+    },
+}
+
+
+def default_permissions_for_level(level: str) -> dict[str, bool]:
+    return ROLE_PERMISSION_PROFILES.get(level, ROLE_PERMISSION_PROFILES[AdminUser.LEVEL_TESTER]).copy()
+
+
+def resolve_permission_profile(level: str, override: dict | None) -> dict[str, object]:
+    base = default_permissions_for_level(level)
+    raw_override = override or {}
+    mode = raw_override.get("mode") if isinstance(raw_override, dict) else None
+    selected_mode = "custom" if mode == "custom" else "inherit"
+    if selected_mode == "custom":
+        custom_values = raw_override.get("permissions") if isinstance(raw_override, dict) else None
+        if isinstance(custom_values, dict):
+            for key in PERMISSION_KEYS:
+                if key in custom_values:
+                    base[key] = bool(custom_values[key])
+    return {"mode": selected_mode, "permissions": base}
+
+
+def build_permissions_override(level: str, override: dict | None) -> dict[str, object]:
+    profile = resolve_permission_profile(level, override)
+    if profile["mode"] != "custom":
+        return {"mode": "inherit", "permissions": {}}
+    permissions = profile.get("permissions") or {}
+    return {
+        "mode": "custom",
+        "permissions": {key: bool(permissions.get(key, False)) for key in PERMISSION_KEYS},
+    }
 
 class AdminActivityLog(models.Model):
     ACTION_STATUS_CHANGE = "status_change"
