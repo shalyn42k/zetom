@@ -416,6 +416,29 @@ body[data-theme='dark'] .modal__backdrop {
     background: #f5faf7;
 }
 
+.settings-table__cell-text {
+    color: #0f2333;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.settings-table__pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    background: rgba(15, 35, 51, 0.06);
+    border-radius: 999px;
+    font-weight: 700;
+    color: #0f2333;
+}
+
+.settings-table__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .settings-row--self {
     background: #f9fcf7;
 }
@@ -1200,7 +1223,10 @@ body[data-theme='dark'] .panel-email .form-submit {
 
 .modal {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1208,7 +1234,7 @@ body[data-theme='dark'] .panel-email .form-submit {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.25s ease, visibility 0.25s ease;
-    z-index: 9999;
+    z-index: 1200;
 }
 
 .modal.is-visible {
@@ -1219,7 +1245,7 @@ body[data-theme='dark'] .panel-email .form-submit {
 .modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.55);
 }
 
 .modal__dialog {

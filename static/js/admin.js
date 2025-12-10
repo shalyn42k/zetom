@@ -967,8 +967,6 @@
         const endpoint = settingsPanel.getAttribute('data-settings-endpoint');
         const currentAdminId = settingsPanel.getAttribute('data-admin-id');
         const departmentsPrototype = settingsPanel.querySelector('select[data-department-prototype="true"]');
-        const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
-        const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
         const permissionDefaults = parseJsonData(
             settingsPanel.getAttribute('data-permissions-defaults'),
             {},
@@ -1007,12 +1005,6 @@
         let currentPage = 1;
         let pendingPayload = null;
         let activeUserIndex = null;
-
-        const levelOptions = [
-            { value: 'level1', label: 'level1' },
-            { value: 'level2', label: 'level2' },
-            { value: 'level3', label: 'level3' },
-        ];
 
         const isInteractiveTarget = (target) =>
             target instanceof Element
@@ -1133,90 +1125,36 @@
             const idCell = document.createElement('span');
             idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
 
-            const emailInput = document.createElement('input');
-            emailInput.type = 'email';
-            emailInput.required = true;
-            emailInput.value = user.email || '';
-            emailInput.placeholder = 'user@example.com';
-            emailInput.dataset.settingsEmail = 'true';
-            emailInput.addEventListener('input', () => {
-                const targetUser = users[user.index];
-                if (targetUser) {
-                    targetUser.email = emailInput.value;
-                }
-            });
+            const emailCell = document.createElement('span');
+            emailCell.className = 'settings-table__cell-text';
+            emailCell.textContent = user.email || '—';
 
-            const levelSelect = document.createElement('select');
-            levelSelect.dataset.settingsLevel = 'true';
-            levelOptions.forEach((option) => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.label;
-                if (option.value === user.level) {
-                    opt.selected = true;
-                }
-                levelSelect.appendChild(opt);
-            });
-            levelSelect.addEventListener('change', () => {
-                const targetUser = users[user.index];
-                if (targetUser) {
-                    targetUser.level = levelSelect.value;
-                    if (levelSelect.value !== 'level1') {
-                        targetUser.password = '';
-                        targetUser.password_changed = false;
-                    }
-                    if (targetUser.permissions_mode !== 'custom') {
-                        targetUser.permissions = getRolePermissions(levelSelect.value);
-                    }
-                }
-            });
+            const levelCell = document.createElement('span');
+            levelCell.className = 'settings-table__pill';
+            levelCell.textContent = user.level || '—';
 
-            const departmentSelect = document.createElement('select');
-            departmentSelect.multiple = true;
-            departmentSelect.size = departmentsSize;
-            departmentSelect.dataset.settingsDepartments = 'true';
-            departmentSelect.innerHTML = departmentsOptionsHTML;
+            const departmentCell = document.createElement('span');
+            departmentCell.className = 'settings-table__cell-text';
+            const departmentLabels = Array.isArray(user.departments)
+                ? user.departments
+                      .map((dept) => departmentLabelMap[dept] || dept)
+                      .filter(Boolean)
+                : [];
+            departmentCell.textContent = departmentLabels.length ? departmentLabels.join(', ') : '—';
 
-            const selectedDepartments = Array.isArray(user.departments) ? user.departments : [];
-            Array.from(departmentSelect.options).forEach((opt) => {
-                if (selectedDepartments.includes(opt.value)) {
-                    opt.selected = true;
-                }
-            });
-            departmentSelect.addEventListener('change', () => {
-                const targetUser = users[user.index];
-                if (targetUser) {
-                    targetUser.departments = Array.from(departmentSelect.selectedOptions).map(
-                        (option) => option.value,
-                    );
-                }
-            });
-
-            const actionsCell = document.createElement('div');
-            actionsCell.className = 'settings-table__actions';
-
-            const editButton = document.createElement('button');
-            editButton.type = 'button';
-            editButton.className = 'button button--ghost button--compact';
-            editButton.dataset.userEdit = 'true';
-            editButton.dataset.userIndex = user.index;
-            editButton.dataset.userId = user.user_id || '';
-            editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
-            editButton.addEventListener('click', (event) => {
-                event.stopPropagation();
-                openUserModal(user);
-            });
-
-            const permissionBadge = document.createElement('span');
-            permissionBadge.className = 'badge badge--info';
-            permissionBadge.textContent =
+            const permissionCell = document.createElement('div');
+            permissionCell.className = 'settings-table__meta';
+            const permissionStatus = document.createElement('span');
+            permissionStatus.className = 'badge badge--info';
+            permissionStatus.textContent =
                 user.permissions_mode === 'custom'
                     ? language === 'pl'
-                        ? 'Nadpisane'
-                        : 'Custom permissions'
+                        ? 'Ręczna konfiguracja'
+                        : 'Custom'
                     : language === 'pl'
                         ? 'Domyślne'
-                        : 'Role defaults';
+                        : 'Defaults';
+            permissionCell.append(permissionStatus);
 
             const hiddenPasswordInput = document.createElement('input');
             hiddenPasswordInput.type = 'hidden';
@@ -1269,15 +1207,14 @@
                 });
             }
             deleteCell.appendChild(deleteButton);
-
-            actionsCell.append(editButton, permissionBadge, hiddenPasswordInput, resetButton);
+            permissionCell.append(hiddenPasswordInput, resetButton);
 
             row.append(
                 idCell,
-                emailInput,
-                levelSelect,
-                departmentSelect,
-                actionsCell,
+                emailCell,
+                levelCell,
+                departmentCell,
+                permissionCell,
                 deleteCell,
             );
             row.addEventListener('click', (event) => {
@@ -1709,16 +1646,6 @@
         };
 
         settingsPanel.addEventListener('click', async (event) => {
-            const editButton = event.target.closest('[data-user-edit]');
-            if (editButton) {
-                event.stopPropagation();
-                const userIndex = Number(editButton.dataset.userIndex);
-                const targetUser = users.find((item) => Number(item.index) === userIndex);
-                if (targetUser) {
-                    openUserModal(targetUser);
-                }
-                return;
-            }
             const resetButton = event.target.closest('[data-user-reset]');
             if (!resetButton) return;
             event.stopPropagation();
