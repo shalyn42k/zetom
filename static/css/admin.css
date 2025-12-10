@@ -573,8 +573,9 @@ body[data-theme='dark'] .modal__backdrop {
 }
 
 .modal--user .modal__dialog {
-    min-width: 600px;
-    max-width: 760px;
+    width: min(540px, 92vw);
+    max-width: 550px;
+    min-width: auto;
 }
 
 .user-modal__form {
@@ -589,69 +590,50 @@ body[data-theme='dark'] .modal__backdrop {
     gap: 16px;
 }
 
-.user-modal__section {
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    background: #f9fafb;
-    overflow: hidden;
-}
-
-
-.user-modal__section-content {
-    padding: 0 16px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
-}
-
-.user-modal__section--collapsible.is-open .user-modal__section-content {
-    max-height: 900px;
-    opacity: 1;
-}
-
-.user-modal__section-toggle {
-    width: 100%;
-    display: flex;
+.user-modal__tabs {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 14px 16px;
-    border: none;
-    border-bottom: 1px solid #e5e7eb;
+    gap: 8px;
+    padding: 6px;
     background: #f3f4f6;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    text-align: left;
+    border-radius: 14px;
+    width: fit-content;
 }
 
-.user-modal__section-toggle:hover,
-.user-modal__section-toggle:focus-visible {
+.user-modal__tab {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
     background: #e5e7eb;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    font-weight: 600;
 }
 
-.user-modal__section-title {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.user-modal__tab.is-active {
+    background: var(--green);
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(47, 168, 79, 0.2);
+}
+
+.user-modal__tabs-content {
+    display: grid;
+    gap: 12px;
+}
+
+.user-modal__tab-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.user-modal__tab-panel.is-hidden {
+    display: none;
 }
 
 .user-modal__hint {
     color: #6b7280;
     font-size: 0.9rem;
-}
-
-.user-modal__chevron {
-    font-size: 1.1rem;
-    color: #4b5563;
-    transition: transform 0.2s ease;
-}
-
-.user-modal__section--collapsible.is-open .user-modal__chevron {
-    transform: rotate(180deg);
 }
 
 .user-modal__departments {
@@ -1286,9 +1268,9 @@ body[data-theme='dark'] .panel-email .form-submit {
     width: 100vw;
     height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 24px;
+    padding: 5vh 24px 24px;
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.25s ease, visibility 0.25s ease;
