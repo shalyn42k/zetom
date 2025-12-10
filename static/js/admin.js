@@ -1014,6 +1014,12 @@
             { value: 'level3', label: 'level3' },
         ];
 
+        const isInteractiveTarget = (target) =>
+            target instanceof Element
+            && Boolean(
+                target.closest('button, input, select, option, textarea, a, label'),
+            );
+
         const getCsrfToken = () => {
             const name = 'csrftoken=';
             return document.cookie
@@ -1122,6 +1128,7 @@
             row.dataset.isNew = user.is_new ? 'true' : 'false';
             row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
             row.dataset.index = user.index;
+            row.tabIndex = 0;
 
             const idCell = document.createElement('span');
             idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
@@ -1195,6 +1202,10 @@
             editButton.dataset.userIndex = user.index;
             editButton.dataset.userId = user.user_id || '';
             editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                openUserModal(user);
+            });
 
             const permissionBadge = document.createElement('span');
             permissionBadge.className = 'badge badge--info';
@@ -1237,7 +1248,8 @@
                 row.classList.add('settings-row--self');
                 deleteButton.disabled = true;
             } else {
-                deleteButton.addEventListener('click', () => {
+                deleteButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
                     const confirmation = window.confirm(
                         language === 'pl'
                             ? 'Usunąć tego użytkownika? Zostanie usunięty po kliknięciu Apply.'
@@ -1268,6 +1280,27 @@
                 actionsCell,
                 deleteCell,
             );
+            row.addEventListener('click', (event) => {
+                if (isInteractiveTarget(event.target)) {
+                    return;
+                }
+                const userIndex = Number(row.dataset.index);
+                const targetUser = users.find((item) => Number(item.index) === userIndex);
+                if (targetUser) {
+                    openUserModal(targetUser);
+                }
+            });
+
+            row.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                if (isInteractiveTarget(event.target)) return;
+                event.preventDefault();
+                const userIndex = Number(row.dataset.index);
+                const targetUser = users.find((item) => Number(item.index) === userIndex);
+                if (targetUser) {
+                    openUserModal(targetUser);
+                }
+            });
             return row;
         };
 
@@ -1357,6 +1390,7 @@
             items.forEach((checkbox) => {
                 checkbox.disabled = mode !== 'custom';
             });
+            permissionList.classList.toggle('is-disabled', mode !== 'custom');
         };
 
         const openUserModal = (user) => {
@@ -1677,6 +1711,7 @@
         settingsPanel.addEventListener('click', async (event) => {
             const editButton = event.target.closest('[data-user-edit]');
             if (editButton) {
+                event.stopPropagation();
                 const userIndex = Number(editButton.dataset.userIndex);
                 const targetUser = users.find((item) => Number(item.index) === userIndex);
                 if (targetUser) {
@@ -1686,6 +1721,7 @@
             }
             const resetButton = event.target.closest('[data-user-reset]');
             if (!resetButton) return;
+            event.stopPropagation();
 
             const userId = resetButton.getAttribute('data-user-id');
             if (!userId || !resetEndpoint) return;

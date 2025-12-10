@@ -408,6 +408,12 @@ body[data-theme='dark'] .modal__backdrop {
     padding: 0.4rem 1rem;
     border-top: 1px solid #edf3ef;
     align-items: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.settings-table__row:hover {
+    background: #f5faf7;
 }
 
 .settings-row--self {
@@ -434,6 +440,7 @@ body[data-theme='dark'] .modal__backdrop {
     border-radius: 10px;
     border: 1px solid #e5e7eb;
     background: #ffffff;
+    cursor: auto;
 }
 
 .settings-table__row select[multiple] {
@@ -604,6 +611,11 @@ body[data-theme='dark'] .modal__backdrop {
 
 .user-modal__permissions .checkbox-pill {
     margin: 0;
+}
+
+.user-modal__permissions.is-disabled {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .toggle {
@@ -1189,13 +1201,14 @@ body[data-theme='dark'] .panel-email .form-submit {
 .modal {
     position: fixed;
     inset: 0;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 24px;
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.25s ease, visibility 0.25s ease;
-    z-index: 60;
+    z-index: 9999;
 }
 
 .modal.is-visible {
@@ -1206,7 +1219,7 @@ body[data-theme='dark'] .panel-email .form-submit {
 .modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(8, 40, 21, 0.55);
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .modal__dialog {
