@@ -672,7 +672,6 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         dept.code: dept for dept in Department.objects.filter(code__in=allowed_departments)
     }
     updated_users: list[AdminUser] = []
-    tokens_to_send: list[tuple[AdminUser, str]] = []
     with transaction.atomic():
         for row in validated_rows:
             selected_departments = [departments_lookup[code] for code in row['departments'] if code in departments_lookup]
@@ -684,25 +683,34 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     user.delete()
                 continue
 
-            token: str | None = None
             if row['user_id']:
                 user = existing_users[row['user_id']]
-                email_changed = user.email.lower() != row['email']
-                level_changed = user.level_of_access != row['level']
-                existing_departments = set(user.departments.values_list('code', flat=True))
-                departments_changed = existing_departments != set(row['departments'])
-                password_changed = row.get('password_changed', False)
-
                 user.email = row['email']
                 user.level_of_access = row['level']
                 user.permissions_override = row['permissions_override']
 
-                if password_changed and row.get('password'):
-                    user.set_password(row['password'])
-                    token = row['password']
-                elif email_changed or not user.password_hash:
-                    token = _generate_access_token()
-                    user.set_password(token)
+                existing_departments = set(user.departments.values_list('code', flat=True))
+                departments_changed = existing_departments != set(row['departments'])
+                manual_password = (
+                    row.get('password')
+                    if row.get('password_changed') and row.get('password')
+                    else None
+                )
+                if manual_password:
+                    send_admin_user_credentials(
+                        email=row['email'],
+                        token=manual_password,
+                        user=user,
+                    )
+                    user.set_password(manual_password)
+                else:
+                    generated_token = _generate_access_token()
+                    send_admin_user_credentials(
+                        email=row['email'],
+                        token=generated_token,
+                        user=user,
+                    )
+                    user.set_password(generated_token)
 
                 user.save()
                 if departments_changed or user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
@@ -714,22 +722,24 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     if row['level'] == AdminUser.LEVEL_ADMIN and row.get('password_changed')
                     else ''
                 )
-                if password_value:
-                    user.set_password(password_value)
-                    token = password_value
+                manual_password = password_value or None
+                if manual_password:
+                    send_admin_user_credentials(email=row['email'], token=manual_password, user=user)
+                    user.set_password(manual_password)
                 else:
-                    token = _generate_access_token()
-                    user.set_password(token)
+                    generated_token = _generate_access_token()
+                    send_admin_user_credentials(
+                        email=row['email'],
+                        token=generated_token,
+                        user=user,
+                    )
+                    user.set_password(generated_token)
                 user.permissions_override = row['permissions_override']
                 user.save()
                 if selected_departments:
                     user.departments.set(selected_departments)
 
-            if token:
-                tokens_to_send.append((user, token))
             updated_users.append(user)
-
-    _queue_credentials_emails(tokens_to_send)
 
     response_users = [
         _serialise_admin_user(user)
