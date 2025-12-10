@@ -711,22 +711,32 @@
                                     </select>
                                 </label>
                             </div>
-                            <div class="user-modal__section">
-                                <div class="user-modal__section-header">
-                                    <p class="form-label">{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</p>
-                                    <span class="user-modal__hint">{% if lang == 'pl' %}Wybierz jedną lub kilka opcji{% else %}Pick one or more departments{% endif %}</span>
+                            <div class="user-modal__section user-modal__section--collapsible" data-collapsible-section="departments">
+                                <button type="button" class="user-modal__section-toggle" data-section-toggle>
+                                    <div class="user-modal__section-title">
+                                        <p class="form-label">{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</p>
+                                        <span class="user-modal__hint">{% if lang == 'pl' %}Wybierz jedną lub kilka opcji{% else %}Pick one or more departments{% endif %}</span>
+                                    </div>
+                                    <span class="user-modal__chevron" data-section-chevron aria-hidden="true">v</span>
+                                </button>
+                                <div class="user-modal__section-content" data-section-content aria-hidden="true">
+                                    <div class="user-modal__departments" data-user-departments></div>
                                 </div>
-                                <div class="user-modal__departments" data-user-departments></div>
                             </div>
-                            <div class="user-modal__section">
-                                <div class="user-modal__section-header">
-                                    <p class="form-label">{% if lang == 'pl' %}Prawa dostępu{% else %}Permissions{% endif %}</p>
+                            <div class="user-modal__section user-modal__section--collapsible" data-collapsible-section="permissions">
+                                <button type="button" class="user-modal__section-toggle" data-section-toggle>
+                                    <div class="user-modal__section-title">
+                                        <p class="form-label">{% if lang == 'pl' %}Prawa dostępu{% else %}Permissions{% endif %}</p>
+                                    </div>
+                                    <span class="user-modal__chevron" data-section-chevron aria-hidden="true">v</span>
+                                </button>
+                                <div class="user-modal__section-content" data-section-content aria-hidden="true">
                                     <label class="toggle" data-permission-toggle-wrapper>
                                         <input type="checkbox" data-permission-override>
                                         <span class="toggle__label">{% if lang == 'pl' %}Nadpisz domyślne{% else %}Override defaults{% endif %}</span>
                                     </label>
+                                    <div class="user-modal__permissions" data-user-permissions></div>
                                 </div>
-                                <div class="user-modal__permissions" data-user-permissions></div>
                             </div>
                             <div class="modal__actions modal__actions--separated">
                                 <button type="button" class="button" data-user-modal-close>{% if lang == 'pl' %}Anuluj{% else %}Cancel{% endif %}</button>

@@ -592,23 +592,66 @@ body[data-theme='dark'] .modal__backdrop {
 .user-modal__section {
     border: 1px solid #e5e7eb;
     border-radius: 14px;
-    padding: 16px;
     background: #f9fafb;
+    overflow: hidden;
+}
+
+
+.user-modal__section-content {
+    padding: 0 16px 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
 }
 
-.user-modal__section-header {
+.user-modal__section--collapsible.is-open .user-modal__section-content {
+    max-height: 900px;
+    opacity: 1;
+}
+
+.user-modal__section-toggle {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+    padding: 14px 16px;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f3f4f6;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+}
+
+.user-modal__section-toggle:hover,
+.user-modal__section-toggle:focus-visible {
+    background: #e5e7eb;
+}
+
+.user-modal__section-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .user-modal__hint {
     color: #6b7280;
     font-size: 0.9rem;
+}
+
+.user-modal__chevron {
+    font-size: 1.1rem;
+    color: #4b5563;
+    transition: transform 0.2s ease;
+}
+
+.user-modal__section--collapsible.is-open .user-modal__chevron {
+    transform: rotate(180deg);
 }
 
 .user-modal__departments {

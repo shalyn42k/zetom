@@ -998,6 +998,7 @@
         const userDepartmentsContainer = settingsPanel.querySelector('[data-user-departments]');
         const permissionOverrideToggle = settingsPanel.querySelector('[data-permission-override]');
         const permissionList = settingsPanel.querySelector('[data-user-permissions]');
+        const collapsibleSections = settingsPanel.querySelectorAll('[data-collapsible-section]');
 
         const PAGE_SIZE = 5;
         let users = [];
@@ -1105,6 +1106,7 @@
                 wrapper.append(checkbox, text);
                 permissionList.appendChild(wrapper);
             });
+            recalcOpenSectionHeights();
         };
 
         const updateEmptyState = () => {
@@ -1311,6 +1313,7 @@
                 option.append(input, text);
                 userDepartmentsContainer.appendChild(option);
             });
+            recalcOpenSectionHeights();
         };
 
         const readPermissionSelection = () => {
@@ -1331,6 +1334,47 @@
             permissionList.classList.toggle('is-disabled', mode !== 'custom');
         };
 
+        const setSectionState = (section, open) => {
+            const content = section.querySelector('[data-section-content]');
+            const toggle = section.querySelector('[data-section-toggle]');
+            const chevron = section.querySelector('[data-section-chevron]');
+            if (!content) return;
+            section.classList.toggle('is-open', open);
+            content.style.maxHeight = open ? `${content.scrollHeight}px` : '0';
+            content.setAttribute('aria-hidden', open ? 'false' : 'true');
+            toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (chevron) {
+                chevron.textContent = open ? '^' : 'v';
+            }
+        };
+
+        const collapseAllSections = () => {
+            collapsibleSections.forEach((section) => setSectionState(section, false));
+        };
+
+        const recalcOpenSectionHeights = () => {
+            collapsibleSections.forEach((section) => {
+                if (!section.classList.contains('is-open')) return;
+                const content = section.querySelector('[data-section-content]');
+                if (content) {
+                    content.style.maxHeight = `${content.scrollHeight}px`;
+                }
+            });
+        };
+
+        collapsibleSections.forEach((section) => {
+            const toggle = section.querySelector('[data-section-toggle]');
+            setSectionState(section, false);
+            if (!toggle) return;
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.addEventListener('click', () => {
+                const isOpen = section.classList.contains('is-open');
+                setSectionState(section, !isOpen);
+            });
+        });
+
+        window.addEventListener('resize', recalcOpenSectionHeights);
+
         const openUserModal = (user) => {
             if (!userModal || !userEmailInput || !userLevelSelect) return;
             activeUserIndex = user.index;
@@ -1347,6 +1391,7 @@
             }
             renderPermissionCheckboxes(mode, user.level || 'level3', user.custom_permissions || user.permissions);
             applyPermissionModeState(mode);
+            collapseAllSections();
             if (userModalTitle) {
                 userModalTitle.textContent = user.user_id
                     ? language === 'pl'
