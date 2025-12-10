@@ -1381,7 +1381,7 @@
             }
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
-            isManualPassword = Boolean(user.is_manual_password && user.password);
+            isManualPassword = Boolean(user.is_manual_password);
             if (manualPasswordToggle) {
                 manualPasswordToggle.checked = isManualPassword;
             }
@@ -1453,7 +1453,7 @@
                       .filter((input) => input.checked)
                       .map((input) => input.value)
                 : targetUser.departments;
-            if (targetUser.level === 'level1' && isManualPassword) {
+            if (isManualPassword) {
                 const manualPassword = manualPasswordInput ? manualPasswordInput.value.trim() : '';
                 if (!manualPassword) {
                     if (userModalError) {
@@ -1487,15 +1487,14 @@
 
         const updateManualPasswordVisibility = () => {
             if (!manualPasswordRow || !manualPasswordToggle) return;
-            const levelAllowsPassword = userLevelSelect ? userLevelSelect.value === 'level1' : false;
-            if (!levelAllowsPassword && manualPasswordToggle.checked) {
-                manualPasswordToggle.checked = false;
-            }
-            const shouldShow = levelAllowsPassword && manualPasswordToggle.checked;
+            const shouldShow = manualPasswordToggle.checked;
             manualPasswordRow.hidden = !shouldShow;
             isManualPassword = shouldShow;
-            if (!shouldShow && manualPasswordInput) {
-                manualPasswordInput.value = '';
+            if (manualPasswordInput) {
+                manualPasswordInput.toggleAttribute('required', shouldShow);
+                if (!shouldShow) {
+                    manualPasswordInput.value = '';
+                }
             }
         };
 
@@ -1546,11 +1545,9 @@
                 email: user.email || '',
                 level: user.level || '',
                 password:
-                    user.level === 'level1' && user.is_manual_password && user.password_changed
-                        ? user.password || ''
-                        : '',
-                password_changed:
-                    user.level === 'level1' ? Boolean(user.password_changed && user.is_manual_password) : false,
+                    user.is_manual_password && user.password_changed ? user.password || '' : '',
+                password_changed: Boolean(user.password_changed && user.is_manual_password),
+                is_manual_password: Boolean(user.is_manual_password),
                 departments: Array.isArray(user.departments) ? user.departments : [],
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
