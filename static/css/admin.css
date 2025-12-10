@@ -395,9 +395,6 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__row > :nth-child(3) {
     text-align: center;
     justify-self: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .settings-table__header span:nth-child(6),
@@ -459,7 +456,7 @@ body[data-theme='dark'] .modal__backdrop {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 0.5rem;
 }
 
 .settings-row--self {
