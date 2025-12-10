@@ -14,11 +14,7 @@ import secrets
 
 from datetime import timedelta
 from django.conf import settings
-from django.contrib.auth.hashers import (
-    check_password,
-    identify_hasher,
-    make_password,
-)
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
 
@@ -163,20 +159,7 @@ class AdminUser(models.Model):
         return f"AdminUser({self.email}, {self.level_of_access})"
 
     def set_password(self, raw: str) -> None:
-        """Set the stored password hash from a raw or pre-hashed value.
-
-        Manual password creation can be invoked from multiple entrypoints
-        (UI upload, management commands). In some flows the password may
-        already be hashed before this method is called, so we avoid hashing
-        twice by detecting already-encoded values.
-        """
-
-        try:
-            identify_hasher(raw)
-        except ValueError:
-            self.password_hash = make_password(raw)
-        else:
-            self.password_hash = raw
+        self.password_hash = make_password(raw)
 
     def check_password(self, raw: str) -> bool:
         return check_password(raw, self.password_hash)
