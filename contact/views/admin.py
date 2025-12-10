@@ -726,7 +726,11 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     user.departments.set(selected_departments)
             else:
                 user = AdminUser(email=row['email'], level_of_access=row['level'])
-                password_value = row.get('password') if row.get('password_changed') else ''
+                password_value = (
+                    row.get('password')
+                    if row['level'] == AdminUser.LEVEL_ADMIN and row.get('password_changed')
+                    else ''
+                )
                 manual_password = password_value or None
                 _apply_credentials(user, manual_password=manual_password, email=row['email'])
                 user.permissions_override = row['permissions_override']
