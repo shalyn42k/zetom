@@ -663,28 +663,48 @@
 
             <section class="settings-section settings-section--profile">
                 <h3 class="settings-section__title">{% if lang == 'pl' %}Moje dane{% else %}My profile{% endif %}</h3>
-                <p class="settings-section__meta">
-                    {% if lang == 'pl' %}Użytkownik:{% else %}Signed in as:{% endif %}
-                    <strong data-profile-email-display>{{ admin_user_email }}</strong>
-                </p>
-                <p class="settings-section__meta">
-                    {% if lang == 'pl' %}Poziom dostępu:{% else %}Access level:{% endif %}
-                    <strong>{{ user_level }}</strong>
-                </p>
-                <p class="settings-section__meta">
-                    {% if lang == 'pl' %}Moje departamenty:{% else %}My departments:{% endif %}
-                    <strong>
-                        {% if user_level == 'level1' %}
-                            {% if lang == 'pl' %}Wszystkie{% else %}All{% endif %}
-                        {% else %}
-                            {% if user_department_labels %}
-                                {{ user_department_labels|join:", " }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        {% endif %}
-                    </strong>
-                </p>
+                <div class="profile-permissions">
+                    <div class="profile-permissions__header">
+                        <div>
+                            <p class="profile-permissions__label">{% if lang == 'pl' %}POZIOM{% else %}LEVEL{% endif %}</p>
+                            <p class="profile-permissions__value">
+                                {% if user_level == 'level1' %}Level 1{% elif user_level == 'level2' %}Level 2{% else %}Level 3{% endif %}
+                            </p>
+                        </div>
+                        <div class="profile-permissions__identity">
+                            <p class="profile-permissions__label">{% if lang == 'pl' %}UŻYTKOWNIK{% else %}SIGNED IN AS{% endif %}</p>
+                            <p class="profile-permissions__value" data-profile-email-display>{{ admin_user_email }}</p>
+                        </div>
+                    </div>
+
+                    {% if user_level == 'level1' %}
+                        <div class="profile-permissions__notice">
+                            <p class="profile-permissions__notice-title">{% if lang == 'pl' %}Dostęp administratora{% else %}Administrator Access{% endif %}</p>
+                            <p class="profile-permissions__notice-body">{% if lang == 'pl' %}Pełna kontrola nad wszystkimi modułami.{% else %}Administrator Access: Full Control{% endif %}</p>
+                        </div>
+                    {% else %}
+                        <dl class="profile-permissions__grid">
+                            <div class="profile-permissions__row">
+                                <dt>{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</dt>
+                                <dd>
+                                    {% if user_department_labels %}
+                                        <div class="profile-permissions__badges">
+                                            {% for department in user_department_labels %}
+                                                <span class="profile-permissions__badge">{{ department }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="profile-permissions__empty">—</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            <div class="profile-permissions__row">
+                                <dt>{% if lang == 'pl' %}Uprawnienia{% else %}Permissions{% endif %}</dt>
+                                <dd class="profile-permissions__note">{% if lang == 'pl' %}Dostęp ograniczony do wskazanych działów.{% else %}Access limited to assigned departments and related operations.{% endif %}</dd>
+                            </div>
+                        </dl>
+                    {% endif %}
+                </div>
 
                 <div class="settings-card settings-card--profile">
                     <form class="profile-form" data-profile-form>
@@ -742,7 +762,7 @@
                         <span>{% if lang == 'pl' %}Departament{% else %}Department{% endif %}</span>
                         <span>{% if lang == 'pl' %}Uprawnienia{% else %}Permissions{% endif %}</span>
                         <span class="settings-table__actions-label">
-                            {% if lang == 'pl' %}Usuń{% else %}Delete{% endif %}
+                            {% if lang == 'pl' %}Akcje{% else %}Actions{% endif %}
                         </span>
                     </div>
                     <div class="settings-table__body" data-settings-rows>
