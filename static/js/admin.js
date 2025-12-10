@@ -981,39 +981,12 @@
         const profileNewPassword = settingsPanel.querySelector('[data-profile-new-password]');
         const profileNewPasswordConfirm = settingsPanel.querySelector('[data-profile-new-password-confirm]');
         const profileEmailDisplay = settingsPanel.querySelector('[data-profile-email-display]');
-        const drawer = settingsPanel.querySelector('[data-user-drawer]');
-        const drawerForm = settingsPanel.querySelector('[data-user-settings-form]');
-        const drawerEmail = settingsPanel.querySelector('[data-user-email]');
-        const drawerRole = settingsPanel.querySelector('[data-user-role]');
-        const drawerDepartments = settingsPanel.querySelector('[data-user-departments]');
-        const drawerPermissionsList = settingsPanel.querySelector('[data-permissions-list]');
-        const drawerFollowToggle = settingsPanel.querySelector('[data-permissions-follow]');
-        const drawerError = settingsPanel.querySelector('[data-user-settings-error]');
-        const drawerSuccess = settingsPanel.querySelector('[data-user-settings-success]');
-        const drawerCloseButtons = settingsPanel.querySelectorAll('[data-user-drawer-close]');
-        const drawerCancelButton = settingsPanel.querySelector('[data-user-cancel]');
-
-        const parseJsonAttribute = (value, fallback) => {
-            try {
-                return value ? JSON.parse(value) : fallback;
-            } catch (error) {
-                return fallback;
-            }
-        };
-
-        let departmentChoices = parseJsonAttribute(settingsPanel.getAttribute('data-departments-data'), []);
-        const rolePermissions = parseJsonAttribute(settingsPanel.getAttribute('data-role-permissions'), {});
-        const userSettingsTemplate = settingsPanel.getAttribute('data-user-settings-template');
 
         const PAGE_SIZE = 5;
         let users = [];
         let originalLevelMap = new Map();
         let currentPage = 1;
         let pendingPayload = null;
-        let activeUserId = null;
-        let activePermissionsDefault = {};
-        let activePermissionsOverride = {};
-        let activePermissionsEffective = {};
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -1079,223 +1052,6 @@
         const updateEmptyState = () => {
             if (!rowsContainer || !emptyState) return;
             emptyState.style.display = users.length ? 'none' : 'block';
-        };
-
-        const buildUserSettingsUrl = (userId) => {
-            if (!userSettingsTemplate || !userId) return null;
-            return userSettingsTemplate
-                .replace('/0/', `/${userId}/`)
-                .replace('/0?', `/${userId}?`)
-                .replace('/0', `/${userId}`);
-        };
-
-        const toggleDrawer = (visible) => {
-            if (!drawer) return;
-            drawer.classList.toggle('is-open', visible);
-            drawer.setAttribute('aria-hidden', visible ? 'false' : 'true');
-        };
-
-        const clearDrawerMessages = () => {
-            if (drawerError) {
-                drawerError.hidden = true;
-                drawerError.textContent = '';
-            }
-            if (drawerSuccess) {
-                drawerSuccess.hidden = true;
-            }
-        };
-
-        const showDrawerError = (message) => {
-            if (!drawerError) return;
-            const messages = normaliseErrorMessages(message);
-            drawerError.textContent = messages.join(' ') || '';
-            drawerError.hidden = !messages.length;
-        };
-
-        const showDrawerSuccess = (visible) => {
-            if (!drawerSuccess) return;
-            drawerSuccess.hidden = !visible;
-        };
-
-        const ensureDepartmentOptions = () => {
-            if (!drawerDepartments || !departmentChoices) return;
-            if (drawerDepartments.options.length) return;
-            departmentChoices.forEach((choice) => {
-                const option = document.createElement('option');
-                option.value = String(choice.id);
-                option.textContent = choice.label;
-                option.dataset.code = choice.code;
-                drawerDepartments.appendChild(option);
-            });
-        };
-
-        const computeEffectivePermissions = (role, overrides, overrideEnabled) => {
-            const base = { ...(rolePermissions[role] || {}) };
-            if (!overrideEnabled || !overrides) {
-                return base;
-            }
-            Object.entries(overrides).forEach(([key, value]) => {
-                base[key] = Boolean(value);
-            });
-            return base;
-        };
-
-        const renderPermissionsList = (role, overrideEnabled, overrides, effective) => {
-            if (!drawerPermissionsList) return;
-            drawerPermissionsList.innerHTML = '';
-            const defaults = { ...(rolePermissions[role] || activePermissionsDefault) };
-            const keys = new Set([
-                ...Object.keys(defaults || {}),
-                ...Object.keys(overrides || {}),
-                ...Object.keys(effective || {}),
-            ]);
-            keys.forEach((key) => {
-                const item = document.createElement('label');
-                item.className = 'permissions-list__item';
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.dataset.permissionKey = key;
-                checkbox.checked = overrideEnabled
-                    ? Boolean((overrides || {})[key] ?? defaults[key])
-                    : Boolean(defaults[key]);
-                checkbox.disabled = !overrideEnabled;
-
-                const name = document.createElement('span');
-                name.textContent = key.replace(/_/g, ' ');
-
-                const hint = document.createElement('span');
-                hint.className = 'permissions-list__hint';
-                const defaultValue = defaults[key] ? 'on' : 'off';
-                const effectiveValue = (effective || {})[key] ? 'on' : 'off';
-                const hintDefault = language === 'pl' ? 'Domyślne:' : 'Default:';
-                const hintEffective = language === 'pl' ? 'Efektywne:' : 'Effective:';
-                hint.textContent = `${hintDefault} ${defaultValue} · ${hintEffective} ${effectiveValue}`;
-
-                item.append(checkbox, name, hint);
-                drawerPermissionsList.appendChild(item);
-            });
-        };
-
-        const setDepartmentSelection = (selectedIds) => {
-            if (!drawerDepartments) return;
-            const selected = (selectedIds || []).map((id) => String(id));
-            Array.from(drawerDepartments.options).forEach((option) => {
-                option.selected = selected.includes(option.value);
-            });
-        };
-
-        const populateDrawer = (data) => {
-            if (!data || !drawer) return;
-            activeUserId = data.id;
-            activePermissionsDefault = data.permissions_default || {};
-            activePermissionsOverride = data.permissions_override || {};
-            activePermissionsEffective = data.permissions_effective || {};
-            const overrideEnabled = Boolean(data.override_enabled);
-
-            clearDrawerMessages();
-            ensureDepartmentOptions();
-
-            if (drawerEmail) drawerEmail.value = data.email || '';
-            if (drawerRole && data.role) drawerRole.value = data.role;
-            setDepartmentSelection(data.departments || []);
-
-            if (drawerFollowToggle) {
-                drawerFollowToggle.checked = !overrideEnabled;
-            }
-
-            renderPermissionsList(
-                data.role,
-                overrideEnabled,
-                activePermissionsOverride,
-                activePermissionsEffective,
-            );
-            toggleDrawer(true);
-        };
-
-        const syncUserRow = (data) => {
-            if (!data || !data.id) return;
-            const targetUser = users.find((user) => String(user.user_id) === String(data.id));
-            if (!targetUser) return;
-            targetUser.level = data.role || targetUser.level;
-            targetUser.departments = data.department_codes || targetUser.departments;
-            originalLevelMap.set(String(data.id), targetUser.level);
-            renderRows();
-        };
-
-        const loadUserSettings = async (userId) => {
-            const url = buildUserSettingsUrl(userId);
-            if (!url) return;
-            clearDrawerMessages();
-            showDrawerSuccess(false);
-            const response = await fetch(url);
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                const message = data.error || 'Unable to load user settings.';
-                showDrawerError(message);
-                window.alert(message);
-                toggleDrawer(false);
-                return;
-            }
-
-            populateDrawer(data);
-        };
-
-        const collectOverrides = () => {
-            if (!drawerPermissionsList) return {};
-            const overrides = {};
-            drawerPermissionsList.querySelectorAll('[data-permission-key]').forEach((checkbox) => {
-                overrides[checkbox.dataset.permissionKey] = checkbox.checked;
-            });
-            return overrides;
-        };
-
-        const saveUserSettings = async () => {
-            if (!activeUserId) return;
-            const url = buildUserSettingsUrl(activeUserId);
-            if (!url) return;
-            clearDrawerMessages();
-
-            const overrideEnabled = drawerFollowToggle ? !drawerFollowToggle.checked : false;
-            const departments = drawerDepartments
-                ? Array.from(drawerDepartments.selectedOptions).map((option) => Number(option.value))
-                : [];
-            const payload = {
-                role: drawerRole ? drawerRole.value : '',
-                departments,
-                override_enabled: overrideEnabled,
-                permissions_override: overrideEnabled ? collectOverrides() : {},
-            };
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken() || '',
-                },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.errors) {
-                const message = data.errors || data.error || 'Unable to save settings.';
-                showDrawerError(message);
-                window.alert(normaliseErrorMessages(message).join(' ') || 'Unable to save settings.');
-                return;
-            }
-
-            showDrawerSuccess(true);
-            activePermissionsDefault = data.permissions_default || {};
-            activePermissionsOverride = data.permissions_override || {};
-            activePermissionsEffective = data.permissions_effective || {};
-            if (Array.isArray(data.department_choices)) {
-                departmentChoices = data.department_choices;
-                if (drawerDepartments) {
-                    drawerDepartments.innerHTML = '';
-                }
-                ensureDepartmentOptions();
-            }
-            populateDrawer(data);
-            syncUserRow(data);
         };
 
         const buildRow = (user) => {
@@ -1374,14 +1130,6 @@
             hiddenPasswordInput.value = user.password_plaintext || '';
             hiddenPasswordInput.dataset.settingsPassword = 'true';
 
-            const editButton = document.createElement('button');
-            editButton.type = 'button';
-            editButton.className = 'settings-table__edit';
-            editButton.dataset.userEdit = 'true';
-            editButton.dataset.userId = user.user_id || '';
-            editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
-            editButton.disabled = !user.user_id;
-
             const resetButton = document.createElement('button');
             resetButton.type = 'button';
             resetButton.className = 'settings-table__reset';
@@ -1428,7 +1176,7 @@
             }
             deleteCell.appendChild(deleteButton);
 
-            actionsCell.append(hiddenPasswordInput, editButton, resetButton, deleteCell);
+            actionsCell.append(hiddenPasswordInput, resetButton, deleteCell);
 
             row.append(
                 idCell,
@@ -1673,42 +1421,6 @@
             showProfileSuccess(true);
         });
 
-        drawerCloseButtons.forEach((button) => {
-            button.addEventListener('click', () => toggleDrawer(false));
-        });
-        drawerCancelButton?.addEventListener('click', (event) => {
-            event.preventDefault();
-            toggleDrawer(false);
-        });
-        drawerFollowToggle?.addEventListener('change', () => {
-            const overrideEnabled = !drawerFollowToggle.checked;
-            renderPermissionsList(
-                drawerRole ? drawerRole.value : '',
-                overrideEnabled,
-                activePermissionsOverride,
-                computeEffectivePermissions(
-                    drawerRole ? drawerRole.value : '',
-                    activePermissionsOverride,
-                    overrideEnabled,
-                ),
-            );
-            showDrawerSuccess(false);
-        });
-        drawerRole?.addEventListener('change', () => {
-            const overrideEnabled = drawerFollowToggle ? !drawerFollowToggle.checked : false;
-            activePermissionsDefault = rolePermissions[drawerRole.value] || {};
-            renderPermissionsList(
-                drawerRole.value,
-                overrideEnabled,
-                activePermissionsOverride,
-                computeEffectivePermissions(drawerRole.value, activePermissionsOverride, overrideEnabled),
-            );
-        });
-        drawerForm?.addEventListener('submit', (event) => {
-            event.preventDefault();
-            saveUserSettings().catch(() => showDrawerError('Unable to save settings.'));
-        });
-
         const resetMessages = {
             confirm:
                 language === 'pl'
@@ -1729,21 +1441,6 @@
         };
 
         settingsPanel.addEventListener('click', async (event) => {
-            const editButton = event.target.closest('[data-user-edit]');
-            if (editButton) {
-                const targetUserId = editButton.getAttribute('data-user-id');
-                if (targetUserId) {
-                    loadUserSettings(targetUserId).catch(() => {
-                        const message = language === 'pl'
-                            ? 'Nie udało się wczytać ustawień użytkownika.'
-                            : 'Unable to load user settings.';
-                        showDrawerError(message);
-                        window.alert(message);
-                    });
-                }
-                return;
-            }
-
             const resetButton = event.target.closest('[data-user-reset]');
             if (!resetButton) return;
 
