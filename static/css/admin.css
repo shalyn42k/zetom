@@ -386,7 +386,7 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__header,
 .settings-table__row {
     display: grid;
-    grid-template-columns: 60px 1.6fr 1.0fr 1.6fr 0.6fr;
+    grid-template-columns: 60px 1.6fr 1.0fr 1.4fr 1.0fr 0.6fr;
     column-gap: 0.75rem;
     align-items: center;
 }
@@ -407,13 +407,15 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__row {
     padding: 0.4rem 1rem;
     border-top: 1px solid #edf3ef;
+    align-items: center;
 }
 
 .settings-row--self {
     background: #f9fcf7;
 }
 
-.settings-table__actions {
+.settings-table__actions,
+.settings-table__delete {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -517,6 +519,147 @@ body[data-theme='dark'] .modal__backdrop {
     margin: 0;
     padding: 16px;
     color: #6b7280;
+}
+
+.settings-table__actions .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal--user .modal__dialog {
+    min-width: 600px;
+    max-width: 760px;
+}
+
+.user-modal__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.user-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.user-modal__section {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-modal__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.user-modal__hint {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.user-modal__departments {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    max-height: 180px;
+    overflow: auto;
+}
+
+.user-modal__department {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-modal__department input {
+    accent-color: #0f2333;
+}
+
+.user-modal__department:hover,
+.user-modal__department:focus-within {
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+}
+
+.user-modal__permissions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px 14px;
+}
+
+.user-modal__permissions .checkbox-pill {
+    margin: 0;
+}
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #ffffff;
+}
+
+.toggle input {
+    width: 40px;
+    height: 20px;
+    appearance: none;
+    background: #e5e7eb;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.toggle input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.toggle input:checked {
+    background: #0f2333;
+}
+
+.toggle input:checked::after {
+    transform: translateX(20px);
+}
+
+.toggle__label {
+    font-weight: 500;
+    color: #0f2333;
+}
+
+.modal__actions--separated {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 4px;
+    padding-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .settings-add {
