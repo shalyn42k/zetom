@@ -19,6 +19,7 @@ from django.db import models
 from django.utils import timezone
 
 from .departments import DEFAULT_DEPARTMENTS
+from .permissions import ROLE_PERMISSIONS
 
 
 
@@ -150,6 +151,7 @@ class AdminUser(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_password_reset_at = models.DateTimeField(null=True, blank=True)
+    permissions_override = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -162,6 +164,15 @@ class AdminUser(models.Model):
 
     def check_password(self, raw: str) -> bool:
         return check_password(raw, self.password_hash)
+
+    def get_effective_permissions(self) -> dict[str, bool]:
+        base = ROLE_PERMISSIONS.get(self.level_of_access, {}).copy()
+        if not self.permissions_override:
+            return base
+
+        for key, val in self.permissions_override.items():
+            base[key] = val
+        return base
 
 class AdminActivityLog(models.Model):
     ACTION_STATUS_CHANGE = "status_change"

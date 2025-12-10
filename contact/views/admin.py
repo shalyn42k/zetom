@@ -39,6 +39,7 @@ from ..models import (
     Department,
     _generate_access_token,
 )
+from ..permissions import ROLE_PERMISSIONS
 from ..services import messages as message_service
 from ..services.activity_log import log_action
 from ..services.email_service import (
@@ -88,6 +89,36 @@ def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
             }
             for log in logs
         ],
+    }
+
+
+def _department_options(language: str) -> list[dict[str, str | int]]:
+    departments = Department.objects.all().order_by('code')
+    return [
+        {
+            'id': dept.id,
+            'code': dept.code,
+            'label': dept.name_pl if language == 'pl' else dept.name_en,
+        }
+        for dept in departments
+    ]
+
+
+def _serialise_admin_user_settings(user: AdminUser, language: str) -> dict:
+    default_permissions = ROLE_PERMISSIONS.get(user.level_of_access, {}).copy()
+    override_permissions = user.permissions_override or {}
+    departments = list(user.departments.all())
+    return {
+        'id': user.id,
+        'email': user.email,
+        'role': user.level_of_access,
+        'departments': [dept.id for dept in departments],
+        'department_codes': [dept.code for dept in departments],
+        'department_labels': [dept.name_pl if language == 'pl' else dept.name_en for dept in departments],
+        'permissions_default': default_permissions,
+        'permissions_override': override_permissions,
+        'permissions_effective': user.get_effective_permissions(),
+        'override_enabled': user.permissions_override is not None,
     }
 
 
@@ -150,6 +181,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     # --- company / department options ---
     company_options = helpers.company_options(lang)  # [{'value': 'Elektrotechniczne', 'label': 'Elektrotechniczne'}, ...]
+    department_options = _department_options(lang)
     department_labels = helpers.company_labels(lang)
     department_choices = [
         (code, department_labels.get(code, code)) for code in user_departments
@@ -376,8 +408,10 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "download_fields_total": download_fields_total,
         "selected_download_ids": selected_download_ids,
         "company_options": company_options,
+        "department_choices_json": json.dumps(department_options),
         "status_options": status_options,
         "status_meta_json": status_meta_json,
+        "role_permissions_json": json.dumps(ROLE_PERMISSIONS),
         "request_detail_error_message": detail_error_message,
         "request_update_error_message": update_error_message,
     }
@@ -633,6 +667,90 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         for user in AdminUser.objects.prefetch_related('departments').all().order_by('id')
     ]
     return JsonResponse({'users': response_users})
+
+
+@require_http_methods(["GET", "POST"])
+@login_required(login_url='/login/')
+def admin_user_settings(request: HttpRequest, user_id: int) -> JsonResponse:
+    admin_user = _get_admin_user(request)
+    if not request.session.get('logged_in') or not admin_user:
+        return JsonResponse({'error': 'unauthorised'}, status=403)
+
+    if admin_user.level_of_access != AdminUser.LEVEL_ADMIN:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    language = get_language(request)
+    messages = {
+        'invalid_payload': 'Nieprawidłowy format danych.' if language == 'pl' else 'Invalid payload.',
+        'not_found': 'Użytkownik nie istnieje.' if language == 'pl' else 'User not found.',
+        'role_required': 'Poziom dostępu jest wymagany.' if language == 'pl' else 'Role is required.',
+        'role_invalid': 'Nieprawidłowy poziom dostępu.' if language == 'pl' else 'Invalid role.',
+        'departments_invalid': 'Nieprawidłowy departament.' if language == 'pl' else 'Invalid department.',
+        'departments_required': 'Departament jest wymagany dla level2.'
+        if language == 'pl'
+        else 'Department is required for level2 users.',
+        'admin_required': 'Musi pozostać co najmniej jeden administrator level1.'
+        if language == 'pl'
+        else 'At least one level1 admin must remain.',
+    }
+
+    try:
+        target = AdminUser.objects.prefetch_related('departments').get(id=user_id)
+    except AdminUser.DoesNotExist:
+        return JsonResponse({'error': messages['not_found']}, status=404)
+
+    if request.method == 'GET':
+        data = _serialise_admin_user_settings(target, language)
+        data['department_choices'] = _department_options(language)
+        return JsonResponse(data)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (TypeError, ValueError, AttributeError):
+        return JsonResponse({'errors': [messages['invalid_payload']]}, status=400)
+
+    role = (payload.get('role') or '').strip()
+    departments_raw = payload.get('departments') if isinstance(payload, dict) else []
+    override_enabled = bool(payload.get('override_enabled'))
+    override_permissions = payload.get('permissions_override') if isinstance(payload, dict) else {}
+
+    if not role:
+        return JsonResponse({'errors': [messages['role_required']]}, status=400)
+    if role not in {choice[0] for choice in AdminUser.LEVEL_CHOICES}:
+        return JsonResponse({'errors': [messages['role_invalid']]}, status=400)
+
+    departments_list = departments_raw if isinstance(departments_raw, list) else []
+    try:
+        department_ids = [int(dep) for dep in departments_list]
+    except (TypeError, ValueError):
+        return JsonResponse({'errors': [messages['departments_invalid']]}, status=400)
+
+    departments = list(Department.objects.filter(id__in=department_ids))
+    if len(departments) != len(department_ids):
+        return JsonResponse({'errors': [messages['departments_invalid']]}, status=400)
+
+    if role == AdminUser.LEVEL_DEPARTMENT and not department_ids:
+        return JsonResponse({'errors': [messages['departments_required']]}, status=400)
+
+    if (
+        target.level_of_access == AdminUser.LEVEL_ADMIN
+        and role != AdminUser.LEVEL_ADMIN
+        and not AdminUser.objects.filter(level_of_access=AdminUser.LEVEL_ADMIN).exclude(id=target.id).exists()
+    ):
+        return JsonResponse({'errors': [messages['admin_required']]}, status=400)
+
+    permissions_payload = override_permissions if override_enabled else None
+    if permissions_payload is not None and not isinstance(permissions_payload, dict):
+        return JsonResponse({'errors': [messages['invalid_payload']]}, status=400)
+
+    target.level_of_access = role
+    target.permissions_override = permissions_payload
+    target.save(update_fields=['level_of_access', 'permissions_override', 'updated_at'])
+    target.departments.set(departments)
+
+    response_data = _serialise_admin_user_settings(target, language)
+    response_data['department_choices'] = _department_options(language)
+    return JsonResponse(response_data)
 
 
 @require_POST
