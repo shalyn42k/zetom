@@ -1166,7 +1166,7 @@
 
             const editButton = document.createElement('button');
             editButton.type = 'button';
-            editButton.className = 'button button--success settings-table__edit';
+            editButton.className = 'settings-table__action settings-table__action--success';
             editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
             editButton.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -1175,27 +1175,30 @@
 
             const resetButton = document.createElement('button');
             resetButton.type = 'button';
-            resetButton.className = 'settings-table__reset';
+            resetButton.className = 'settings-table__action settings-table__action--info';
             resetButton.dataset.userReset = 'true';
             resetButton.dataset.userId = user.user_id || '';
             resetButton.title = language === 'pl'
                 ? 'Wyślij nowe hasło e-mailem'
                 : 'Send new password via email';
-            resetButton.textContent = '↻';
+            resetButton.textContent = language === 'pl' ? 'Resetuj hasło' : 'Resend password';
             if (!user.user_id) {
                 resetButton.disabled = true;
             }
 
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
-            deleteButton.innerHTML = '🗑';
-            deleteButton.title = 'Delete user';
+            deleteButton.className = 'settings-table__action settings-table__action--danger';
+            deleteButton.textContent = language === 'pl' ? 'Usuń' : 'Delete';
+            deleteButton.title = language === 'pl' ? 'Usuń użytkownika' : 'Delete user';
 
             const isCurrentAdmin = String(user.user_id) === String(currentAdminId);
             if (isCurrentAdmin) {
                 row.classList.add('settings-row--self');
                 deleteButton.disabled = true;
                 deleteButton.setAttribute('aria-disabled', 'true');
+                editButton.disabled = false;
+                resetButton.disabled = false;
             } else {
                 deleteButton.addEventListener('click', (event) => {
                     event.stopPropagation();
