@@ -998,6 +998,8 @@
         const manualPasswordToggle = userModal?.querySelector('[data-user-password-toggle]');
         const manualPasswordRow = userModal?.querySelector('[data-user-password-row]');
         const manualPasswordInput = userModal?.querySelector('[data-user-password]');
+        const userGrid = userModal?.querySelector('.user-modal__grid');
+        const emailRow = userModal?.querySelector('.user-modal__row--email');
         const userDepartmentsContainer = userModal?.querySelector('[data-user-departments]');
         const permissionOverrideToggle = userModal?.querySelector('[data-permission-override]');
         const permissionList = userModal?.querySelector('[data-user-permissions]');
@@ -1486,14 +1488,27 @@
         });
 
         const updateManualPasswordVisibility = () => {
-            if (!manualPasswordRow || !manualPasswordToggle) return;
+            if (!manualPasswordRow || !manualPasswordToggle || !userGrid || !emailRow) return;
+
             const shouldShow = manualPasswordToggle.checked;
-            manualPasswordRow.hidden = !shouldShow;
             isManualPassword = shouldShow;
-            if (manualPasswordInput) {
-                manualPasswordInput.toggleAttribute('required', shouldShow);
-                if (!shouldShow) {
+
+            if (shouldShow) {
+                if (!manualPasswordRow.parentElement) {
+                    userGrid.insertBefore(manualPasswordRow, emailRow.nextSibling);
+                }
+                manualPasswordRow.hidden = false;
+                if (manualPasswordInput) {
+                    manualPasswordInput.toggleAttribute('required', true);
+                    manualPasswordInput.focus();
+                }
+            } else {
+                if (manualPasswordInput) {
+                    manualPasswordInput.toggleAttribute('required', false);
                     manualPasswordInput.value = '';
+                }
+                if (manualPasswordRow.parentElement) {
+                    manualPasswordRow.parentElement.removeChild(manualPasswordRow);
                 }
             }
         };
@@ -1501,6 +1516,8 @@
         manualPasswordToggle?.addEventListener('change', () => {
             updateManualPasswordVisibility();
         });
+
+        updateManualPasswordVisibility();
 
         const setUsers = (list) => {
             users = (list || []).map((user, index) => ({

@@ -672,6 +672,29 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         dept.code: dept for dept in Department.objects.filter(code__in=allowed_departments)
     }
     updated_users: list[AdminUser] = []
+    def _apply_credentials(user: AdminUser, *, manual_password: str | None, email: str) -> None:
+        if manual_password:
+            plain_text_password = manual_password
+            transaction.on_commit(
+                lambda: send_admin_user_credentials(
+                    email=email,
+                    token=plain_text_password,
+                    user=user,
+                )
+            )
+            user.set_password(plain_text_password)
+            return
+
+        generated_token = _generate_access_token()
+        transaction.on_commit(
+            lambda: send_admin_user_credentials(
+                email=email,
+                token=generated_token,
+                user=user,
+            )
+        )
+        user.set_password(generated_token)
+
     with transaction.atomic():
         for row in validated_rows:
             selected_departments = [departments_lookup[code] for code in row['departments'] if code in departments_lookup]
@@ -696,21 +719,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     if row.get('password_changed') and row.get('password')
                     else None
                 )
-                if manual_password:
-                    send_admin_user_credentials(
-                        email=row['email'],
-                        token=manual_password,
-                        user=user,
-                    )
-                    user.set_password(manual_password)
-                else:
-                    generated_token = _generate_access_token()
-                    send_admin_user_credentials(
-                        email=row['email'],
-                        token=generated_token,
-                        user=user,
-                    )
-                    user.set_password(generated_token)
+                _apply_credentials(user, manual_password=manual_password, email=row['email'])
 
                 user.save()
                 if departments_changed or user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
@@ -723,17 +732,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     else ''
                 )
                 manual_password = password_value or None
-                if manual_password:
-                    send_admin_user_credentials(email=row['email'], token=manual_password, user=user)
-                    user.set_password(manual_password)
-                else:
-                    generated_token = _generate_access_token()
-                    send_admin_user_credentials(
-                        email=row['email'],
-                        token=generated_token,
-                        user=user,
-                    )
-                    user.set_password(generated_token)
+                _apply_credentials(user, manual_password=manual_password, email=row['email'])
                 user.permissions_override = row['permissions_override']
                 user.save()
                 if selected_departments:
