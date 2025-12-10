@@ -681,6 +681,25 @@ body[data-theme='dark'] .modal__backdrop {
     pointer-events: none;
 }
 
+.user-modal__permissions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+.user-modal__permissions-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.user-modal__permissions-mode-pill {
+    font-size: 0.9rem;
+}
+
 .toggle {
     display: inline-flex;
     align-items: center;

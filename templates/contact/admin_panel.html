@@ -725,10 +725,22 @@
                                     <div class="user-modal__departments" data-user-departments></div>
                                 </div>
                                 <div class="user-modal__tab-panel is-hidden" data-tab-content="permissions">
-                                    <label class="toggle" data-permission-toggle-wrapper>
-                                        <input type="checkbox" data-permission-override>
-                                        <span class="toggle__label">{% if lang == 'pl' %}Nadpisz domyślne{% else %}Override defaults{% endif %}</span>
-                                    </label>
+                                    <div class="user-modal__permissions-header">
+                                        <div class="user-modal__permissions-mode">
+                                            <label class="toggle" data-permission-toggle-wrapper>
+                                                <input type="checkbox" data-permission-override>
+                                                <span class="toggle__label" data-permission-mode-label>
+                                                    {% if lang == 'pl' %}Użyj domyślnych uprawnień roli{% else %}Use role defaults{% endif %}
+                                                </span>
+                                            </label>
+                                            <p class="user-modal__hint" data-permission-mode-hint>
+                                                {% if lang == 'pl' %}Domyślne uprawnienia wynikają z wybranego poziomu.{% else %}Defaults are inherited from the selected level.{% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="badge badge--info user-modal__permissions-mode-pill" data-permission-mode-pill>
+                                            {% if lang == 'pl' %}Domyślne{% else %}Defaults{% endif %}
+                                        </div>
+                                    </div>
                                     <div class="user-modal__permissions" data-user-permissions></div>
                                 </div>
                             </div>

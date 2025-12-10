@@ -998,6 +998,9 @@
         const userDepartmentsContainer = settingsPanel.querySelector('[data-user-departments]');
         const permissionOverrideToggle = settingsPanel.querySelector('[data-permission-override]');
         const permissionList = settingsPanel.querySelector('[data-user-permissions]');
+        const permissionModeLabel = settingsPanel.querySelector('[data-permission-mode-label]');
+        const permissionModeHint = settingsPanel.querySelector('[data-permission-mode-hint]');
+        const permissionModePill = settingsPanel.querySelector('[data-permission-mode-pill]');
         const tabButtons = settingsPanel.querySelectorAll('[data-tab-target]');
         const tabPanels = settingsPanel.querySelectorAll('[data-tab-content]');
 
@@ -1167,6 +1170,15 @@
             const actionsCell = document.createElement('div');
             actionsCell.className = 'settings-table__delete settings-table__actions';
 
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.className = 'button button--outline';
+            editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                openUserModal(user);
+            });
+
             const resetButton = document.createElement('button');
             resetButton.type = 'button';
             resetButton.className = 'settings-table__reset';
@@ -1210,7 +1222,7 @@
                     deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
                 });
             }
-            actionsCell.append(resetButton, deleteButton);
+            actionsCell.append(editButton, resetButton, deleteButton);
 
             row.append(
                 idCell,
@@ -1331,6 +1343,27 @@
                 checkbox.disabled = mode !== 'custom';
             });
             permissionList.classList.toggle('is-disabled', mode !== 'custom');
+            if (permissionModeLabel) {
+                permissionModeLabel.textContent = mode === 'custom'
+                    ? (language === 'pl' ? 'Konfiguruj ręcznie' : 'Configure manually')
+                    : (language === 'pl' ? 'Użyj domyślnych uprawnień roli' : 'Use role defaults');
+            }
+            if (permissionModeHint) {
+                permissionModeHint.textContent = mode === 'custom'
+                    ? (language === 'pl'
+                        ? 'Możesz selektywnie włączyć lub wyłączyć funkcje niezależnie od roli.'
+                        : 'Fine-tune available actions regardless of the base role.')
+                    : (language === 'pl'
+                        ? 'Uprawnienia są dziedziczone z wybranego poziomu dostępu.'
+                        : 'Permissions inherit from the selected access level.');
+            }
+            if (permissionModePill) {
+                permissionModePill.textContent = mode === 'custom'
+                    ? (language === 'pl' ? 'Nadpisane' : 'Custom')
+                    : (language === 'pl' ? 'Domyślne' : 'Defaults');
+                permissionModePill.classList.toggle('badge--warning', mode === 'custom');
+                permissionModePill.classList.toggle('badge--info', mode !== 'custom');
+            }
         };
 
         const activateTab = (target) => {
