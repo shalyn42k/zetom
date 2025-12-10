@@ -274,18 +274,35 @@
         <form class="modal__form user-modal__form" data-user-form>
             <div class="settings-modal__error" data-user-modal-error hidden></div>
             <div class="user-modal__grid">
-                <label class="user-modal__field">
-                    <span class="form-label">Email</span>
-                    <input type="email" class="form-input" data-user-email required readonly>
-                </label>
-                <label class="user-modal__field">
-                    <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
-                    <select class="form-input" data-user-level>
-                        <option value="level1">level1</option>
-                        <option value="level2">level2</option>
-                        <option value="level3">level3</option>
-                    </select>
-                </label>
+                <div class="user-modal__row user-modal__row--email">
+                    <label class="user-modal__field user-modal__field--email">
+                        <span class="form-label">Email</span>
+                        <input type="email" class="form-input" data-user-email required readonly>
+                    </label>
+                    <label class="user-modal__field user-modal__field--toggle">
+                        <span class="form-label">{% if lang == 'pl' %}Ustaw hasło ręcznie{% else %}Set password manually{% endif %}</span>
+                        <div class="user-modal__toggle">
+                            <input type="checkbox" data-user-password-toggle>
+                            <span class="user-modal__toggle-label">{% if lang == 'pl' %}Włączone{% else %}Enabled{% endif %}</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="user-modal__row user-modal__row--password" data-user-password-row hidden>
+                    <label class="user-modal__field user-modal__field--password">
+                        <span class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</span>
+                        <input type="password" class="form-input" data-user-password>
+                    </label>
+                </div>
+                <div class="user-modal__row user-modal__row--level">
+                    <label class="user-modal__field">
+                        <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                        <select class="form-input" data-user-level>
+                            <option value="level1">level1</option>
+                            <option value="level2">level2</option>
+                            <option value="level3">level3</option>
+                        </select>
+                    </label>
+                </div>
             </div>
             <div class="user-modal__tabs" role="tablist" aria-label="User details navigation">
                 <button type="button" class="user-modal__tab is-active" data-tab-target="departments" role="tab" aria-selected="true">
