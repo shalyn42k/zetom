@@ -1160,6 +1160,10 @@
             hiddenPasswordInput.type = 'hidden';
             hiddenPasswordInput.value = user.password_plaintext || '';
             hiddenPasswordInput.dataset.settingsPassword = 'true';
+            permissionCell.appendChild(hiddenPasswordInput);
+
+            const actionsCell = document.createElement('div');
+            actionsCell.className = 'settings-table__delete settings-table__actions';
 
             const resetButton = document.createElement('button');
             resetButton.type = 'button';
@@ -1174,8 +1178,6 @@
                 resetButton.disabled = true;
             }
 
-            const deleteCell = document.createElement('div');
-            deleteCell.className = 'settings-table__delete';
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
             deleteButton.innerHTML = '🗑';
@@ -1206,8 +1208,7 @@
                     deleteButton.setAttribute('aria-pressed', (!isMarked).toString());
                 });
             }
-            deleteCell.appendChild(deleteButton);
-            permissionCell.append(hiddenPasswordInput, resetButton);
+            actionsCell.append(resetButton, deleteButton);
 
             row.append(
                 idCell,
@@ -1215,7 +1216,7 @@
                 levelCell,
                 departmentCell,
                 permissionCell,
-                deleteCell,
+                actionsCell,
             );
             row.addEventListener('click', (event) => {
                 if (isInteractiveTarget(event.target)) {
