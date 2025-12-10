@@ -1166,7 +1166,7 @@
 
             const editButton = document.createElement('button');
             editButton.type = 'button';
-            editButton.className = 'button button--outline';
+            editButton.className = 'button button--success settings-table__edit';
             editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
             editButton.addEventListener('click', (event) => {
                 event.stopPropagation();
