@@ -700,7 +700,7 @@
                             <div class="user-modal__grid">
                                 <label class="user-modal__field">
                                     <span class="form-label">Email</span>
-                                    <input type="email" class="form-input" data-user-email required>
+                                    <input type="email" class="form-input" data-user-email required readonly>
                                 </label>
                                 <label class="user-modal__field">
                                     <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
@@ -711,26 +711,20 @@
                                     </select>
                                 </label>
                             </div>
-                            <div class="user-modal__section user-modal__section--collapsible" data-collapsible-section="departments">
-                                <button type="button" class="user-modal__section-toggle" data-section-toggle>
-                                    <div class="user-modal__section-title">
-                                        <p class="form-label">{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</p>
-                                        <span class="user-modal__hint">{% if lang == 'pl' %}Wybierz jedną lub kilka opcji{% else %}Pick one or more departments{% endif %}</span>
-                                    </div>
-                                    <span class="user-modal__chevron" data-section-chevron aria-hidden="true">v</span>
+                            <div class="user-modal__tabs" role="tablist" aria-label="User details navigation">
+                                <button type="button" class="user-modal__tab is-active" data-tab-target="departments" role="tab" aria-selected="true">
+                                    {% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}
                                 </button>
-                                <div class="user-modal__section-content" data-section-content aria-hidden="true">
+                                <button type="button" class="user-modal__tab" data-tab-target="permissions" role="tab" aria-selected="false">
+                                    {% if lang == 'pl' %}Uprawnienia{% else %}Permissions{% endif %}
+                                </button>
+                            </div>
+                            <div class="user-modal__tabs-content">
+                                <div class="user-modal__tab-panel" data-tab-content="departments">
+                                    <p class="user-modal__hint">{% if lang == 'pl' %}Wybierz jedną lub kilka opcji{% else %}Pick one or more departments{% endif %}</p>
                                     <div class="user-modal__departments" data-user-departments></div>
                                 </div>
-                            </div>
-                            <div class="user-modal__section user-modal__section--collapsible" data-collapsible-section="permissions">
-                                <button type="button" class="user-modal__section-toggle" data-section-toggle>
-                                    <div class="user-modal__section-title">
-                                        <p class="form-label">{% if lang == 'pl' %}Prawa dostępu{% else %}Permissions{% endif %}</p>
-                                    </div>
-                                    <span class="user-modal__chevron" data-section-chevron aria-hidden="true">v</span>
-                                </button>
-                                <div class="user-modal__section-content" data-section-content aria-hidden="true">
+                                <div class="user-modal__tab-panel is-hidden" data-tab-content="permissions">
                                     <label class="toggle" data-permission-toggle-wrapper>
                                         <input type="checkbox" data-permission-override>
                                         <span class="toggle__label">{% if lang == 'pl' %}Nadpisz domyślne{% else %}Override defaults{% endif %}</span>
