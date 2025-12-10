@@ -17,17 +17,6 @@
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
-    <style>
-    .modal[data-user-modal] {
-        z-index: 10000 !important;
-    }
-    .modal[data-user-modal] .modal__backdrop {
-        z-index: 10001 !important;
-    }
-    .modal[data-user-modal] .modal__dialog {
-        z-index: 10002 !important;
-    }
-    </style>
     <script src="{% static 'js/admin.js' %}" defer></script>
 </head>
 <body class="admin-page{% if trash_form.errors or download_form.errors %} has-modal{% endif %}">
