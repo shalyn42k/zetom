@@ -997,8 +997,8 @@
         const userModalError = settingsPanel.querySelector('[data-user-modal-error]');
         const userEmailInput = settingsPanel.querySelector('[data-user-email]');
         const userLevelSelect = settingsPanel.querySelector('[data-user-level]');
-        const userDepartmentsSelect = settingsPanel.querySelector('[data-user-departments]');
-        const permissionModeInputs = settingsPanel.querySelectorAll('[data-permission-mode]');
+        const userDepartmentsContainer = settingsPanel.querySelector('[data-user-departments]');
+        const permissionOverrideToggle = settingsPanel.querySelector('[data-permission-override]');
         const permissionList = settingsPanel.querySelector('[data-user-permissions]');
 
         const PAGE_SIZE = 5;
@@ -1093,14 +1093,17 @@
             Object.entries(permissionLabels).forEach(([key, label]) => {
                 const wrapper = document.createElement('label');
                 wrapper.className = 'checkbox-pill checkbox-pill--permission';
+                const checkboxId = `permission-${key}`;
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.id = checkboxId;
                 checkbox.value = key;
                 checkbox.dataset.permissionItem = 'true';
                 checkbox.checked = Boolean(effective[key]);
                 checkbox.disabled = mode !== 'custom';
                 const text = document.createElement('span');
                 text.textContent = label;
+                wrapper.setAttribute('for', checkboxId);
                 wrapper.append(checkbox, text);
                 permissionList.appendChild(wrapper);
             });
@@ -1319,11 +1322,23 @@
         };
 
         const populateDepartmentSelect = (selectedValues) => {
-            if (!userDepartmentsSelect) return;
-            userDepartmentsSelect.innerHTML = departmentsOptionsHTML;
+            if (!userDepartmentsContainer) return;
             const selected = Array.isArray(selectedValues) ? selectedValues : [];
-            Array.from(userDepartmentsSelect.options).forEach((opt) => {
-                opt.selected = selected.includes(opt.value);
+            userDepartmentsContainer.innerHTML = '';
+            Object.entries(departmentLabelMap).forEach(([value, label]) => {
+                const checkboxId = `user-dept-${value}`;
+                const option = document.createElement('label');
+                option.className = 'user-modal__department';
+                option.setAttribute('for', checkboxId);
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = checkboxId;
+                input.value = value;
+                input.checked = selected.includes(value);
+                const text = document.createElement('span');
+                text.textContent = label;
+                option.append(input, text);
+                userDepartmentsContainer.appendChild(option);
             });
         };
 
@@ -1355,9 +1370,9 @@
             userLevelSelect.value = user.level || 'level3';
             populateDepartmentSelect(user.departments);
             const mode = user.permissions_mode || 'inherit';
-            permissionModeInputs.forEach((input) => {
-                input.checked = input.value === mode;
-            });
+            if (permissionOverrideToggle) {
+                permissionOverrideToggle.checked = mode === 'custom';
+            }
             renderPermissionCheckboxes(mode, user.level || 'level3', user.custom_permissions || user.permissions);
             applyPermissionModeState(mode);
             if (userModalTitle) {
@@ -1389,18 +1404,15 @@
             }
         });
 
-        permissionModeInputs.forEach((input) => {
-            input.addEventListener('change', () => {
-                const mode = input.value;
-                const custom = readPermissionSelection();
-                renderPermissionCheckboxes(mode, userLevelSelect ? userLevelSelect.value : 'level3', custom);
-                applyPermissionModeState(mode);
-            });
+        permissionOverrideToggle?.addEventListener('change', () => {
+            const mode = permissionOverrideToggle.checked ? 'custom' : 'inherit';
+            const custom = readPermissionSelection();
+            renderPermissionCheckboxes(mode, userLevelSelect ? userLevelSelect.value : 'level3', custom);
+            applyPermissionModeState(mode);
         });
 
         userLevelSelect?.addEventListener('change', () => {
-            const modeInput = Array.from(permissionModeInputs).find((input) => input.checked);
-            const mode = modeInput ? modeInput.value : 'inherit';
+            const mode = permissionOverrideToggle?.checked ? 'custom' : 'inherit';
             const custom = mode === 'custom' ? readPermissionSelection() : {};
             renderPermissionCheckboxes(mode, userLevelSelect.value, custom);
             applyPermissionModeState(mode);
@@ -1413,11 +1425,12 @@
             if (!targetUser) return;
             targetUser.email = userEmailInput ? userEmailInput.value.trim() : '';
             targetUser.level = userLevelSelect ? userLevelSelect.value : targetUser.level;
-            targetUser.departments = userDepartmentsSelect
-                ? Array.from(userDepartmentsSelect.selectedOptions).map((option) => option.value)
+            targetUser.departments = userDepartmentsContainer
+                ? Array.from(userDepartmentsContainer.querySelectorAll('input[type="checkbox"]'))
+                      .filter((input) => input.checked)
+                      .map((input) => input.value)
                 : targetUser.departments;
-            const modeInput = Array.from(permissionModeInputs).find((input) => input.checked);
-            const mode = modeInput ? modeInput.value : 'inherit';
+            const mode = permissionOverrideToggle?.checked ? 'custom' : 'inherit';
             targetUser.permissions_mode = mode;
             if (mode === 'custom') {
                 const selectedPermissions = readPermissionSelection();
