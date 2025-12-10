@@ -483,6 +483,18 @@ def _serialise_admin_user(user: AdminUser) -> dict:
     }
 
 
+def _queue_credentials_emails(pairs: list[tuple[AdminUser, str]]) -> None:
+    if not pairs:
+        return
+
+    transaction.on_commit(
+        lambda: [
+            send_admin_user_credentials(email=user.email, token=token, user=user)
+            for user, token in pairs
+        ]
+    )
+
+
 @require_http_methods(["GET", "POST"])
 @login_required(login_url='/login/')
 def admin_settings(request: HttpRequest) -> JsonResponse:
@@ -717,13 +729,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 tokens_to_send.append((user, token))
             updated_users.append(user)
 
-    if tokens_to_send:
-        transaction.on_commit(
-            lambda: [
-                send_admin_user_credentials(email=user.email, token=token, user=user)
-                for user, token in tokens_to_send
-            ]
-        )
+    _queue_credentials_emails(tokens_to_send)
 
     response_users = [
         _serialise_admin_user(user)
@@ -767,11 +773,12 @@ def admin_reset_password(request: HttpRequest) -> JsonResponse:
         )
 
     new_password = get_random_string(length=10)
-    target.set_password(new_password)
-    target.last_password_reset_at = now
-    target.save(update_fields=['password_hash', 'last_password_reset_at'])
+    with transaction.atomic():
+        target.set_password(new_password)
+        target.last_password_reset_at = now
+        target.save(update_fields=['password_hash', 'last_password_reset_at'])
 
-    send_admin_user_credentials(email=target.email, token=new_password, user=target)
+    _queue_credentials_emails([(target, new_password)])
 
     return JsonResponse({'success': True})
 
@@ -836,6 +843,9 @@ def admin_profile(request: HttpRequest) -> JsonResponse:
         admin_user.set_password(new_password)
     admin_user.save(update_fields=['email', 'password_hash', 'updated_at'])
     request.session['admin_email'] = admin_user.email
+
+    if wants_password_change and new_password:
+        _queue_credentials_emails([(admin_user, new_password)])
 
     return JsonResponse({'success': True, 'email': admin_user.email})
 
