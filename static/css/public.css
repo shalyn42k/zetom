@@ -377,6 +377,73 @@ a:focus {
     box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.18);
 }
 
+.password-input {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.password-input__field {
+    width: 100%;
+    padding: 12px 14px;
+    padding-right: 3.2rem;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-background);
+    color: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.password-input__field:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.18);
+}
+
+.password-input__toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    color: var(--green);
+    border-radius: 8px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    z-index: 1;
+}
+
+.password-input__toggle:hover,
+.password-input__toggle:focus-visible {
+    color: var(--green-dark);
+    background: rgba(47, 168, 79, 0.1);
+    outline: none;
+}
+
+.password-input__icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.password-input__icon--hide {
+    display: none;
+}
+
+.password-input__toggle.is-visible .password-input__icon--show {
+    display: none;
+}
+
+.password-input__toggle.is-visible .password-input__icon--hide {
+    display: block;
+}
+
 .form-error {
     color: var(--form-error);
     font-size: 0.9rem;
