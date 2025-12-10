@@ -38,7 +38,11 @@ class MultipleFileField(forms.FileField):
             try:
                 cleaned_files.append(super().clean(file, initial))
             except forms.ValidationError as exc:  # pragma: no cover - delegated validation
-                errors.extend(exc.error_list)
+                non_empty_errors = [err for err in exc.error_list if getattr(err, 'code', '') != 'empty']
+                if non_empty_errors:
+                    errors.extend(non_empty_errors)
+                else:
+                    cleaned_files.append(file)
         if errors:
             raise forms.ValidationError(errors)
         return cleaned_files
@@ -219,7 +223,10 @@ class ContactForm(forms.ModelForm):
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
-        return _validate_attachments(files, self.language)
+        errors = _validate_attachments(files, self.language)
+        if errors:
+            raise forms.ValidationError(errors)
+        return files
 
 
 class LoginForm(forms.Form):
@@ -558,7 +565,10 @@ class UserMessageUpdateForm(forms.ModelForm):
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
-        return _validate_attachments(files, None)
+        errors = _validate_attachments(files, None)
+        if errors:
+            raise forms.ValidationError(errors)
+        return files
 
 
 class RequestAccessForm(forms.Form):
