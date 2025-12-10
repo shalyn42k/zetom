@@ -995,6 +995,10 @@
         const userModalError = userModal?.querySelector('[data-user-modal-error]');
         const userEmailInput = userModal?.querySelector('[data-user-email]');
         const userLevelSelect = userModal?.querySelector('[data-user-level]');
+        const manualPasswordToggle = userModal?.querySelector('[data-user-manual-password]');
+        const manualPasswordSection = userModal?.querySelector('[data-user-password-row]');
+        const userPasswordInput = userModal?.querySelector('[data-user-password]');
+        const userPasswordConfirmInput = userModal?.querySelector('[data-user-password-confirm]');
         const userDepartmentsContainer = userModal?.querySelector('[data-user-departments]');
         const permissionOverrideToggle = userModal?.querySelector('[data-permission-override]');
         const permissionList = userModal?.querySelector('[data-user-permissions]');
@@ -1055,6 +1059,12 @@
             }
         };
 
+        const showUserModalError = (message) => {
+            if (!userModalError) return;
+            userModalError.textContent = message || '';
+            userModalError.hidden = !message;
+        };
+
         const showProfileError = (message) => {
             if (!profileErrors) return;
             profileErrors.textContent = message || '';
@@ -1104,6 +1114,15 @@
                 wrapper.append(checkbox, text);
                 permissionList.appendChild(wrapper);
             });
+        };
+
+        const updateManualPasswordVisibility = (enabled) => {
+            if (!manualPasswordSection) return;
+            manualPasswordSection.hidden = !enabled;
+            if (!enabled) {
+                if (userPasswordInput) userPasswordInput.value = '';
+                if (userPasswordConfirmInput) userPasswordConfirmInput.value = '';
+            }
         };
 
         const updateEmptyState = () => {
@@ -1377,6 +1396,17 @@
             }
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
+            const manualPasswordEnabled = Boolean(user.manual_password);
+            if (manualPasswordToggle) {
+                manualPasswordToggle.checked = manualPasswordEnabled;
+            }
+            if (userPasswordInput) {
+                userPasswordInput.value = manualPasswordEnabled ? user.password || '' : '';
+            }
+            if (userPasswordConfirmInput) {
+                userPasswordConfirmInput.value = manualPasswordEnabled ? user.password || '' : '';
+            }
+            updateManualPasswordVisibility(manualPasswordEnabled);
             populateDepartmentSelect(user.departments);
             const mode = user.permissions_mode || 'inherit';
             if (permissionOverrideToggle) {
@@ -1385,6 +1415,7 @@
             renderPermissionCheckboxes(mode, user.level || 'level3', user.custom_permissions || user.permissions);
             applyPermissionModeState(mode);
             activateTab('departments');
+            showUserModalError('');
             if (userModalTitle) {
                 userModalTitle.textContent = user.user_id
                     ? language === 'pl'
@@ -1399,6 +1430,8 @@
 
         const closeUserModal = () => {
             activeUserIndex = null;
+            updateManualPasswordVisibility(false);
+            showUserModalError('');
             toggleUserModal(false);
         };
 
@@ -1428,6 +1461,11 @@
             applyPermissionModeState(mode);
         });
 
+        manualPasswordToggle?.addEventListener('change', () => {
+            updateManualPasswordVisibility(manualPasswordToggle.checked);
+            showUserModalError('');
+        });
+
         userModalForm?.addEventListener('submit', (event) => {
             event.preventDefault();
             if (activeUserIndex === null) return;
@@ -1435,6 +1473,28 @@
             if (!targetUser) return;
             targetUser.email = userEmailInput ? userEmailInput.value.trim() : '';
             targetUser.level = userLevelSelect ? userLevelSelect.value : targetUser.level;
+            const manualPasswordEnabled = manualPasswordToggle?.checked;
+            let manualPasswordValue = '';
+            if (manualPasswordEnabled) {
+                manualPasswordValue = userPasswordInput ? userPasswordInput.value.trim() : '';
+                const confirmValue = userPasswordConfirmInput ? userPasswordConfirmInput.value.trim() : '';
+                if (!manualPasswordValue) {
+                    showUserModalError(
+                        language === 'pl'
+                            ? 'Podaj hasło, jeśli ma być ustawione ręcznie.'
+                            : 'Please provide a password when setting it manually.',
+                    );
+                    return;
+                }
+                if (confirmValue && confirmValue !== manualPasswordValue) {
+                    showUserModalError(
+                        language === 'pl'
+                            ? 'Hasła nie są zgodne.'
+                            : 'Passwords do not match.',
+                    );
+                    return;
+                }
+            }
             targetUser.departments = userDepartmentsContainer
                 ? Array.from(userDepartmentsContainer.querySelectorAll('input[type="checkbox"]'))
                       .filter((input) => input.checked)
@@ -1442,6 +1502,9 @@
                 : targetUser.departments;
             const mode = permissionOverrideToggle?.checked ? 'custom' : 'inherit';
             targetUser.permissions_mode = mode;
+            targetUser.manual_password = Boolean(manualPasswordEnabled);
+            targetUser.password_changed = Boolean(manualPasswordEnabled);
+            targetUser.password = manualPasswordEnabled ? manualPasswordValue : '';
             if (mode === 'custom') {
                 const selectedPermissions = readPermissionSelection();
                 targetUser.permissions = { ...getRolePermissions(targetUser.level), ...selectedPermissions };
@@ -1450,6 +1513,7 @@
                 targetUser.permissions = getRolePermissions(targetUser.level);
                 targetUser.custom_permissions = {};
             }
+            showUserModalError('');
             renderRows();
             closeUserModal();
         });
@@ -1460,6 +1524,7 @@
                 index,
                 password: '',
                 password_changed: false,
+                manual_password: Boolean(user.manual_password),
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
                 permissions_mode: user.permissions_mode || 'inherit',
@@ -1495,8 +1560,9 @@
                 user_id: user.user_id || null,
                 email: user.email || '',
                 level: user.level || '',
-                password: user.level === 'level1' && user.password_changed ? user.password || '' : '',
-                password_changed: user.level === 'level1' ? Boolean(user.password_changed) : false,
+                password: user.manual_password ? user.password || '' : '',
+                password_changed: Boolean(user.manual_password),
+                manual_password: Boolean(user.manual_password),
                 departments: Array.isArray(user.departments) ? user.departments : [],
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
@@ -1607,6 +1673,7 @@
                 departments: [],
                 password: '',
                 password_changed: false,
+                manual_password: false,
                 permissions_mode: 'inherit',
                 permissions: getRolePermissions('level3'),
                 custom_permissions: {},

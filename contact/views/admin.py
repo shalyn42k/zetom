@@ -567,7 +567,8 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         departments_list = departments_raw if isinstance(departments_raw, list) else []
         departments = [str(value).strip() for value in departments_list if str(value).strip()]
         password_value = row.get('password') if isinstance(row.get('password'), str) else ''
-        password_changed = bool(row.get('password_changed')) if level == AdminUser.LEVEL_ADMIN else False
+        manual_password = bool(row.get('manual_password')) or bool(row.get('password_changed'))
+        password_changed = manual_password
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
         permissions_raw = row.get('permissions') if isinstance(row.get('permissions'), dict) else {}
@@ -605,7 +606,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
             if invalid_departments:
                 _error('department_invalid')
 
-        if password_changed and not password_value:
+        if manual_password and not password_value:
             _error('password_required')
 
         if not marked_for_deletion:
@@ -621,6 +622,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 'departments': departments,
                 'password': password_value,
                 'password_changed': password_changed,
+                'manual_password': manual_password,
                 'marked_for_deletion': marked_for_deletion,
                 'is_new': is_new,
                 'permissions_override': permissions_override,
@@ -691,13 +693,13 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 level_changed = user.level_of_access != row['level']
                 existing_departments = set(user.departments.values_list('code', flat=True))
                 departments_changed = existing_departments != set(row['departments'])
-                password_changed = row.get('password_changed', False)
+                manual_password = row.get('manual_password', False) or row.get('password_changed', False)
 
                 user.email = row['email']
                 user.level_of_access = row['level']
                 user.permissions_override = row['permissions_override']
 
-                if password_changed and row.get('password'):
+                if manual_password and row.get('password'):
                     user.set_password(row['password'])
                     token = row['password']
                 elif email_changed or not user.password_hash:
@@ -709,11 +711,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                     user.departments.set(selected_departments)
             else:
                 user = AdminUser(email=row['email'], level_of_access=row['level'])
-                password_value = (
-                    row.get('password')
-                    if row['level'] == AdminUser.LEVEL_ADMIN and row.get('password_changed')
-                    else ''
-                )
+                password_value = row.get('password') if row.get('manual_password') else ''
                 if password_value:
                     user.set_password(password_value)
                     token = password_value

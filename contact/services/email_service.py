@@ -74,7 +74,7 @@ def send_admin_user_credentials(*, email: str, token: str, user: AdminUser | Non
         "",
         "You have been granted access to the ZETOM admin panel.",
         f"Email: {email}",
-        f"Temporary password/token: {token}",
+        f"Password/token: {token}",
     ]
 
     if role_label:
