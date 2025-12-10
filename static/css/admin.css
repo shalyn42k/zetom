@@ -1287,7 +1287,7 @@ body[data-theme='dark'] .panel-email .form-submit {
     width: 100vw;
     height: 100vh;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     padding: 5vh 24px 24px;
     visibility: hidden;
@@ -1311,8 +1311,11 @@ body[data-theme='dark'] .panel-email .form-submit {
 }
 
 .modal__dialog {
-    position: relative;
-    z-index: 1;
+    position: fixed;
+    left: 50%;
+    top: clamp(32px, 8vh, 72px);
+    transform: translateX(-50%);
+    z-index: 10000;
     width: min(720px, 92vw);
     max-height: 90vh;
     overflow-y: auto;
