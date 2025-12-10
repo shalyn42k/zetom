@@ -169,6 +169,8 @@ media_root_env = os.getenv('MEDIA_ROOT')
 MEDIA_ROOT = Path(media_root_env) if media_root_env else BASE_DIR / 'media'
 MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
 
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+
 default_file_storage = os.getenv(
     'DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage'
 )

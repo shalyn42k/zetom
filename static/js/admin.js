@@ -995,6 +995,7 @@
         const userModalError = userModal?.querySelector('[data-user-modal-error]');
         const userEmailInput = userModal?.querySelector('[data-user-email]');
         const userLevelSelect = userModal?.querySelector('[data-user-level]');
+        const manualPasswordToggleWrapper = userModal?.querySelector('[data-user-password-toggle-wrapper]');
         const manualPasswordToggle = userModal?.querySelector('[data-user-password-toggle]');
         const manualPasswordRow = userModal?.querySelector('[data-user-password-row]');
         const manualPasswordInput = userModal?.querySelector('[data-user-password]');
@@ -1014,6 +1015,7 @@
         let pendingPayload = null;
         let activeUserIndex = null;
         let isManualPassword = false;
+        let isEditingExistingUser = false;
 
         const getCsrfToken = () => {
             const name = 'csrftoken=';
@@ -1375,18 +1377,19 @@
         const openUserModal = (user) => {
             if (!userModal || !userEmailInput || !userLevelSelect) return;
             activeUserIndex = user.index;
+            isEditingExistingUser = Boolean(user.user_id);
             if (userModalError) {
                 userModalError.hidden = true;
                 userModalError.textContent = '';
             }
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
-            isManualPassword = Boolean(user.is_manual_password);
+            isManualPassword = !isEditingExistingUser && Boolean(user.is_manual_password);
             if (manualPasswordToggle) {
                 manualPasswordToggle.checked = isManualPassword;
             }
             if (manualPasswordInput) {
-                manualPasswordInput.value = isManualPassword ? user.password || '' : '';
+                manualPasswordInput.value = !isEditingExistingUser && isManualPassword ? user.password || '' : '';
             }
             updateManualPasswordVisibility();
             populateDepartmentSelect(user.departments);
@@ -1488,6 +1491,25 @@
         const updateManualPasswordVisibility = () => {
             if (!manualPasswordRow || !manualPasswordToggle) return;
             const shouldShow = manualPasswordToggle.checked;
+            const isNewUser = !isEditingExistingUser;
+
+            if (manualPasswordToggleWrapper) {
+                manualPasswordToggleWrapper.hidden = !isNewUser;
+            }
+
+            if (!isNewUser) {
+                manualPasswordRow.hidden = true;
+                isManualPassword = false;
+                if (manualPasswordInput) {
+                    manualPasswordInput.removeAttribute('required');
+                    manualPasswordInput.value = '';
+                }
+                if (manualPasswordToggle) {
+                    manualPasswordToggle.checked = false;
+                }
+                return;
+            }
+
             manualPasswordRow.hidden = !shouldShow;
             isManualPassword = shouldShow;
             if (manualPasswordInput) {
