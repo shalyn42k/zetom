@@ -280,22 +280,28 @@
                         <span class="form-label">Email</span>
                         <input type="email" class="form-input" data-user-email required>
                     </label>
-                    <div class="user-modal__field user-modal__field--toggle">
-                        <div class="user-modal__toggle">
-                            <span class="user-modal__toggle-label">{% if lang == 'pl' %}Hasło ręcznie{% else %}Manual Password{% endif %}</span>
-                            <label class="switch" data-user-password-toggle-wrapper>
-                                <input type="checkbox" data-user-password-toggle>
-                                <span class="switch__track"></span>
-                                <span class="switch__thumb"></span>
+                </div>
+                <div data-user-password-mount>
+                    <div class="user-modal__password-block" data-user-password-block>
+                        <div class="user-modal__row user-modal__row--toggle">
+                            <div class="user-modal__field user-modal__field--toggle">
+                                <div class="user-modal__toggle">
+                                    <span class="user-modal__toggle-label">{% if lang == 'pl' %}Hasło ręcznie{% else %}Manual Password{% endif %}</span>
+                                    <label class="switch" data-user-password-toggle-wrapper>
+                                        <input type="checkbox" data-user-password-toggle>
+                                        <span class="switch__track"></span>
+                                        <span class="switch__thumb"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-modal__row user-modal__row--password" data-user-password-row hidden>
+                            <label class="user-modal__field user-modal__field--password">
+                                <span class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</span>
+                                <input type="password" class="form-input" data-user-password>
                             </label>
                         </div>
                     </div>
-                </div>
-                <div class="user-modal__row user-modal__row--password" data-user-password-row hidden>
-                    <label class="user-modal__field user-modal__field--password">
-                        <span class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</span>
-                        <input type="password" class="form-input" data-user-password>
-                    </label>
                 </div>
                 <div class="user-modal__row user-modal__row--level">
                     <label class="user-modal__field">

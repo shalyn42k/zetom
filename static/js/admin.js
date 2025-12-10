@@ -995,10 +995,13 @@
         const userModalError = userModal?.querySelector('[data-user-modal-error]');
         const userEmailInput = userModal?.querySelector('[data-user-email]');
         const userLevelSelect = userModal?.querySelector('[data-user-level]');
-        const manualPasswordToggleWrapper = userModal?.querySelector('[data-user-password-toggle-wrapper]');
-        const manualPasswordToggle = userModal?.querySelector('[data-user-password-toggle]');
-        const manualPasswordRow = userModal?.querySelector('[data-user-password-row]');
-        const manualPasswordInput = userModal?.querySelector('[data-user-password]');
+        const userPasswordMount = userModal?.querySelector('[data-user-password-mount]');
+        let manualPasswordBlock = userModal?.querySelector('[data-user-password-block]');
+        let manualPasswordToggleWrapper = manualPasswordBlock?.querySelector('[data-user-password-toggle-wrapper]');
+        let manualPasswordToggle = manualPasswordBlock?.querySelector('[data-user-password-toggle]');
+        let manualPasswordRow = manualPasswordBlock?.querySelector('[data-user-password-row]');
+        let manualPasswordInput = manualPasswordBlock?.querySelector('[data-user-password]');
+        const manualPasswordTemplate = manualPasswordBlock?.cloneNode(true);
         const userDepartmentsContainer = userModal?.querySelector('[data-user-departments]');
         const permissionOverrideToggle = userModal?.querySelector('[data-permission-override]');
         const permissionList = userModal?.querySelector('[data-user-permissions]');
@@ -1374,6 +1377,34 @@
 
         activateTab('departments');
 
+        const bindManualPasswordToggle = () => {
+            manualPasswordToggle?.addEventListener('change', () => {
+                updateManualPasswordVisibility();
+            });
+        };
+
+        const restoreManualPasswordBlock = () => {
+            if (!userPasswordMount || manualPasswordBlock || !manualPasswordTemplate) return;
+            const restoredBlock = manualPasswordTemplate.cloneNode(true);
+            userPasswordMount.appendChild(restoredBlock);
+            manualPasswordBlock = restoredBlock;
+            manualPasswordToggleWrapper = manualPasswordBlock.querySelector('[data-user-password-toggle-wrapper]');
+            manualPasswordToggle = manualPasswordBlock.querySelector('[data-user-password-toggle]');
+            manualPasswordRow = manualPasswordBlock.querySelector('[data-user-password-row]');
+            manualPasswordInput = manualPasswordBlock.querySelector('[data-user-password]');
+            bindManualPasswordToggle();
+        };
+
+        const removeManualPasswordBlock = () => {
+            if (!manualPasswordBlock) return;
+            manualPasswordBlock.remove();
+            manualPasswordBlock = null;
+            manualPasswordToggleWrapper = null;
+            manualPasswordToggle = null;
+            manualPasswordRow = null;
+            manualPasswordInput = null;
+        };
+
         const openUserModal = (user) => {
             if (!userModal || !userEmailInput || !userLevelSelect) return;
             activeUserIndex = user.index;
@@ -1384,12 +1415,18 @@
             }
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
-            isManualPassword = !isEditingExistingUser && Boolean(user.is_manual_password);
-            if (manualPasswordToggle) {
-                manualPasswordToggle.checked = isManualPassword;
-            }
-            if (manualPasswordInput) {
-                manualPasswordInput.value = !isEditingExistingUser && isManualPassword ? user.password || '' : '';
+            if (isEditingExistingUser) {
+                removeManualPasswordBlock();
+                isManualPassword = false;
+            } else {
+                restoreManualPasswordBlock();
+                isManualPassword = Boolean(user.is_manual_password);
+                if (manualPasswordToggle) {
+                    manualPasswordToggle.checked = isManualPassword;
+                }
+                if (manualPasswordInput) {
+                    manualPasswordInput.value = isManualPassword ? user.password || '' : '';
+                }
             }
             updateManualPasswordVisibility();
             populateDepartmentSelect(user.departments);
@@ -1489,8 +1526,8 @@
         });
 
         const updateManualPasswordVisibility = () => {
-            if (!manualPasswordRow || !manualPasswordToggle) return;
-            const shouldShow = manualPasswordToggle.checked;
+            if (!manualPasswordBlock) return;
+            const shouldShow = Boolean(manualPasswordToggle && manualPasswordToggle.checked);
             const isNewUser = !isEditingExistingUser;
 
             if (manualPasswordToggleWrapper) {
@@ -1498,19 +1535,16 @@
             }
 
             if (!isNewUser) {
-                manualPasswordRow.hidden = true;
+                removeManualPasswordBlock();
                 isManualPassword = false;
-                if (manualPasswordInput) {
-                    manualPasswordInput.removeAttribute('required');
-                    manualPasswordInput.value = '';
-                }
-                if (manualPasswordToggle) {
-                    manualPasswordToggle.checked = false;
-                }
                 return;
             }
 
-            manualPasswordRow.hidden = !shouldShow;
+            if (manualPasswordRow) {
+                manualPasswordRow.hidden = !shouldShow;
+                manualPasswordRow.classList.toggle('is-visible', shouldShow);
+            }
+
             isManualPassword = shouldShow;
             if (manualPasswordInput) {
                 manualPasswordInput.toggleAttribute('required', shouldShow);
@@ -1520,9 +1554,7 @@
             }
         };
 
-        manualPasswordToggle?.addEventListener('change', () => {
-            updateManualPasswordVisibility();
-        });
+        bindManualPasswordToggle();
 
         const setUsers = (list) => {
             users = (list || []).map((user, index) => ({
