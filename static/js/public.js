@@ -269,11 +269,11 @@
     ready(() => {
         const form = document.querySelector('[data-contact-form]');
         if (form) {
-            const botCheckbox = form.querySelector('[data-bot-check]');
-            const submitButton = form.querySelector('[data-form-submit]');
+            const botCheckbox = document.querySelector('[data-bot-check]');
+            const submitButton = document.querySelector('[data-form-submit]');
             const submitContainer = form.querySelector('[data-submit-container]');
             const submitTooltip = form.querySelector('[data-submit-tooltip]');
-            const botError = form.querySelector('[data-bot-error]');
+            const botError = document.querySelector('[data-bot-error]');
             const requiredMessage = form.dataset.botRequiredMessage || '';
             const cooldownStorageKey = form.dataset.submitCooldownStorage || 'contactFormCooldownEndsAt';
             const parsedCooldownSeconds = Number.parseInt(
@@ -286,7 +286,7 @@
             const cooldownMessageTemplate =
                 form.dataset.submitCooldownMessage ||
                 'Please wait {seconds} s before sending again.';
-            const reviewModal = form.querySelector('[data-review-modal]');
+            const reviewModal = document.querySelector('[data-review-modal]');
             const reviewFieldsContainer = reviewModal
                 ? reviewModal.querySelector('[data-review-fields]')
                 : null;
