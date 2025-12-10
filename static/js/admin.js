@@ -1011,11 +1011,8 @@
         let pendingPayload = null;
         let activeUserIndex = null;
 
-        const isInteractiveTarget = (target) =>
-            target instanceof Element
-            && Boolean(
-                target.closest('button, input, select, option, textarea, a, label'),
-            );
+        const isRowActionTarget = (target) =>
+            target instanceof Element && Boolean(target.closest('button'));
 
         const getCsrfToken = () => {
             const name = 'csrftoken=';
@@ -1233,7 +1230,7 @@
                 actionsCell,
             );
             row.addEventListener('click', (event) => {
-                if (isInteractiveTarget(event.target)) {
+                if (isRowActionTarget(event.target)) {
                     return;
                 }
                 const userIndex = Number(row.dataset.index);
@@ -1245,7 +1242,7 @@
 
             row.addEventListener('keydown', (event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
-                if (isInteractiveTarget(event.target)) return;
+                if (isRowActionTarget(event.target)) return;
                 event.preventDefault();
                 const userIndex = Number(row.dataset.index);
                 const targetUser = users.find((item) => Number(item.index) === userIndex);
