@@ -701,9 +701,7 @@ body[data-theme='dark'] .modal__backdrop {
 }
 
 .user-modal__row--email {
-    grid-template-columns: 7fr 3fr;
-    align-items: end;
-    column-gap: 16px;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
 .user-modal__row--password,
@@ -711,12 +709,21 @@ body[data-theme='dark'] .modal__backdrop {
     grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
+.user-modal__row--toggle {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.user-modal__password-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .user-modal__field--toggle {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    justify-self: end;
-    text-align: right;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .user-modal__toggle {
@@ -729,6 +736,18 @@ body[data-theme='dark'] .modal__backdrop {
 .user-modal__toggle-label {
     color: #374151;
     font-weight: 700;
+}
+
+.user-modal__row--password {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.18s ease, max-height 0.2s ease;
+}
+
+.user-modal__row--password.is-visible {
+    opacity: 1;
+    max-height: 200px;
 }
 
 .switch {
