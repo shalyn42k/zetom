@@ -690,9 +690,47 @@ body[data-theme='dark'] .modal__backdrop {
 }
 
 .user-modal__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.user-modal__row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 12px;
+}
+
+.user-modal__row--email {
+    grid-template-columns: 7fr 3fr;
+    align-items: end;
+    column-gap: 16px;
+}
+
+.user-modal__row--password,
+.user-modal__row--level {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.user-modal__field--toggle {
+    justify-self: end;
+    text-align: right;
+}
+
+.user-modal__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.user-modal__toggle input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+}
+
+.user-modal__toggle-label {
+    color: #374151;
+    font-weight: 600;
 }
 
 .user-modal__tabs {

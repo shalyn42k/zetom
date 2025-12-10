@@ -995,6 +995,9 @@
         const userModalError = userModal?.querySelector('[data-user-modal-error]');
         const userEmailInput = userModal?.querySelector('[data-user-email]');
         const userLevelSelect = userModal?.querySelector('[data-user-level]');
+        const manualPasswordToggle = userModal?.querySelector('[data-user-password-toggle]');
+        const manualPasswordRow = userModal?.querySelector('[data-user-password-row]');
+        const manualPasswordInput = userModal?.querySelector('[data-user-password]');
         const userDepartmentsContainer = userModal?.querySelector('[data-user-departments]');
         const permissionOverrideToggle = userModal?.querySelector('[data-permission-override]');
         const permissionList = userModal?.querySelector('[data-user-permissions]');
@@ -1010,6 +1013,7 @@
         let currentPage = 1;
         let pendingPayload = null;
         let activeUserIndex = null;
+        let isManualPassword = false;
 
         const getCsrfToken = () => {
             const name = 'csrftoken=';
@@ -1377,6 +1381,14 @@
             }
             userEmailInput.value = user.email || '';
             userLevelSelect.value = user.level || 'level3';
+            isManualPassword = Boolean(user.is_manual_password && user.password);
+            if (manualPasswordToggle) {
+                manualPasswordToggle.checked = isManualPassword;
+            }
+            if (manualPasswordInput) {
+                manualPasswordInput.value = isManualPassword ? user.password || '' : '';
+            }
+            updateManualPasswordVisibility();
             populateDepartmentSelect(user.departments);
             const mode = user.permissions_mode || 'inherit';
             if (permissionOverrideToggle) {
@@ -1426,6 +1438,7 @@
             const custom = mode === 'custom' ? readPermissionSelection() : {};
             renderPermissionCheckboxes(mode, userLevelSelect.value, custom);
             applyPermissionModeState(mode);
+            updateManualPasswordVisibility();
         });
 
         userModalForm?.addEventListener('submit', (event) => {
@@ -1440,6 +1453,24 @@
                       .filter((input) => input.checked)
                       .map((input) => input.value)
                 : targetUser.departments;
+            if (targetUser.level === 'level1' && isManualPassword) {
+                const manualPassword = manualPasswordInput ? manualPasswordInput.value.trim() : '';
+                if (!manualPassword) {
+                    if (userModalError) {
+                        userModalError.textContent =
+                            language === 'pl' ? 'Hasło jest wymagane.' : 'Password is required.';
+                        userModalError.hidden = false;
+                    }
+                    return;
+                }
+                targetUser.password = manualPassword;
+                targetUser.password_changed = true;
+                targetUser.is_manual_password = true;
+            } else {
+                targetUser.password = '';
+                targetUser.password_changed = false;
+                targetUser.is_manual_password = false;
+            }
             const mode = permissionOverrideToggle?.checked ? 'custom' : 'inherit';
             targetUser.permissions_mode = mode;
             if (mode === 'custom') {
@@ -1454,12 +1485,31 @@
             closeUserModal();
         });
 
+        const updateManualPasswordVisibility = () => {
+            if (!manualPasswordRow || !manualPasswordToggle) return;
+            const levelAllowsPassword = userLevelSelect ? userLevelSelect.value === 'level1' : false;
+            if (!levelAllowsPassword && manualPasswordToggle.checked) {
+                manualPasswordToggle.checked = false;
+            }
+            const shouldShow = levelAllowsPassword && manualPasswordToggle.checked;
+            manualPasswordRow.hidden = !shouldShow;
+            isManualPassword = shouldShow;
+            if (!shouldShow && manualPasswordInput) {
+                manualPasswordInput.value = '';
+            }
+        };
+
+        manualPasswordToggle?.addEventListener('change', () => {
+            updateManualPasswordVisibility();
+        });
+
         const setUsers = (list) => {
             users = (list || []).map((user, index) => ({
                 ...user,
                 index,
                 password: '',
                 password_changed: false,
+                is_manual_password: Boolean(user.is_manual_password),
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
                 permissions_mode: user.permissions_mode || 'inherit',
@@ -1495,8 +1545,12 @@
                 user_id: user.user_id || null,
                 email: user.email || '',
                 level: user.level || '',
-                password: user.level === 'level1' && user.password_changed ? user.password || '' : '',
-                password_changed: user.level === 'level1' ? Boolean(user.password_changed) : false,
+                password:
+                    user.level === 'level1' && user.is_manual_password && user.password_changed
+                        ? user.password || ''
+                        : '',
+                password_changed:
+                    user.level === 'level1' ? Boolean(user.password_changed && user.is_manual_password) : false,
                 departments: Array.isArray(user.departments) ? user.departments : [],
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
