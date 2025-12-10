@@ -712,25 +712,74 @@ body[data-theme='dark'] .modal__backdrop {
 }
 
 .user-modal__field--toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     justify-self: end;
     text-align: right;
 }
 
 .user-modal__toggle {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     justify-content: flex-end;
-}
-
-.user-modal__toggle input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
 }
 
 .user-modal__toggle-label {
     color: #374151;
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 4px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.switch__track {
+    width: 46px;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    transition: background 0.2s ease;
+    display: block;
+}
+
+.switch__thumb {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease;
+}
+
+.switch input:checked + .switch__track {
+    background: var(--green);
+}
+
+.switch input:checked + .switch__track + .switch__thumb {
+    transform: translateX(18px);
+}
+
+.switch:focus-within {
+    box-shadow: 0 0 0 4px rgba(0, 168, 79, 0.2);
 }
 
 .user-modal__tabs {
