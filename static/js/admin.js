@@ -1011,12 +1011,6 @@
         let pendingPayload = null;
         let activeUserIndex = null;
 
-        const isInteractiveTarget = (target) =>
-            target instanceof Element
-            && Boolean(
-                target.closest('button, input, select, option, textarea, a, label'),
-            );
-
         const getCsrfToken = () => {
             const name = 'csrftoken=';
             return document.cookie
@@ -1172,7 +1166,7 @@
 
             const editButton = document.createElement('button');
             editButton.type = 'button';
-            editButton.className = 'button button--outline';
+            editButton.className = 'button button--success settings-table__edit';
             editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
             editButton.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -1232,27 +1226,6 @@
                 permissionCell,
                 actionsCell,
             );
-            row.addEventListener('click', (event) => {
-                if (isInteractiveTarget(event.target)) {
-                    return;
-                }
-                const userIndex = Number(row.dataset.index);
-                const targetUser = users.find((item) => Number(item.index) === userIndex);
-                if (targetUser) {
-                    openUserModal(targetUser);
-                }
-            });
-
-            row.addEventListener('keydown', (event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                if (isInteractiveTarget(event.target)) return;
-                event.preventDefault();
-                const userIndex = Number(row.dataset.index);
-                const targetUser = users.find((item) => Number(item.index) === userIndex);
-                if (targetUser) {
-                    openUserModal(targetUser);
-                }
-            });
             return row;
         };
 
