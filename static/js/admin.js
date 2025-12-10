@@ -1241,20 +1241,6 @@
             populateDrawer(data);
         };
 
-        const openUserSettings = async (userId) => {
-            if (!userId) return;
-            try {
-                await loadUserSettings(userId);
-            } catch (error) {
-                const message =
-                    language === 'pl'
-                        ? 'Nie udało się wczytać ustawień użytkownika.'
-                        : 'Unable to load user settings.';
-                showDrawerError(message);
-                window.alert(message);
-            }
-        };
-
         const collectOverrides = () => {
             if (!drawerPermissionsList) return {};
             const overrides = {};
@@ -1320,18 +1306,6 @@
             row.dataset.isNew = user.is_new ? 'true' : 'false';
             row.dataset.markedForDeletion = user.marked_for_deletion ? 'true' : 'false';
             row.dataset.index = user.index;
-
-            row.addEventListener('click', (event) => {
-                const isInteractive = event.target.closest(
-                    'button, input, select, textarea, option, label',
-                );
-                if (isInteractive) {
-                    return;
-                }
-                if (row.dataset.userId) {
-                    openUserSettings(row.dataset.userId);
-                }
-            });
 
             const idCell = document.createElement('span');
             idCell.textContent = user.user_id ? `#${user.user_id}` : '—';
@@ -1758,7 +1732,15 @@
             const editButton = event.target.closest('[data-user-edit]');
             if (editButton) {
                 const targetUserId = editButton.getAttribute('data-user-id');
-                await openUserSettings(targetUserId);
+                if (targetUserId) {
+                    loadUserSettings(targetUserId).catch(() => {
+                        const message = language === 'pl'
+                            ? 'Nie udało się wczytać ustawień użytkownika.'
+                            : 'Unable to load user settings.';
+                        showDrawerError(message);
+                        window.alert(message);
+                    });
+                }
                 return;
             }
 
