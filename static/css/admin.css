@@ -391,6 +391,17 @@ body[data-theme='dark'] .modal__backdrop {
     align-items: center;
 }
 
+.settings-table__header span:nth-child(3),
+.settings-table__row > :nth-child(3) {
+    text-align: center;
+    justify-self: center;
+}
+
+.settings-table__header span:nth-child(6),
+.settings-table__row > :nth-child(6) {
+    justify-self: end;
+}
+
 .settings-table__header {
     background: #0f2333;
     color: #ffffff;
@@ -439,16 +450,17 @@ body[data-theme='dark'] .modal__backdrop {
     gap: 0.5rem;
 }
 
-.settings-row--self {
-    background: #f9fcf7;
-}
-
 .settings-table__actions,
 .settings-table__delete {
+    width: 100%;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.settings-row--self {
+    background: #f9fcf7;
 }
 
 .settings-table__row.is-marked-for-deletion {
@@ -501,7 +513,7 @@ body[data-theme='dark'] .modal__backdrop {
 
 .settings-table__actions-label,
 .settings-table__delete {
-    text-align: center;
+    text-align: right;
 }
 
 .settings-table__delete button {
@@ -1234,7 +1246,7 @@ body[data-theme='dark'] .panel-email .form-submit {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.25s ease, visibility 0.25s ease;
-    z-index: 1200;
+    z-index: 9999;
 }
 
 .modal.is-visible {
@@ -1261,6 +1273,7 @@ body[data-theme='dark'] .panel-email .form-submit {
     padding: clamp(24px, 4vw, 36px);
     display: grid;
     gap: 18px;
+    margin: 0;
 }
 
 .modal__close,
