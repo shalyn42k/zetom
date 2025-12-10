@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from datetime import timedelta
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
@@ -37,6 +38,9 @@ from ..models import (
     ClientChangeLog,
     ContactMessage,
     Department,
+    build_permissions_override,
+    default_permissions_for_level,
+    resolve_permission_profile,
     _generate_access_token,
 )
 from ..services import messages as message_service
@@ -101,6 +105,12 @@ def _get_admin_user(request: HttpRequest) -> AdminUser | None:
         return None
 
 
+def _permission_profile(admin_user: AdminUser | None) -> dict[str, object]:
+    if not admin_user:
+        return {"mode": "inherit", "permissions": default_permissions_for_level(AdminUser.LEVEL_TESTER)}
+    return resolve_permission_profile(admin_user.level_of_access, admin_user.permissions_override)
+
+
 def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
     if not admin_user:
         return False
@@ -141,11 +151,17 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         return redirect('contact:login')
 
     user_level = admin_user.level_of_access
+    permission_profile = _permission_profile(admin_user)
+    permissions = permission_profile.get("permissions", {})
+    can_edit_messages = bool(permissions.get("can_edit_messages"))
+    can_delete_messages = bool(permissions.get("can_delete_messages"))
+    can_export_messages = bool(permissions.get("can_export_messages"))
+    can_send_emails = bool(permissions.get("can_send_emails"))
     user_departments = list(admin_user.departments.values_list('code', flat=True))
     allowed_companies: set[str] | None = (
         set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
     )
-    readonly_mode = user_level == AdminUser.LEVEL_TESTER
+    readonly_mode = not can_edit_messages
     lang = get_language(request)
 
     # --- company / department options ---
@@ -230,13 +246,16 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     )
 
     # --- readonly mode ---
-    if readonly_mode:
+    if not (can_edit_messages or can_delete_messages):
         action_form.fields["action"].disabled = True
         action_form.fields["selected"].disabled = True
+    if not can_send_emails:
         for field in email_form.fields.values():
             field.disabled = True
+    if not can_delete_messages:
         for field in trash_form.fields.values():
             field.disabled = True
+    if not can_export_messages:
         for field in download_form.fields.values():
             field.disabled = True
 
@@ -259,19 +278,23 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         filter_form.fields["company"].widget.attrs["disabled"] = False
 
     # --- POST handlers ---
-    if request.method == "POST" and readonly_mode:
-        return redirect(
-            helpers.panel_redirect_url(
-                lang,
-                page_obj.number,
-                sort_by=sort_by,
-                company=company_filter,
-            )
-        )
-
     if request.method == "POST":
         form_name = (request.POST.get("form_name") or "").strip()
         if form_name == "bulk":
+            if not (can_edit_messages or can_delete_messages):
+                messages.error(
+                    request,
+                    "Brak uprawnień do wykonania akcji." if lang == "pl" else "You do not have permission to perform this action.",
+                    extra_tags="admin",
+                )
+                return redirect(
+                    helpers.panel_redirect_url(
+                        lang,
+                        page_obj.number,
+                        sort_by=sort_by,
+                        company=company_filter,
+                    )
+                )
             action_form, response = _handle_bulk_form(
                 request,
                 lang,
@@ -280,10 +303,26 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 sort_by,
                 company_filter,
                 allowed_companies,
+                can_edit_messages,
+                can_delete_messages,
             )
             if response:
                 return response
         elif form_name == "trash":
+            if not can_delete_messages:
+                messages.error(
+                    request,
+                    "Brak uprawnień do opróżniania kosza." if lang == "pl" else "You cannot modify trash.",
+                    extra_tags="admin",
+                )
+                return redirect(
+                    helpers.panel_redirect_url(
+                        lang,
+                        page_obj.number,
+                        sort_by=sort_by,
+                        company=company_filter,
+                    )
+                )
             trash_form, response = _handle_trash_form(
                 request,
                 lang,
@@ -292,10 +331,25 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 sort_by,
                 company_filter,
                 allowed_companies,
+                can_delete_messages,
             )
             if response:
                 return response
         elif form_name == "download":
+            if not can_export_messages:
+                messages.error(
+                    request,
+                    "Brak uprawnień do eksportu." if lang == "pl" else "You cannot export messages.",
+                    extra_tags="admin",
+                )
+                return redirect(
+                    helpers.panel_redirect_url(
+                        lang,
+                        page_obj.number,
+                        sort_by=sort_by,
+                        company=company_filter,
+                    )
+                )
             download_form, response = _handle_download_form(
                 request,
                 lang,
@@ -305,16 +359,32 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 allowed_companies,
                 user_level,
                 valid_companies,
+                can_export_messages,
             )
             if response:
                 return response
         else:
+            if not can_send_emails:
+                messages.error(
+                    request,
+                    "Brak uprawnień do wysyłania wiadomości." if lang == "pl" else "You cannot send emails from this panel.",
+                    extra_tags="admin",
+                )
+                return redirect(
+                    helpers.panel_redirect_url(
+                        lang,
+                        page_obj.number,
+                        sort_by=sort_by,
+                        company=company_filter,
+                    )
+                )
             email_form, response = _handle_email_form(
                 request,
                 lang,
                 page_obj,
                 sort_by,
                 company_filter,
+                can_send_emails,
             )
             if response:
                 return response
@@ -334,6 +404,12 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     }
 
     status_meta_json = json.dumps(status_meta)
+
+    permission_defaults = {
+        level: default_permissions_for_level(level) for level, _ in AdminUser.LEVEL_CHOICES
+    }
+    permission_defaults_json = json.dumps(permission_defaults)
+    permission_profile_json = json.dumps(permission_profile)
 
     if lang == "pl":
         detail_error_message = "Nie udało się pobrać danych zgłoszenia."
@@ -378,13 +454,22 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "company_options": company_options,
         "status_options": status_options,
         "status_meta_json": status_meta_json,
+        "permission_defaults_json": permission_defaults_json,
+        "permission_profile_json": permission_profile_json,
         "request_detail_error_message": detail_error_message,
         "request_update_error_message": update_error_message,
+        "can_edit_messages": can_edit_messages,
+        "can_delete_messages": can_delete_messages,
+        "can_export_messages": can_export_messages,
+        "can_send_emails": can_send_emails,
     }
     return render(request, "contact/admin_panel.html", context)
 
 
 def _serialise_admin_user(user: AdminUser) -> dict:
+    permission_profile = resolve_permission_profile(
+        user.level_of_access, user.permissions_override
+    )
     return {
         'user_id': user.id,
         'email': user.email,
@@ -392,6 +477,9 @@ def _serialise_admin_user(user: AdminUser) -> dict:
         'has_password': bool(user.password_hash),
         'level': user.level_of_access,
         'departments': list(user.departments.values_list('code', flat=True)),
+        'permissions': permission_profile.get('permissions', {}),
+        'permissions_mode': permission_profile.get('mode', 'inherit'),
+        'role_permissions': default_permissions_for_level(user.level_of_access),
     }
 
 
@@ -470,6 +558,12 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
         password_changed = bool(row.get('password_changed')) if level == AdminUser.LEVEL_ADMIN else False
         marked_for_deletion = bool(row.get('marked_for_deletion'))
         is_new = bool(row.get('is_new')) or user_id is None
+        permissions_raw = row.get('permissions') if isinstance(row.get('permissions'), dict) else {}
+        permissions_mode = row.get('permissions_mode')
+        permissions_override = build_permissions_override(
+            level,
+            {'mode': permissions_mode, 'permissions': permissions_raw},
+        )
 
         if user_id:
             if user_id in seen_ids:
@@ -517,6 +611,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 'password_changed': password_changed,
                 'marked_for_deletion': marked_for_deletion,
                 'is_new': is_new,
+                'permissions_override': permissions_override,
             }
         )
 
@@ -588,6 +683,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
 
                 user.email = row['email']
                 user.level_of_access = row['level']
+                user.permissions_override = row['permissions_override']
 
                 if password_changed and row.get('password'):
                     user.set_password(row['password'])
@@ -612,6 +708,7 @@ def admin_settings(request: HttpRequest) -> JsonResponse:
                 else:
                     token = _generate_access_token()
                     user.set_password(token)
+                user.permissions_override = row['permissions_override']
                 user.save()
                 if selected_departments:
                     user.departments.set(selected_departments)
@@ -773,6 +870,8 @@ def _handle_bulk_form(
     sort_by: str | None,
     company_filter: str | None,
     allowed_companies: set[str] | None,
+    can_edit_messages: bool,
+    can_delete_messages: bool,
 ):
     submitted_ids = request.POST.getlist('selected') if request.method == 'POST' else []
     existing_values = {value for value, _ in choices}
@@ -784,9 +883,22 @@ def _handle_bulk_form(
     form = MessageBulkActionForm(request.POST, message_choices=merged_choices)
     helpers.localise_action_choices(form, lang)
     if form.is_valid():
+        action = form.cleaned_data['action']
+        if action == MessageBulkActionForm.ACTION_DELETE and not can_delete_messages:
+            form.add_error(
+                None,
+                "Brak uprawnień do usuwania." if lang == "pl" else "You cannot delete messages.",
+            )
+            return form, None
+        if action != MessageBulkActionForm.ACTION_DELETE and not can_edit_messages:
+            form.add_error(
+                None,
+                "Brak uprawnień do edycji." if lang == "pl" else "You cannot edit messages.",
+            )
+            return form, None
         ids = [int(pk) for pk in form.cleaned_data['selected']]
         helpers.handle_action(
-            form.cleaned_data['action'], ids, lang, request, allowed_companies
+            action, ids, lang, request, allowed_companies
         )
         return form, redirect(
             helpers.panel_redirect_url(
@@ -807,6 +919,7 @@ def _handle_trash_form(
     sort_by: str | None,
     company_filter: str | None,
     allowed_companies: set[str] | None,
+    can_delete_messages: bool,
 ):
     submitted_ids = request.POST.getlist('selected') if request.method == 'POST' else []
     existing_values = {value for value, _ in deleted_choices}
@@ -817,6 +930,12 @@ def _handle_trash_form(
 
     form = TrashActionForm(request.POST, message_choices=merged_choices, language=lang)
     if form.is_valid():
+        if not can_delete_messages:
+            form.add_error(
+                None,
+                "Brak uprawnień do zarządzania koszem." if lang == "pl" else "You cannot manage trash.",
+            )
+            return form, None
         ids = [int(pk) for pk in form.cleaned_data['selected']]
         helpers.handle_trash_action(
             form.cleaned_data['action'], ids, lang, request, allowed_companies
@@ -841,12 +960,19 @@ def _handle_download_form(
     allowed_companies: set[str] | None,
     user_level: str,
     valid_companies: set[str],
+    can_export_messages: bool,
 ):
     form = DownloadMessagesForm(
         request.POST,
         message_choices=download_choices,
         language=lang,
     )
+    if not can_export_messages:
+        form.add_error(
+            None,
+            "Brak uprawnień do eksportu." if lang == "pl" else "Export is not allowed.",
+        )
+        return form, None
     if form.is_valid():
         ids = [int(pk) for pk in form.cleaned_data['messages']]
         fields = form.cleaned_data['fields']
@@ -871,8 +997,15 @@ def _handle_email_form(
     page_obj,
     sort_by: str | None,
     company_filter: str | None,
+    can_send_emails: bool,
 ):
     form = EmailForm(request.POST, request.FILES or None)
+    if not can_send_emails:
+        form.add_error(
+            None,
+            "Brak uprawnień do wysyłania wiadomości." if lang == "pl" else "Email sending is disabled for this account.",
+        )
+        return form, None
     if form.is_valid():
         file = request.FILES.get('attachment')
         send_email_with_attachment(
@@ -917,7 +1050,8 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if admin_user.level_of_access == AdminUser.LEVEL_TESTER:
+    permissions = _permission_profile(admin_user).get("permissions", {})
+    if not permissions.get("can_edit_messages"):
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
@@ -938,7 +1072,8 @@ def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    if admin_user.level_of_access == AdminUser.LEVEL_TESTER:
+    permissions = _permission_profile(admin_user).get("permissions", {})
+    if not permissions.get("can_edit_messages"):
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)

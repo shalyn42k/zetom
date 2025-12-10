@@ -386,7 +386,7 @@ body[data-theme='dark'] .modal__backdrop {
 .settings-table__header,
 .settings-table__row {
     display: grid;
-    grid-template-columns: 60px 1.6fr 1.0fr 1.6fr 0.6fr;
+    grid-template-columns: 60px 1.6fr 1.0fr 1.4fr 1.0fr 0.6fr;
     column-gap: 0.75rem;
     align-items: center;
 }

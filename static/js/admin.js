@@ -969,6 +969,16 @@
         const departmentsPrototype = settingsPanel.querySelector('select[data-department-prototype="true"]');
         const departmentsOptionsHTML = departmentsPrototype ? departmentsPrototype.innerHTML : '';
         const departmentsSize = departmentsPrototype ? departmentsPrototype.size || 4 : 4;
+        const permissionDefaults = parseJsonData(
+            settingsPanel.getAttribute('data-permissions-defaults'),
+            {},
+        );
+        const departmentLabelMap = {};
+        if (departmentsPrototype) {
+            Array.from(departmentsPrototype.options).forEach((opt) => {
+                departmentLabelMap[opt.value] = opt.textContent;
+            });
+        }
 
         const adminPasswordSection = settingsPanel.querySelector('[data-admin-password-confirmation]');
         const adminPasswordInput = settingsPanel.querySelector('[data-admin-password-input]');
@@ -981,12 +991,22 @@
         const profileNewPassword = settingsPanel.querySelector('[data-profile-new-password]');
         const profileNewPasswordConfirm = settingsPanel.querySelector('[data-profile-new-password-confirm]');
         const profileEmailDisplay = settingsPanel.querySelector('[data-profile-email-display]');
+        const userModal = settingsPanel.querySelector('[data-user-modal]');
+        const userModalForm = settingsPanel.querySelector('[data-user-form]');
+        const userModalTitle = settingsPanel.querySelector('[data-user-modal-title]');
+        const userModalError = settingsPanel.querySelector('[data-user-modal-error]');
+        const userEmailInput = settingsPanel.querySelector('[data-user-email]');
+        const userLevelSelect = settingsPanel.querySelector('[data-user-level]');
+        const userDepartmentsSelect = settingsPanel.querySelector('[data-user-departments]');
+        const permissionModeInputs = settingsPanel.querySelectorAll('[data-permission-mode]');
+        const permissionList = settingsPanel.querySelector('[data-user-permissions]');
 
         const PAGE_SIZE = 5;
         let users = [];
         let originalLevelMap = new Map();
         let currentPage = 1;
         let pendingPayload = null;
+        let activeUserIndex = null;
 
         const levelOptions = [
             { value: 'level1', label: 'level1' },
@@ -1049,6 +1069,43 @@
             profileSuccess.hidden = !visible;
         };
 
+        const fallbackPermissions = Object.values(permissionDefaults)[0] || {};
+        const permissionLabels = {
+            can_edit_messages:
+                language === 'pl' ? 'Edycja wiadomości' : 'Edit messages',
+            can_delete_messages:
+                language === 'pl' ? 'Usuwanie i kosz' : 'Delete & trash',
+            can_export_messages: language === 'pl' ? 'Eksport' : 'Export',
+            can_send_emails: language === 'pl' ? 'Wysyłanie e-maili' : 'Send emails',
+        };
+
+        const getRolePermissions = (level) => ({
+            ...(permissionDefaults[level] || fallbackPermissions),
+        });
+
+        const renderPermissionCheckboxes = (mode, level, customPermissions) => {
+            if (!permissionList) return;
+            const basePermissions = getRolePermissions(level);
+            const effective = mode === 'custom'
+                ? { ...basePermissions, ...(customPermissions || {}) }
+                : basePermissions;
+            permissionList.innerHTML = '';
+            Object.entries(permissionLabels).forEach(([key, label]) => {
+                const wrapper = document.createElement('label');
+                wrapper.className = 'checkbox-pill checkbox-pill--permission';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = key;
+                checkbox.dataset.permissionItem = 'true';
+                checkbox.checked = Boolean(effective[key]);
+                checkbox.disabled = mode !== 'custom';
+                const text = document.createElement('span');
+                text.textContent = label;
+                wrapper.append(checkbox, text);
+                permissionList.appendChild(wrapper);
+            });
+        };
+
         const updateEmptyState = () => {
             if (!rowsContainer || !emptyState) return;
             emptyState.style.display = users.length ? 'none' : 'block';
@@ -1098,6 +1155,9 @@
                         targetUser.password = '';
                         targetUser.password_changed = false;
                     }
+                    if (targetUser.permissions_mode !== 'custom') {
+                        targetUser.permissions = getRolePermissions(levelSelect.value);
+                    }
                 }
             });
 
@@ -1124,6 +1184,25 @@
 
             const actionsCell = document.createElement('div');
             actionsCell.className = 'settings-table__actions';
+
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.className = 'button button--ghost button--compact';
+            editButton.dataset.userEdit = 'true';
+            editButton.dataset.userIndex = user.index;
+            editButton.dataset.userId = user.user_id || '';
+            editButton.textContent = language === 'pl' ? 'Edytuj' : 'Edit';
+
+            const permissionBadge = document.createElement('span');
+            permissionBadge.className = 'badge badge--info';
+            permissionBadge.textContent =
+                user.permissions_mode === 'custom'
+                    ? language === 'pl'
+                        ? 'Nadpisane'
+                        : 'Custom permissions'
+                    : language === 'pl'
+                        ? 'Domyślne'
+                        : 'Role defaults';
 
             const hiddenPasswordInput = document.createElement('input');
             hiddenPasswordInput.type = 'hidden';
@@ -1176,7 +1255,7 @@
             }
             deleteCell.appendChild(deleteButton);
 
-            actionsCell.append(hiddenPasswordInput, resetButton, deleteCell);
+            actionsCell.append(editButton, permissionBadge, hiddenPasswordInput, resetButton);
 
             row.append(
                 idCell,
@@ -1184,6 +1263,7 @@
                 levelSelect,
                 departmentSelect,
                 actionsCell,
+                deleteCell,
             );
             return row;
         };
@@ -1225,6 +1305,132 @@
             renderPagination();
         };
 
+        const toggleUserModal = (shouldOpen) => {
+            if (!userModal) return;
+            if (shouldOpen) {
+                userModal.classList.add('is-visible');
+                userModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('has-modal');
+            } else {
+                userModal.classList.remove('is-visible');
+                userModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('has-modal');
+            }
+        };
+
+        const populateDepartmentSelect = (selectedValues) => {
+            if (!userDepartmentsSelect) return;
+            userDepartmentsSelect.innerHTML = departmentsOptionsHTML;
+            const selected = Array.isArray(selectedValues) ? selectedValues : [];
+            Array.from(userDepartmentsSelect.options).forEach((opt) => {
+                opt.selected = selected.includes(opt.value);
+            });
+        };
+
+        const readPermissionSelection = () => {
+            const items = permissionList ? permissionList.querySelectorAll('[data-permission-item]') : [];
+            const result = {};
+            items.forEach((checkbox) => {
+                result[checkbox.value] = checkbox.checked;
+            });
+            return result;
+        };
+
+        const applyPermissionModeState = (mode) => {
+            if (!permissionList) return;
+            const items = permissionList.querySelectorAll('[data-permission-item]');
+            items.forEach((checkbox) => {
+                checkbox.disabled = mode !== 'custom';
+            });
+        };
+
+        const openUserModal = (user) => {
+            if (!userModal || !userEmailInput || !userLevelSelect) return;
+            activeUserIndex = user.index;
+            if (userModalError) {
+                userModalError.hidden = true;
+                userModalError.textContent = '';
+            }
+            userEmailInput.value = user.email || '';
+            userLevelSelect.value = user.level || 'level3';
+            populateDepartmentSelect(user.departments);
+            const mode = user.permissions_mode || 'inherit';
+            permissionModeInputs.forEach((input) => {
+                input.checked = input.value === mode;
+            });
+            renderPermissionCheckboxes(mode, user.level || 'level3', user.custom_permissions || user.permissions);
+            applyPermissionModeState(mode);
+            if (userModalTitle) {
+                userModalTitle.textContent = user.user_id
+                    ? language === 'pl'
+                        ? `Edycja użytkownika #${user.user_id}`
+                        : `Edit user #${user.user_id}`
+                    : language === 'pl'
+                        ? 'Nowy użytkownik'
+                        : 'New user';
+            }
+            toggleUserModal(true);
+        };
+
+        const closeUserModal = () => {
+            activeUserIndex = null;
+            toggleUserModal(false);
+        };
+
+        userModal?.addEventListener('click', (event) => {
+            if (event.target.closest('[data-user-modal-close]')) {
+                closeUserModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && userModal && userModal.classList.contains('is-visible')) {
+                closeUserModal();
+            }
+        });
+
+        permissionModeInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                const mode = input.value;
+                const custom = readPermissionSelection();
+                renderPermissionCheckboxes(mode, userLevelSelect ? userLevelSelect.value : 'level3', custom);
+                applyPermissionModeState(mode);
+            });
+        });
+
+        userLevelSelect?.addEventListener('change', () => {
+            const modeInput = Array.from(permissionModeInputs).find((input) => input.checked);
+            const mode = modeInput ? modeInput.value : 'inherit';
+            const custom = mode === 'custom' ? readPermissionSelection() : {};
+            renderPermissionCheckboxes(mode, userLevelSelect.value, custom);
+            applyPermissionModeState(mode);
+        });
+
+        userModalForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (activeUserIndex === null) return;
+            const targetUser = users[activeUserIndex];
+            if (!targetUser) return;
+            targetUser.email = userEmailInput ? userEmailInput.value.trim() : '';
+            targetUser.level = userLevelSelect ? userLevelSelect.value : targetUser.level;
+            targetUser.departments = userDepartmentsSelect
+                ? Array.from(userDepartmentsSelect.selectedOptions).map((option) => option.value)
+                : targetUser.departments;
+            const modeInput = Array.from(permissionModeInputs).find((input) => input.checked);
+            const mode = modeInput ? modeInput.value : 'inherit';
+            targetUser.permissions_mode = mode;
+            if (mode === 'custom') {
+                const selectedPermissions = readPermissionSelection();
+                targetUser.permissions = { ...getRolePermissions(targetUser.level), ...selectedPermissions };
+                targetUser.custom_permissions = selectedPermissions;
+            } else {
+                targetUser.permissions = getRolePermissions(targetUser.level);
+                targetUser.custom_permissions = {};
+            }
+            renderRows();
+            closeUserModal();
+        });
+
         const setUsers = (list) => {
             users = (list || []).map((user, index) => ({
                 ...user,
@@ -1233,6 +1439,12 @@
                 password_changed: false,
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
+                permissions_mode: user.permissions_mode || 'inherit',
+                permissions: user.permissions || getRolePermissions(user.level),
+                custom_permissions:
+                    (user.permissions_mode || 'inherit') === 'custom'
+                        ? user.permissions || getRolePermissions(user.level)
+                        : {},
             }));
             originalLevelMap = new Map(
                 users.filter((u) => u.user_id).map((u) => [String(u.user_id), u.level]),
@@ -1265,6 +1477,11 @@
                 departments: Array.isArray(user.departments) ? user.departments : [],
                 marked_for_deletion: Boolean(user.marked_for_deletion),
                 is_new: Boolean(user.is_new),
+                permissions_mode: user.permissions_mode || 'inherit',
+                permissions:
+                    (user.permissions_mode || 'inherit') === 'custom'
+                        ? user.custom_permissions || user.permissions || {}
+                        : getRolePermissions(user.level),
             })),
         });
 
@@ -1367,10 +1584,14 @@
                 departments: [],
                 password: '',
                 password_changed: false,
+                permissions_mode: 'inherit',
+                permissions: getRolePermissions('level3'),
+                custom_permissions: {},
                 index: users.length,
             };
             users.push(newUser);
             renderRows();
+            openUserModal(newUser);
         });
 
         applyButton?.addEventListener('click', () => {
@@ -1441,6 +1662,15 @@
         };
 
         settingsPanel.addEventListener('click', async (event) => {
+            const editButton = event.target.closest('[data-user-edit]');
+            if (editButton) {
+                const userIndex = Number(editButton.dataset.userIndex);
+                const targetUser = users.find((item) => Number(item.index) === userIndex);
+                if (targetUser) {
+                    openUserModal(targetUser);
+                }
+                return;
+            }
             const resetButton = event.target.closest('[data-user-reset]');
             if (!resetButton) return;
 
