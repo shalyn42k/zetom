@@ -274,40 +274,18 @@
         <form class="modal__form user-modal__form" data-user-form>
             <div class="settings-modal__error" data-user-modal-error hidden></div>
             <div class="user-modal__grid">
-                <div class="user-modal__row user-modal__row--email">
-                    <label class="user-modal__field">
-                        <span class="form-label">Email</span>
-                        <input type="email" class="form-input" data-user-email required readonly>
-                    </label>
-                    <label class="toggle user-modal__manual-toggle">
-                        <input type="checkbox" data-user-manual-password>
-                        <span class="toggle__label">
-                            {% if lang == 'pl' %}Ustaw hasło ręcznie{% else %}Set password manually{% endif %}
-                        </span>
-                    </label>
-                </div>
-                <div class="user-modal__row">
-                    <label class="user-modal__field">
-                        <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
-                        <select class="form-input" data-user-level>
-                            <option value="level1">level1</option>
-                            <option value="level2">level2</option>
-                            <option value="level3">level3</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="user-modal__row" data-user-password-row hidden>
-                    <div class="user-modal__manual-password">
-                        <label class="user-modal__field">
-                            <span class="form-label">{% if lang == 'pl' %}Hasło{% else %}Password{% endif %}</span>
-                            <input type="password" class="form-input" data-user-password autocomplete="new-password">
-                        </label>
-                        <label class="user-modal__field">
-                            <span class="form-label">{% if lang == 'pl' %}Powtórz hasło{% else %}Confirm password{% endif %}</span>
-                            <input type="password" class="form-input" data-user-password-confirm autocomplete="new-password">
-                        </label>
-                    </div>
-                </div>
+                <label class="user-modal__field">
+                    <span class="form-label">Email</span>
+                    <input type="email" class="form-input" data-user-email required readonly>
+                </label>
+                <label class="user-modal__field">
+                    <span class="form-label">{% if lang == 'pl' %}Poziom{% else %}Level{% endif %}</span>
+                    <select class="form-input" data-user-level>
+                        <option value="level1">level1</option>
+                        <option value="level2">level2</option>
+                        <option value="level3">level3</option>
+                    </select>
+                </label>
             </div>
             <div class="user-modal__tabs" role="tablist" aria-label="User details navigation">
                 <button type="button" class="user-modal__tab is-active" data-tab-target="departments" role="tab" aria-selected="true">
