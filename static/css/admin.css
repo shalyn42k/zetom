@@ -1238,7 +1238,8 @@ body[data-theme='dark'] .panel-email .form-submit {
 
 .modal {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -1248,7 +1249,9 @@ body[data-theme='dark'] .panel-email .form-submit {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.25s ease, visibility 0.25s ease;
-    z-index: 9999;
+    z-index: 2147483647;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
 }
 
 .modal.is-visible {
@@ -1260,6 +1263,7 @@ body[data-theme='dark'] .panel-email .form-submit {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
+    z-index: 0;
 }
 
 .modal__dialog {

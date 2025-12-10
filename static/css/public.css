@@ -703,15 +703,20 @@ a:focus {
 
 .modal {
     position: fixed;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: rgba(12, 32, 18, 0.32);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
     padding: 24px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease;
-    z-index: 40;
+    z-index: 2147483647;
 }
 
 .modal.is-visible {
@@ -722,10 +727,13 @@ a:focus {
 .modal__backdrop {
     position: absolute;
     inset: 0;
+    background: transparent;
+    z-index: 0;
 }
 
 .modal__dialog {
     position: relative;
+    z-index: 1;
     width: min(680px, 100%);
     max-height: calc(100vh - 48px);
     overflow-y: auto;
