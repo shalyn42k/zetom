@@ -36,6 +36,11 @@ urlpatterns = [
         login_required(views.rollback_client_change, login_url='/login/'),
         name='rollback_client_change',
     ),
+    path(
+        'panel/api/users/<int:user_id>/settings/',
+        login_required(views.admin_user_settings, login_url='/login/'),
+        name='admin_user_settings',
+    ),
     path('panel/settings/', login_required(views.admin_settings, login_url='/login/'), name='admin_settings'),
     path(
         'panel/reset-password/',

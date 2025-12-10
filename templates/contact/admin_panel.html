@@ -585,7 +585,10 @@
                  data-settings-endpoint="{% url 'contact:admin_settings' %}?lang={{ lang }}"
                  data-profile-endpoint="{% url 'contact:admin_profile' %}?lang={{ lang }}"
                  data-verify-endpoint="{% url 'contact:admin_verify_password' %}?lang={{ lang }}"
-                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}">
+                 data-reset-endpoint="{% url 'contact:admin_reset_password' %}?lang={{ lang }}"
+                 data-user-settings-template="{% url 'contact:admin_user_settings' 0 %}?lang={{ lang }}"
+                 data-departments-data='{{ department_choices_json|escapejs }}'
+                 data-role-permissions='{{ role_permissions_json|escapejs }}'>
             <div class="settings-panel__intro">
                 <h2 class="settings-panel__title">Settings</h2>
                 <p class="settings-panel__description">
@@ -694,6 +697,56 @@
                     <button type="button" class="button" data-admin-password-submit>
                         {% if lang == 'pl' %}Potwierdź{% else %}Confirm{% endif %}
                     </button>
+                </div>
+                <div class="drawer" data-user-drawer aria-hidden="true">
+                    <div class="drawer__backdrop" data-user-drawer-close></div>
+                    <div class="drawer__panel" role="dialog" aria-modal="true">
+                        <header class="drawer__header">
+                            <h3 class="drawer__title" data-user-drawer-title>
+                                {% if lang == 'pl' %}Ustawienia użytkownika{% else %}User settings{% endif %}
+                            </h3>
+                            <button type="button" class="drawer__close" data-user-drawer-close aria-label="{% if lang == 'pl' %}Zamknij{% else %}Close{% endif %}">×</button>
+                        </header>
+                        <div class="drawer__body">
+                            <div class="form-error" data-user-settings-error hidden></div>
+                            <div class="form-success" data-user-settings-success hidden>
+                                {% if lang == 'pl' %}Zapisano ustawienia.{% else %}Settings saved.{% endif %}
+                            </div>
+                            <form class="drawer__form" data-user-settings-form>
+                                <div class="drawer__grid">
+                                    <label class="form-field">
+                                        <span class="form-label">Email</span>
+                                        <input type="email" class="form-input" data-user-email readonly>
+                                    </label>
+                                    <label class="form-field">
+                                        <span class="form-label">{% if lang == 'pl' %}Rola{% else %}Role{% endif %}</span>
+                                        <select class="form-input" data-user-role>
+                                            <option value="level1">level1</option>
+                                            <option value="level2">level2</option>
+                                            <option value="level3">level3</option>
+                                        </select>
+                                    </label>
+                                    <label class="form-field form-field--full">
+                                        <span class="form-label">{% if lang == 'pl' %}Departamenty{% else %}Departments{% endif %}</span>
+                                        <select class="form-input" multiple data-user-departments></select>
+                                    </label>
+                                </div>
+                                <div class="drawer__permissions">
+                                    <div class="drawer__toggle">
+                                        <label class="checkbox-pill">
+                                            <input type="checkbox" data-permissions-follow>
+                                            <span>{% if lang == 'pl' %}Korzystaj z domyślnych uprawnień roli{% else %}Follow role default permissions{% endif %}</span>
+                                        </label>
+                                    </div>
+                                    <div class="permissions-list" data-permissions-list></div>
+                                </div>
+                                <div class="drawer__actions">
+                                    <button type="button" class="button button--outline" data-user-cancel>{% if lang == 'pl' %}Anuluj{% else %}Cancel{% endif %}</button>
+                                    <button type="submit" class="button button--primary" data-user-save>{% if lang == 'pl' %}Zapisz{% else %}Save{% endif %}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </section>
             {% else %}
