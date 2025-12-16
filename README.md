@@ -20,6 +20,7 @@
 ## Требования
 
 - Python 3.11+;
+- PostgreSQL 14+ (можно в Docker);
 - pip и virtualenv/venv;
 - (опционально) SMTP‑учётка для реальной отправки почты.
 
@@ -46,10 +47,12 @@
    - `DJANGO_SECRET_KEY` — любой длинный случайный ключ.
    - `DJANGO_DEBUG` — `true` для разработки.
    - `DJANGO_ALLOWED_HOSTS` — список доменов через запятую.
-   - `SQLITE_NAME` — путь к SQLite базе (по умолчанию `db.sqlite3`).
+   - `DATABASE_URL` **или** `POSTGRES_*` — строка подключения к PostgreSQL (обязательна для работы).
+   - `LEGACY_SQLITE_PATH` — путь к существующей SQLite базе, если нужно перенести данные.
    - `SMTP_*` — настройки SMTP, если нужна отправка писем.
+   - `DJANGO_ALLOW_SQLITE_FALLBACK` — только для локальной отладки без PostgreSQL; не используйте в проде.
 
-5. Примените миграции и (по необходимости) соберите статику:
+5. Примените миграции и (по необходимости) соберите статику на PostgreSQL:
    ```bash
    python manage.py migrate
    python manage.py collectstatic  # можно пропустить в dev
@@ -61,12 +64,7 @@
    ```
    Команда попросит ввести пароль (или сгенерирует случайный, если оставить пустым) и сохранит его хеш в базе. При необходимости переопределите уровень доступа (`level1`, `level2`, `level3`) и используйте `--force-update`, чтобы обновить существующую запись. Чтобы задать свой тестовый пароль вручную, добавьте флаг `--password <VALUE>` — пароль будет захеширован и сохранён только в базе данных.
 
-   Если появилось сообщение `no such column: contact_adminuser.password_hash`, значит у вас старая база без актуальных миграций. Удалите устаревший файл SQLite или примените миграции к нужной БД и повторите команды:
-
-   ```bash
-   python manage.py migrate
-   ```
-   Это гарантированно создаст таблицу с колонкой `password_hash` и заведёт тестовый логин. Не коммитьте тестовые пароли и не храните их в репозитории.
+   Если команда сообщает об отсутствии колонок, значит база данных не прошла актуальные миграции — выполните `python manage.py migrate` ещё раз и убедитесь, что подключены к правильной PostgreSQL базе. Не коммитьте тестовые пароли и не храните их в репозитории.
 
 7. Запустите сервер разработки:
    ```bash
@@ -93,38 +91,53 @@ python manage.py migrate            # применяет все доступны
 python manage.py migrate sessions
 ```
 
-После выполнения команды таблица появится в выбранной базе (по умолчанию `db.sqlite3` из `DATABASES['default']`), и ошибки
+После выполнения команды таблица появится в выбранной базе данных (значение `DATABASES['default']`, обычно PostgreSQL), и ошибки
 `no such table: django_session` больше не будет.
+
+## Перенос данных из SQLite в PostgreSQL
+
+1. Настройте подключение к PostgreSQL через `DATABASE_URL` или `POSTGRES_*` в `.env`. База должна быть пустой (новая или очищенная).
+2. Укажите путь к старой базе SQLite через `LEGACY_SQLITE_PATH` (например, `LEGACY_SQLITE_PATH=/app/db.sqlite3`).
+3. Выполните миграции для новой базы:
+   ```bash
+   python manage.py migrate
+   ```
+4. Запустите перенос данных:
+   ```bash
+   python manage.py migrate_sqlite_to_postgres --force-flush
+   ```
+   Флаг `--force-flush` очищает данные в целевой базе перед импортом (используйте только если база новая и данных нет). Команда валидирует, что основная БД — PostgreSQL, и скопирует все строки, восстанавливая последовательности.
+5. Перенесите каталог `media/`, если в SQLite базе есть связанные загрузки файлов.
+6. Проверьте систему:
+   ```bash
+   python manage.py check
+   python manage.py test
+   ```
+
+Для локальной отладки без PostgreSQL можно временно включить `DJANGO_ALLOW_SQLITE_FALLBACK=true`, но миграцию данных выполняйте только в PostgreSQL.
 
 ## Запуск в Docker (порт 8888)
 
-1. Скопируйте `.env.example` в `.env` и при необходимости измените значения (секретный ключ, SMTP и т. д.).
-2. Соберите образ:
+1. Скопируйте `.env.example` в `.env` и укажите `DATABASE_URL` PostgreSQL (или `POSTGRES_*`). Пример для локального docker‑контейнера: `postgresql://zetom:zetom@zetom-db:5432/zetom`.
+2. Поднимите PostgreSQL (пример для сети `zetom-net`):
+   ```bash
+   docker network create zetom-net
+   docker run -d --name zetom-db --network zetom-net -e POSTGRES_DB=zetom -e POSTGRES_USER=zetom -e POSTGRES_PASSWORD=zetom postgres:16
+   ```
+3. Соберите образ приложения:
    ```bash
    docker build -t zetom:local .
    ```
-3. Запустите контейнер, пробросив порт 8888 и подключив `.env`:
+4. Запустите контейнер, подключив `.env` и сеть с базой:
    ```bash
-   docker run --rm --env-file .env -p 8888:8888 zetom:local
-   ```  
-4. Чтобы правильно все запустилось, в терминале посмотрите id контейнера.
-   ```bash
-   docker ps
+   docker run --rm --env-file .env --network zetom-net -p 8888:8888 zetom:local
    ```
-5. После чего скоипровав id контейнера, впишите эту команду в терминал.
+5. Примените миграции и создайте учётку администратора (при необходимости):
    ```bash
-   docker exec -it ID_ИЛИ_ИМЯ_КОНТЕЙНЕРА python manage.py migrate
-   ```
-6. Затем вам потребуется логин и пароль для входа в админ панель, он создается такой командой:
-   ```bash
+   docker exec -it ИМЯ_ВАШЕГО_КОНТЕЙНЕРА python manage.py migrate
    docker exec -it ИМЯ_ВАШЕГО_КОНТЕЙНЕРА python manage.py create_admin_user test@gmail.com --level level1
    ```
-   Приложение будет доступно на <http://localhost:8888/>. По умолчанию используется SQLite внутри контейнера; подключите том,
-   если хотите сохранять базу вне контейнера, например:
-   ```bash
-   docker run --rm --env-file .env -p 8888:8888 \
-     -v $(pwd)/db.sqlite3:/app/db.sqlite3 zetom:local
-   ```
+   Приложение будет доступно на <http://localhost:8888/>.
 
 ## Тесты и проверки
 
