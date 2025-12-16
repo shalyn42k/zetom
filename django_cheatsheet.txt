@@ -59,8 +59,8 @@ Static files
 # Collect static for production
 python manage.py collectstatic
 
-Migrations & database (SQLite)
-------------------------------
+Migrations & database (PostgreSQL)
+----------------------------------
 # Make and apply migrations
 python manage.py makemigrations
 python manage.py makemigrations contact
@@ -73,16 +73,21 @@ python manage.py showmigrations contact
 # See SQL for a migration
 python manage.py sqlmigrate contact 0001
 
-# Open DB shell (SQLite)
+# Open DB shell (PostgreSQL / current DATABASE_URL)
 python manage.py dbshell
+
+# Import data from legacy SQLite into PostgreSQL (requires LEGACY_SQLITE_PATH and DATABASE_URL)
+python manage.py migrate_sqlite_to_postgres --force-flush
 
 # Dump/Load fixtures
 python manage.py dumpdata contact.ContactMessage --indent 2 > fixtures/contact_messages.json
 python manage.py loaddata fixtures/contact_messages.json
 
-# Reset local DB (DANGER: deletes all data)
-Remove-Item .\db.sqlite3
-python manage.py migrate
+# Reset local PostgreSQL DB (DANGER: deletes all data)
+# Example in psql (adjust credentials):
+#   DROP DATABASE zetom; CREATE DATABASE zetom;
+# Then rerun migrations:
+#   python manage.py migrate
 
 # Reset app migrations from scratch (DEV ONLY)
 Remove-Item -Recurse -Force .\contact\migrations\*.py -ErrorAction SilentlyContinue
