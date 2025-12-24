@@ -1088,6 +1088,7 @@ def _handle_email_form(
             filename=file.name if file else None,
             inline_images=inline_images,
         )
+        messages.success(request, "Wiadomość została wysłana pomyślnie!")
         log_action(
             AdminActivityLog.ACTION_EMAIL,
             description=f"Manual email sent to {form.cleaned_data['to_email']}",
