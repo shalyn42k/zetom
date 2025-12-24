@@ -321,22 +321,22 @@ class EmailForm(forms.Form):
     )
     sender_name = forms.CharField(
         label="Imię i Nazwisko",
-        initial="Jan Lozinszek",
+        initial="Imię i Nazwisko",
         widget=forms.TextInput(attrs={"class": "form-input"}),
     )
     sender_position = forms.CharField(
         label="Stanowisko",
-        initial="Starszy Specjalista",
+        initial="Stanowisko",
         widget=forms.TextInput(attrs={"class": "form-input"}),
     )
     sender_phone = forms.CharField(
         label="Telefon",
-        initial="692 286 438 | 604 903 479",
+        initial="+48 000 000 000",
         widget=forms.TextInput(attrs={"class": "form-input"}),
     )
     sender_email = forms.EmailField(
         label="E-mail w stopce",
-        initial="jan.lozinszek@zetom.eu",
+        initial="email@zetom.eu",
         widget=forms.EmailInput(attrs={"class": "form-input"}),
     )
     message_text = forms.CharField(
