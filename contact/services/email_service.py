@@ -134,15 +134,27 @@ def send_email_with_attachment(
     to_email: str,
     subject: str,
     body: str,
+    html_body: str | None,
     attachment: IO[bytes] | None,
     filename: str | None,
 ) -> None:
-    msg = MIMEMultipart()
+    if html_body:
+        alternative = MIMEMultipart('alternative')
+        alternative.attach(MIMEText(body, 'plain', 'utf-8'))
+        alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+        if attachment and filename and filename.endswith('.pdf'):
+            msg = MIMEMultipart('mixed')
+            msg.attach(alternative)
+        else:
+            msg = alternative
+    else:
+        msg = MIMEMultipart()
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
     msg['From'] = settings.SMTP_USER
     msg['To'] = to_email
     msg['Subject'] = subject
-
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
     if attachment and filename and filename.endswith('.pdf'):
         pdf = MIMEApplication(attachment.read(), _subtype='pdf')

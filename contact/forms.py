@@ -319,7 +319,37 @@ class EmailForm(forms.Form):
         initial="Custom message",
         widget=forms.TextInput(attrs={"class": "form-input"})
     )
-    body = forms.CharField(widget=forms.Textarea(attrs={"rows": 6, "class": "form-input"}))
+    main_message = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "rows": 6,
+                "class": "form-input",
+                "id": "email-main-message",
+                "data-email-main-message": "true",
+            }
+        )
+    )
+    quote_title = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-input",
+                "id": "email-quote-title",
+                "data-email-quote-title": "true",
+            }
+        ),
+    )
+    quote_body = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+                "class": "form-input",
+                "id": "email-quote-body",
+                "data-email-quote-body": "true",
+            }
+        ),
+    )
     attachment = forms.FileField(required=False, widget=forms.ClearableFileInput(attrs={"class": "form-input"}))
 
 
