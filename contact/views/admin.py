@@ -446,6 +446,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         )
 
     user_department_labels = [department_labels.get(code, code) for code in user_departments]
+    base_url = request.build_absolute_uri("/").rstrip("/")
 
     context = {
         "lang": lang,
@@ -488,6 +489,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "email_sender_name": sender_name,
         "email_sender_position": sender_position,
         "email_sender_phone": sender_phone,
+        "base_url": base_url,
     }
     return render(request, "contact/admin_panel.html", context)
 
