@@ -667,14 +667,6 @@
                             </div>
                             <div class="panel-email__body">
                                 <label for="{{ email_form.quote_body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść cytatu{% else %}Quoted message{% endif %}</label>
-                                <div class="panel-form-actions">
-                                    <button type="button" class="button button--ghost button--compact" data-email-quote-template>
-                                        {% if lang == 'pl' %}Wstaw Szablon Klienta{% else %}Insert customer template{% endif %}
-                                    </button>
-                                    <button type="button" class="button button--ghost button--compact" data-email-quote-clear>
-                                        {% if lang == 'pl' %}Wyczyść{% else %}Clear{% endif %}
-                                    </button>
-                                </div>
                                 {{ email_form.quote_body }}
                                 {% if email_form.quote_body.errors %}<div class="form-error">{{ email_form.quote_body.errors.0 }}</div>{% endif %}
                             </div>
