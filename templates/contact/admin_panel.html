@@ -623,6 +623,77 @@
 
         <section class="panel panel-forms is-hidden" id="forms" data-panel-content="forms">
             <div class="panel-email">
+                <style>
+                    .panel-email .email-composer-grid {
+                        display: grid;
+                        grid-template-columns: 400px 1fr;
+                        gap: 30px;
+                        align-items: start;
+                    }
+
+                    .panel-email .email-form-column {
+                        width: 400px;
+                        max-width: 100%;
+                    }
+
+                    .panel-email .email-form-column input,
+                    .panel-email .email-form-column textarea,
+                    .panel-email .email-form-column select {
+                        width: 100%;
+                        box-sizing: border-box;
+                    }
+
+                    .panel-email .email-field {
+                        margin-bottom: 18px;
+                    }
+
+                    .panel-email .email-field .form-label {
+                        display: block;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                    }
+
+                    .panel-email .preview-column {
+                        min-width: 0;
+                    }
+
+                    .panel-email .preview-box {
+                        background: #fff;
+                        border: 1px solid #ccc;
+                        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+                        padding: 40px;
+                        border-radius: 6px;
+                    }
+
+                    .panel-email .preview-body,
+                    .panel-email .preview-quote-body {
+                        white-space: pre-line;
+                    }
+
+                    .panel-email .preview-quote-block {
+                        margin: 24px 0;
+                        padding: 16px 18px;
+                        border-left: 3px solid #3aa657;
+                        background: #f3faf5;
+                        display: none;
+                    }
+
+                    .panel-email .preview-divider {
+                        height: 2px;
+                        background: #3aa657;
+                        margin: 24px 0 16px;
+                    }
+
+                    @media (max-width: 1000px) {
+                        .panel-email .email-composer-grid {
+                            grid-template-columns: 1fr;
+                        }
+
+                        .panel-email .email-form-column {
+                            width: 100%;
+                        }
+                    }
+                </style>
                 <div class="panel-email__header">
                     <div class="panel-email__intro">
                         <h3 class="panel-email__title">{% if lang == 'pl' %}Wyślij wiadomość do klienta{% else %}Send an email to a customer{% endif %}</h3>
@@ -635,8 +706,8 @@
                         </p>
                     </div>
                 </div>
-                <div class="panel-email__layout">
-                    <form method="post" enctype="multipart/form-data" class="panel-email__form" data-email-form>
+                <div class="email-composer-grid">
+                    <form method="post" enctype="multipart/form-data" class="panel-email__form email-form-column" data-email-form>
                         {% csrf_token %}
                         <input type="hidden" name="send_email" value="1">
                         <input type="hidden" name="sort_by" value="{{ current_sort }}">
@@ -644,99 +715,138 @@
                         {% if email_form.non_field_errors %}
                             <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
                         {% endif %}
-                        <div class="email-grid">
-                            <div>
-                                <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
-                                {{ email_form.to_email }}
-                                {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div>
-                                <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
-                                {{ email_form.subject }}
-                                {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="panel-email__body">
-                                <label for="{{ email_form.main_message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Główna wiadomość{% else %}Main message{% endif %}</label>
-                                {{ email_form.main_message }}
-                                {% if email_form.main_message.errors %}<div class="form-error">{{ email_form.main_message.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div>
-                                <label for="{{ email_form.quote_title.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nagłówek cytatu{% else %}Quote heading{% endif %}</label>
-                                {{ email_form.quote_title }}
-                                {% if email_form.quote_title.errors %}<div class="form-error">{{ email_form.quote_title.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="panel-email__body">
-                                <label for="{{ email_form.quote_body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść cytatu{% else %}Quoted message{% endif %}</label>
-                                {{ email_form.quote_body }}
-                                {% if email_form.quote_body.errors %}<div class="form-error">{{ email_form.quote_body.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div>
-                                <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
-                                {{ email_form.attachment }}
-                                {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
-                            </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
+                            {{ email_form.to_email }}
+                            {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
+                            {{ email_form.subject }}
+                            {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.main_message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Główna wiadomość{% else %}Main message{% endif %}</label>
+                            {{ email_form.main_message }}
+                            {% if email_form.main_message.errors %}<div class="form-error">{{ email_form.main_message.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.quote_title.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nagłówek cytatu{% else %}Quote heading{% endif %}</label>
+                            {{ email_form.quote_title }}
+                            {% if email_form.quote_title.errors %}<div class="form-error">{{ email_form.quote_title.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.quote_body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść cytatu{% else %}Quoted message{% endif %}</label>
+                            {{ email_form.quote_body }}
+                            {% if email_form.quote_body.errors %}<div class="form-error">{{ email_form.quote_body.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="email-field">
+                            <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
+                            {{ email_form.attachment }}
+                            {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
                         </div>
                         <button type="submit" class="form-submit" {% if not can_send_emails %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
                     </form>
-                    <div class="panel-email__preview">
+                    <div class="preview-column">
                         <div class="panel-email__preview-header">
                             <h4 class="panel-email__preview-title">{% if lang == 'pl' %}Podgląd na żywo{% else %}Live preview{% endif %}</h4>
                             <p class="panel-email__preview-subtitle">{% if lang == 'pl' %}Układ wiadomości z podpisem i cytatem.{% else %}Email layout with signature and quote block.{% endif %}</p>
                         </div>
-                        <div class="email-preview">
-                            <div class="email-preview__canvas">
-                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;color:#1f2d1f;">
-                                    <tr>
-                                        <td style="padding:24px 32px 16px;">
-                                            <img src="{{ email_logo_url }}" alt="ZETOM Katowice" width="140" style="display:block;height:auto;">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 32px 24px;">
-                                            <div style="font-size:15px;line-height:1.6;color:#1f2d1f;" data-email-preview-body></div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 32px 24px;">
-                                            <div data-email-preview-quote-block style="display:none;border-left:3px solid #3aa657;padding:12px 16px;background:#f3faf5;">
-                                                <div style="font-weight:600;margin-bottom:8px;" data-email-preview-quote-title></div>
-                                                <div style="color:#2f3d2f;line-height:1.5;" data-email-preview-quote-body></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 32px 24px;">
-                                            <div style="height:2px;background:#3aa657;margin:8px 0 16px;"></div>
-                                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;">
-                                                <tr>
-                                                    <td style="font-size:14px;line-height:1.5;color:#1f2d1f;">
-                                                        <strong>{{ email_signature_name }}</strong><br>
-                                                        <span>{{ email_signature_email }}</span><br>
-                                                        {% if email_signature_phone %}
-                                                            <span>{{ email_signature_phone }}</span><br>
-                                                        {% endif %}
-                                                        <span>Zakłady Badań i Atestacji „ZETOM”</span><br>
-                                                        <span>ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice</span>
-                                                    </td>
-                                                    <td align="right" style="font-size:12px;line-height:1.5;color:#566a56;">
-                                                        <span style="display:inline-flex;align-items:center;gap:6px;">
-                                                            <img src="{{ email_mail_icon_url }}" alt="" width="14" style="vertical-align:middle;">
-                                                            <span>biuro@zetom.eu</span>
-                                                        </span><br>
-                                                        <span style="display:inline-flex;align-items:center;gap:6px;">
-                                                            <img src="{{ email_phone_icon_url }}" alt="" width="14" style="vertical-align:middle;">
-                                                            <span>32 256 92 57</span>
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                </table>
+                        <div class="preview-box">
+                            <div style="margin-bottom: 20px;">
+                                <img src="{{ email_logo_url }}" alt="ZETOM Katowice" width="140" style="display:block;height:auto;">
+                            </div>
+                            <div class="preview-body" data-email-preview-body>
+                                {% if lang == 'pl' %}
+                                    Wpisz treść wiadomości, aby zobaczyć ją w podglądzie.
+                                {% else %}
+                                    Start typing to see your message preview.
+                                {% endif %}
+                            </div>
+                            <div class="preview-quote-block" data-email-preview-quote-block>
+                                <div class="preview-quote-title" data-email-preview-quote-title></div>
+                                <div class="preview-quote-body" data-email-preview-quote-body></div>
+                            </div>
+                            <div class="preview-divider"></div>
+                            <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+                                <div style="font-size:14px;line-height:1.5;color:#1f2d1f;">
+                                    <strong>{{ email_signature_name }}</strong><br>
+                                    <span>{{ email_signature_email }}</span><br>
+                                    {% if email_signature_phone %}
+                                        <span>{{ email_signature_phone }}</span><br>
+                                    {% endif %}
+                                    <span>Zakłady Badań i Atestacji „ZETOM”</span><br>
+                                    <span>ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice</span>
+                                </div>
+                                <div style="font-size:12px;line-height:1.5;color:#566a56;">
+                                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                                        <img src="{{ email_mail_icon_url }}" alt="" width="14" style="vertical-align:middle;">
+                                        <span>biuro@zetom.eu</span>
+                                    </span><br>
+                                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                                        <img src="{{ email_phone_icon_url }}" alt="" width="14" style="vertical-align:middle;">
+                                        <span>32 256 92 57</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <script>
+                    (() => {
+                        const panel = document.querySelector('#forms .panel-email');
+                        if (!panel) {
+                            return;
+                        }
+                        const form = panel.querySelector('[data-email-form]');
+                        if (!form) {
+                            return;
+                        }
+                        const bodyInput = form.querySelector('[name="main_message"]');
+                        const quoteTitleInput = form.querySelector('[name="quote_title"]');
+                        const quoteBodyInput = form.querySelector('[name="quote_body"]');
+
+                        const previewBody = panel.querySelector('[data-email-preview-body]');
+                        const previewQuoteBlock = panel.querySelector('[data-email-preview-quote-block]');
+                        const previewQuoteTitle = panel.querySelector('[data-email-preview-quote-title]');
+                        const previewQuoteBody = panel.querySelector('[data-email-preview-quote-body]');
+
+                        const updatePreview = () => {
+                            const bodyText = (bodyInput?.value || '').trim();
+                            if (previewBody) {
+                                previewBody.textContent =
+                                    bodyText ||
+                                    `{% if lang == 'pl' %}Wpisz treść wiadomości, aby zobaczyć ją w podglądzie.{% else %}Start typing to see your message preview.{% endif %}`;
+                            }
+
+                            const quoteTitleText = (quoteTitleInput?.value || '').trim();
+                            const quoteBodyText = (quoteBodyInput?.value || '').trim();
+                            const hasQuote = quoteTitleText || quoteBodyText;
+
+                            if (previewQuoteBlock) {
+                                previewQuoteBlock.style.display = hasQuote ? 'block' : 'none';
+                            }
+                            if (previewQuoteTitle) {
+                                previewQuoteTitle.textContent = quoteTitleText;
+                            }
+                            if (previewQuoteBody) {
+                                previewQuoteBody.textContent = quoteBodyText;
+                            }
+                        };
+
+                        form.addEventListener('input', updatePreview);
+                        form.addEventListener('submit', (event) => {
+                            const confirmed = window.confirm(
+                                'Вы уверены, что текст письма верен? Отправить сообщение клиенту?'
+                            );
+                            if (!confirmed) {
+                                event.preventDefault();
+                            }
+                        });
+
+                        updatePreview();
+                    })();
+                </script>
             </div>
         </section>
 
