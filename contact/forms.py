@@ -320,11 +320,7 @@ class EmailForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-input"}),
     )
     message_text = forms.CharField(
-        initial=(
-            "Dzień dobry.\n\n"
-            "W załączniku umieściłem ofertę cenową na wykonanie wzorcowania przyrządu "
-            "pomiarowego wyszczególnionego w zapytaniu ofertowym."
-        ),
+        initial="",
         widget=forms.Textarea(
             attrs={
                 "rows": 6,
@@ -335,28 +331,7 @@ class EmailForm(forms.Form):
         ),
     )
     quote_text = forms.CharField(
-        initial=(
-            "Plaintext\n\n"
-            "W dniu 28.10.2025 o 09:29, Jarosław Ługowyj pisze:\n\n"
-            "Dzień dobry,\n"
-            "Proszę o ofertę terminowo-cenową na n/w pozycję:\n"
-            "1. Usługa wzorcowania maszyny wytrzymałościowej na rozciąganie: wytwórca DSI, "
-            "NIEMCY TYP HOZ 4000/250\n\n"
-            "Z poważaniem,\n\n"
-            "Jarosław Ługowyj\n"
-            "Specjalista ds. zaopatrzenia\n"
-            "Tel. +48 32 20-71-258\n"
-            "Tel kom: 602-779-103\n"
-            "e-mail: zaopatrzenie@gonar.com.pl\n\n"
-            "GONAR-BIS Sp.z o.o\n"
-            "ul.Obroki 109, 40-833 KATOWICE\n"
-            "www.gonar.com.pl\n"
-            "NIP 6342620329, REGON 240529393\n"
-            "Nr rejestrowy BDO: 000022830\n"
-            "KRS: 0000270191\n"
-            "Wysokość kapitału zakładowego: 226 244 000,00 zł\n"
-            "Konto bankowe: mBANK SA PL62 1140 1078 0000 3452 3000 1001"
-        ),
+        initial="",
         widget=forms.Textarea(
             attrs={
                 "rows": 10,
