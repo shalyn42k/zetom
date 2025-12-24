@@ -1850,16 +1850,14 @@
         const form = document.querySelector('[data-email-form]');
         if (!form) return;
 
-        const mainInput = form.querySelector('[data-email-main-message]');
-        const quoteTitleInput = form.querySelector('[data-email-quote-title]');
-        const quoteBodyInput = form.querySelector('[data-email-quote-body]');
+        const messageInput = form.querySelector('[data-email-message-text]');
+        const quoteInput = form.querySelector('[data-email-quote-text]');
 
         const previewBody = document.querySelector('[data-email-preview-body]');
-        const previewQuoteTitle = document.querySelector('[data-email-preview-quote-title]');
         const previewQuoteBody = document.querySelector('[data-email-preview-quote-body]');
         const previewQuoteBlock = document.querySelector('[data-email-preview-quote-block]');
 
-        if (!mainInput || !previewBody || !previewQuoteBlock) return;
+        if (!messageInput || !previewBody || !previewQuoteBlock) return;
 
         const escapeHtml = (value) =>
             value
@@ -1872,24 +1870,20 @@
         const formatText = (value) => escapeHtml(value).replace(/\n/g, '<br>');
 
         const updatePreview = () => {
-            const mainValue = mainInput.value || '';
-            previewBody.innerHTML = formatText(mainValue);
+            const messageValue = messageInput.value || '';
+            previewBody.innerHTML = formatText(messageValue);
 
-            const quoteTitleValue = quoteTitleInput ? quoteTitleInput.value : '';
-            const quoteBodyValue = quoteBodyInput ? quoteBodyInput.value : '';
+            const quoteValue = quoteInput ? quoteInput.value : '';
 
-            if (previewQuoteTitle) {
-                previewQuoteTitle.innerHTML = formatText(quoteTitleValue);
-            }
             if (previewQuoteBody) {
-                previewQuoteBody.innerHTML = formatText(quoteBodyValue);
+                previewQuoteBody.innerHTML = formatText(quoteValue);
             }
 
-            const hasQuote = quoteBodyValue.trim().length > 0;
+            const hasQuote = quoteValue.trim().length > 0;
             previewQuoteBlock.style.display = hasQuote ? 'block' : 'none';
         };
 
-        [mainInput, quoteTitleInput, quoteBodyInput].forEach((input) => {
+        [messageInput, quoteInput].forEach((input) => {
             if (!input) return;
             input.addEventListener('input', updatePreview);
         });

@@ -316,41 +316,60 @@ class EmailForm(forms.Form):
     to_email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-input"}))
     subject = forms.CharField(
         max_length=255,
-        initial="Custom message",
-        widget=forms.TextInput(attrs={"class": "form-input"})
+        initial="Oferta cenowa - wzorcowanie przyrządu pomiarowego",
+        widget=forms.TextInput(attrs={"class": "form-input"}),
     )
-    main_message = forms.CharField(
+    message_text = forms.CharField(
+        initial=(
+            "Dzień dobry.\n\n"
+            "W załączniku umieściłem ofertę cenową na wykonanie wzorcowania przyrządu "
+            "pomiarowego wyszczególnionego w zapytaniu ofertowym."
+        ),
         widget=forms.Textarea(
             attrs={
                 "rows": 6,
                 "class": "form-input",
-                "id": "email-main-message",
-                "data-email-main-message": "true",
-            }
-        )
-    )
-    quote_title = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-input",
-                "id": "email-quote-title",
-                "data-email-quote-title": "true",
+                "id": "email-message-text",
+                "data-email-message-text": "true",
             }
         ),
     )
-    quote_body = forms.CharField(
-        required=False,
+    quote_text = forms.CharField(
+        initial=(
+            "Plaintext\n\n"
+            "W dniu 28.10.2025 o 09:29, Jarosław Ługowyj pisze:\n\n"
+            "Dzień dobry,\n"
+            "Proszę o ofertę terminowo-cenową na n/w pozycję:\n"
+            "1. Usługa wzorcowania maszyny wytrzymałościowej na rozciąganie: wytwórca DSI, "
+            "NIEMCY TYP HOZ 4000/250\n\n"
+            "Z poważaniem,\n\n"
+            "Jarosław Ługowyj\n"
+            "Specjalista ds. zaopatrzenia\n"
+            "Tel. +48 32 20-71-258\n"
+            "Tel kom: 602-779-103\n"
+            "e-mail: zaopatrzenie@gonar.com.pl\n\n"
+            "GONAR-BIS Sp.z o.o\n"
+            "ul.Obroki 109, 40-833 KATOWICE\n"
+            "www.gonar.com.pl\n"
+            "NIP 6342620329, REGON 240529393\n"
+            "Nr rejestrowy BDO: 000022830\n"
+            "KRS: 0000270191\n"
+            "Wysokość kapitału zakładowego: 226 244 000,00 zł\n"
+            "Konto bankowe: mBANK SA PL62 1140 1078 0000 3452 3000 1001"
+        ),
         widget=forms.Textarea(
             attrs={
-                "rows": 4,
+                "rows": 10,
                 "class": "form-input",
-                "id": "email-quote-body",
-                "data-email-quote-body": "true",
+                "id": "email-quote-text",
+                "data-email-quote-text": "true",
             }
         ),
     )
-    attachment = forms.FileField(required=False, widget=forms.ClearableFileInput(attrs={"class": "form-input"}))
+    attachment = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-input"}),
+    )
 
 
 class MessageFilterForm(forms.Form):

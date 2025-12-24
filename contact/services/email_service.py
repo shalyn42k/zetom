@@ -14,12 +14,12 @@ import logging
 import smtplib
 import ssl
 from contextlib import contextmanager
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 from typing import IO
 
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from ..models import AdminUser, ContactMessage
@@ -137,31 +137,28 @@ def send_email_with_attachment(
     html_body: str | None,
     attachment: IO[bytes] | None,
     filename: str | None,
+    inline_images: list[dict[str, bytes]] | None = None,
 ) -> None:
+    from_email = settings.SMTP_USER
+    if not from_email:
+        return
+
+    message = EmailMultiAlternatives(subject, body, from_email, [to_email])
     if html_body:
-        alternative = MIMEMultipart('alternative')
-        alternative.attach(MIMEText(body, 'plain', 'utf-8'))
-        alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
+        message.attach_alternative(html_body, "text/html")
 
-        if attachment and filename and filename.endswith('.pdf'):
-            msg = MIMEMultipart('mixed')
-            msg.attach(alternative)
-        else:
-            msg = alternative
-    else:
-        msg = MIMEMultipart()
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    if attachment and filename:
+        attachment.seek(0)
+        message.attach(filename, attachment.read(), getattr(attachment, "content_type", None))
 
-    msg['From'] = settings.SMTP_USER
-    msg['To'] = to_email
-    msg['Subject'] = subject
+    for image in inline_images or []:
+        content_id = image["content_id"]
+        mime_image = MIMEImage(image["content"])
+        mime_image.add_header("Content-ID", f"<{content_id}>")
+        mime_image.add_header("Content-Disposition", "inline", filename=content_id)
+        message.attach(mime_image)
 
-    if attachment and filename and filename.endswith('.pdf'):
-        pdf = MIMEApplication(attachment.read(), _subtype='pdf')
-        pdf.add_header('Content-Disposition', 'attachment', filename=filename)
-        msg.attach(pdf)
-
-    _send_message(msg)
+    _send_message(message.message())
 
 
 def _send_plain_email(*, to_email: str, subject: str, body: str) -> None:

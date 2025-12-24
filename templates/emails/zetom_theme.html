@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZETOM email</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f2f4f2;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background-color:#f2f4f2;">
+    <tr>
+        <td align="center" style="padding:24px 16px;">
+            <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background-color:#ffffff;font-family:Arial,sans-serif;color:#1f2d1f;">
+                <tr>
+                    <td style="padding:24px 36px 18px;">
+                        <div style="font-size:15px;line-height:1.6;color:#1f2d1f;">
+                            {{ message_text|linebreaksbr }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:0 36px 18px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                            <tr>
+                                <td style="font-size:14px;line-height:1.5;color:#1f2d1f;">
+                                    <strong>Jan Lozinszek</strong><br>
+                                    <span>Specjalista ds. sprzedaży i wzorcowań</span>
+                                </td>
+                            </tr>
+                        </table>
+                        <hr style="border:none;border-top:2px solid #3aa657;margin:14px 0 16px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                            <tr>
+                                <td valign="top" width="55%" style="font-size:13px;line-height:1.5;color:#1f2d1f;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                                        <tr>
+                                            <td style="padding:0 8px 6px 0;">
+                                                <img src="{{ image_prefix }}telef.png" alt="" width="16" style="display:block;">
+                                            </td>
+                                            <td style="padding:0 0 6px;">692 286 438</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:0 8px 6px 0;">
+                                                <img src="{{ image_prefix }}mail.png" alt="" width="16" style="display:block;">
+                                            </td>
+                                            <td style="padding:0 0 6px;">jan.lozinszek@zetom.eu</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:0 8px 6px 0;">
+                                                <img src="{{ image_prefix }}zet1.png" alt="" width="16" style="display:block;">
+                                            </td>
+                                            <td style="padding:0 0 6px;">www.zetom.eu</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:0 8px 6px 0;"></td>
+                                            <td style="padding:0 0 6px;">
+                                                Zakłady Badań i Atestacji „ZETOM”<br>
+                                                ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td valign="top" align="right" width="45%" style="font-size:12px;line-height:1.5;color:#566a56;">
+                                    <div style="margin-bottom:8px;">
+                                        <img src="{{ image_prefix }}zet1.png" alt="ZETOM" width="120" style="display:block;height:auto;">
+                                    </div>
+                                    <div>
+                                        <img src="{{ image_prefix }}building.png" alt="ZETOM Building" width="150" style="display:block;height:auto;">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:0 0 18px;">
+                        <div style="height:8px;background-color:#3aa657;"></div>
+                    </td>
+                </tr>
+                {% if quote_text %}
+                    <tr>
+                        <td style="padding:0 36px 28px;">
+                            <div style="background-color:#f3f3f3;padding:16px 18px;font-size:13px;line-height:1.6;color:#2f2f2f;">
+                                {{ quote_text|linebreaksbr }}
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
