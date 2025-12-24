@@ -622,6 +622,60 @@
         </section>
 
         <section class="panel panel-forms is-hidden" id="forms" data-panel-content="forms">
+            <style>
+                .panel-forms .panel-email {
+                    padding: 24px;
+                }
+
+                .panel-forms .email-composer-container {
+                    display: grid;
+                    grid-template-columns: 450px minmax(0, 1fr);
+                    gap: 32px;
+                    align-items: start;
+                }
+
+                .panel-forms .panel-email__form {
+                    background: #ffffff;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+                    padding: 20px 22px;
+                }
+
+                .panel-forms .panel-email__preview {
+                    background: #f6f7f8;
+                    border-radius: 16px;
+                    padding: 20px;
+                }
+
+                .panel-forms .email-preview__canvas {
+                    background: #ffffff;
+                    border-radius: 10px;
+                    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+                    padding: 24px;
+                }
+
+                .panel-forms .panel-email__preview-header {
+                    margin-bottom: 16px;
+                }
+
+                .panel-forms .email-preview-alert {
+                    background: #e7f8ec;
+                    border: 1px solid #39a96b;
+                    color: #256a43;
+                    padding: 12px 16px;
+                    border-radius: 10px;
+                    margin-bottom: 16px;
+                    font-weight: 600;
+                    text-align: center;
+                    box-shadow: 0 8px 16px rgba(57, 169, 107, 0.15);
+                }
+
+                @media (max-width: 1100px) {
+                    .panel-forms .email-composer-container {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            </style>
             <div class="panel-email">
                 <div class="panel-email__header">
                     <div class="panel-email__intro">
@@ -641,6 +695,11 @@
                         <input type="hidden" name="send_email" value="1">
                         <input type="hidden" name="sort_by" value="{{ current_sort }}">
                         <input type="hidden" name="company" value="{{ current_company }}">
+                        {% if messages %}
+                            <div class="email-preview-alert">
+                                {% if lang == 'pl' %}Pismo zostało wysłane pomyślnie!{% else %}Email sent successfully!{% endif %}
+                            </div>
+                        {% endif %}
                         {% if email_form.non_field_errors %}
                             <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
                         {% endif %}
@@ -680,78 +739,117 @@
                         </div>
                         <div class="email-preview">
                             <div class="email-preview__canvas">
-                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;color:#1f2d1f;">
-                                    <tr>
-                                        <td style="padding:24px 32px 16px;">
-                                            <div style="font-size:15px;line-height:1.6;color:#1f2d1f;" data-email-preview-body></div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 32px 16px;">
-                                            <strong>Jan Lozinszek</strong><br>
-                                            <span>Specjalista ds. sprzedaży i wzorcowań</span>
-                                            <hr style="border:none;border-top:2px solid #3aa657;margin:12px 0 16px;">
-                                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;">
-                                                <tr>
-                                                    <td valign="top" style="font-size:13px;line-height:1.5;color:#1f2d1f;">
-                                                        <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                                                            <tr>
-                                                                <td style="padding:0 8px 6px 0;">
-                                                                    <img src="{% static 'img/telef.png' %}" alt="" width="16" style="display:block;">
-                                                                </td>
-                                                                <td style="padding:0 0 6px;">692 286 438</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td style="padding:0 8px 6px 0;">
-                                                                    <img src="{% static 'img/mail.png' %}" alt="" width="16" style="display:block;">
-                                                                </td>
-                                                                <td style="padding:0 0 6px;">jan.lozinszek@zetom.eu</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td style="padding:0 8px 6px 0;">
-                                                                    <img src="{% static 'img/zet1.png' %}" alt="" width="16" style="display:block;">
-                                                                </td>
-                                                                <td style="padding:0 0 6px;">www.zetom.eu</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td style="padding:0 8px 6px 0;"></td>
-                                                                <td style="padding:0 0 6px;">
-                                                                    Zakłady Badań i Atestacji „ZETOM”<br>
-                                                                    ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice
-                                                                </td>
-                                                            </tr>
-                                                        </table>
-                                                    </td>
-                                                    <td valign="top" align="right" style="font-size:12px;line-height:1.5;color:#566a56;">
-                                                        <div style="margin-bottom:8px;">
-                                                            <img src="{% static 'img/zet1.png' %}" alt="ZETOM" width="120" style="display:block;height:auto;">
-                                                        </div>
-                                                        <div>
-                                                            <img src="{% static 'img/building.png' %}" alt="ZETOM Building" width="150" style="display:block;height:auto;">
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 0 16px;">
-                                            <div style="height:8px;background-color:#3aa657;"></div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 32px 24px;">
-                                            <div data-email-preview-quote-block style="display:none;background:#f3f3f3;padding:16px 18px;">
-                                                <div style="color:#2f2f2f;line-height:1.5;" data-email-preview-quote-body></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
+                                <div id="live-preview-content"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <script>
+                (function () {
+                    const form = document.querySelector('[data-email-form]');
+                    if (!form) {
+                        return;
+                    }
+
+                    const messageField = form.querySelector('[name="message_text"]');
+                    const quoteField = form.querySelector('[name="quote_text"]');
+                    const preview = document.getElementById('live-preview-content');
+
+                    const escapeHtml = (value) => {
+                        const div = document.createElement('div');
+                        div.textContent = value;
+                        return div.innerHTML;
+                    };
+
+                    const normalizeText = (value) => escapeHtml(value).replace(/\n/g, '<br>');
+
+                    const updatePreview = () => {
+                        const message = messageField ? normalizeText(messageField.value) : '';
+                        const quote = quoteField ? normalizeText(quoteField.value) : '';
+                        const quoteBlock = quote.trim()
+                            ? `
+                                <div style="background:#f3f3f3;padding:16px 18px;margin-top:20px;border-left:4px solid #3aa657;">
+                                    ${quote}
+                                </div>
+                            `
+                            : '';
+
+                        const html = `
+                            <div style="font-family:Arial,sans-serif;color:#1f2d1f;font-size:15px;line-height:1.6;">
+                                <p>Dzień dobry,</p>
+                                <div>${message}</div>
+                                <hr style="border:none;border-top:2px solid #3aa657;margin:20px 0;">
+                                <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                                    <div>
+                                        <strong>Jan Lozinszek</strong><br>
+                                        <span>Specjalista ds. sprzedaży i wzorcowań</span>
+                                        <div style="margin:12px 0 16px;">
+                                            <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;">
+                                                <tr>
+                                                    <td style="padding:0 8px 6px 0;">
+                                                        <img src="/static/img/telef.png" alt="" width="16" style="display:block;">
+                                                    </td>
+                                                    <td style="padding:0 0 6px;">692 286 438</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding:0 8px 6px 0;">
+                                                        <img src="/static/img/mail.png" alt="" width="16" style="display:block;">
+                                                    </td>
+                                                    <td style="padding:0 0 6px;">jan.lozinszek@zetom.eu</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding:0 8px 6px 0;">
+                                                        <img src="/static/img/zet1.png" alt="" width="16" style="display:block;">
+                                                    </td>
+                                                    <td style="padding:0 0 6px;">www.zetom.eu</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding:0 8px 6px 0;"></td>
+                                                    <td style="padding:0 0 6px;">
+                                                        Zakłady Badań i Atestacji „ZETOM”<br>
+                                                        ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div style="text-align:right;font-size:12px;color:#566a56;">
+                                        <div style="margin-bottom:8px;">
+                                            <img src="/static/img/zet1.png" alt="ZETOM" width="120" style="display:block;height:auto;">
+                                        </div>
+                                        <div>
+                                            <img src="/static/img/building.png" alt="ZETOM Building" width="150" style="display:block;height:auto;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="height:8px;background-color:#3aa657;margin:20px 0;"></div>
+                                ${quoteBlock}
+                            </div>
+                        `;
+                        preview.innerHTML = html;
+                    };
+
+                    updatePreview();
+
+                    if (messageField) {
+                        messageField.addEventListener('input', updatePreview);
+                    }
+
+                    if (quoteField) {
+                        quoteField.addEventListener('input', updatePreview);
+                    }
+
+                    form.addEventListener('submit', (event) => {
+                        const confirmed = confirm(
+                            'Вы уверены, что хотите отправить это письмо? Проверьте правильность данных в превью.'
+                        );
+                        if (!confirmed) {
+                            event.preventDefault();
+                        }
+                    });
+                })();
+            </script>
         </section>
 
         <section class="panel settings-panel is-hidden"
