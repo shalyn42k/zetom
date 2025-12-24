@@ -21,6 +21,7 @@ from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_POST, require_http_methods
@@ -259,13 +260,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     )
 
     email_signature = _build_email_signature(admin_user)
-    sender_name = (
-        email_signature["name"]
-        if email_signature["name"] and email_signature["name"] != "ZETOM"
-        else "Jan Lozinszek"
-    )
-    sender_position = "Specjalista ds. obsługi klienta"
-    sender_phone = "692 286 438 | 604 903 479"
+    logo_url = request.build_absolute_uri(static("img/zet1.png"))
+    mail_icon_url = request.build_absolute_uri(static("img/mail.png"))
+    phone_icon_url = request.build_absolute_uri(static("img/telef.png"))
 
     # --- readonly mode ---
     if not (can_edit_messages or can_delete_messages):
@@ -408,6 +405,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 company_filter,
                 can_send_emails,
                 admin_user,
+                logo_url,
+                mail_icon_url,
+                phone_icon_url,
             )
             if response:
                 return response
@@ -485,9 +485,12 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "can_delete_messages": can_delete_messages,
         "can_export_messages": can_export_messages,
         "can_send_emails": can_send_emails,
-        "email_sender_name": sender_name,
-        "email_sender_position": sender_position,
-        "email_sender_phone": sender_phone,
+        "email_signature_name": email_signature["name"],
+        "email_signature_email": email_signature["email"],
+        "email_signature_phone": email_signature["phone"],
+        "email_logo_url": logo_url,
+        "email_mail_icon_url": mail_icon_url,
+        "email_phone_icon_url": phone_icon_url,
     }
     return render(request, "contact/admin_panel.html", context)
 
@@ -1038,6 +1041,9 @@ def _handle_email_form(
     company_filter: str | None,
     can_send_emails: bool,
     admin_user: AdminUser,
+    logo_url: str,
+    mail_icon_url: str,
+    phone_icon_url: str,
 ):
     form = EmailForm(request.POST, request.FILES or None)
     if not can_send_emails:
@@ -1049,45 +1055,44 @@ def _handle_email_form(
     if form.is_valid():
         file = request.FILES.get('attachment')
         signature = _build_email_signature(admin_user)
-        sender_name = signature["name"] if signature["name"] and signature["name"] != "ZETOM" else "Jan Lozinszek"
-        sender_position = "Specjalista ds. obsługi klienta"
-        sender_phone = "692 286 438 | 604 903 479"
-        message_text = (form.cleaned_data.get("message_text") or "").strip()
-        quote_text = (form.cleaned_data.get("quote_text") or "").strip()
-        lower_message = message_text.lower()
-        show_greeting = not lower_message.startswith("dzień dobry") and not lower_message.startswith("dzien dobry")
-        base_url = request.build_absolute_uri("/").rstrip("/")
+        quote_body = (form.cleaned_data.get("quote_body") or "").strip()
+        quote_title = (form.cleaned_data.get("quote_title") or "").strip()
+        response_body = (form.cleaned_data.get("main_message") or "").strip()
         html_body = render_to_string(
-            "emails/zetom_theme.html",
+            "emails/zetom_email_theme.html",
             {
-                "message_text": message_text,
-                "quote_text": quote_text,
-                "show_greeting": show_greeting,
-                "base_url": base_url,
-                "sender_name": sender_name,
-                "sender_position": sender_position,
-                "sender_phone": sender_phone,
+                "response_body": response_body,
+                "quote_title": quote_title,
+                "quote_body": quote_body,
+                "signature_name": signature["name"],
+                "signature_email": signature["email"],
+                "signature_phone": signature["phone"],
+                "logo_url": logo_url,
+                "mail_icon_url": mail_icon_url,
+                "phone_icon_url": phone_icon_url,
             },
         )
-        plain_chunks = []
-        if show_greeting:
-            plain_chunks.append("Dzień dobry,")
-        if message_text:
-            plain_chunks.append(message_text)
-        if quote_text:
-            plain_chunks.append("")
-            plain_chunks.append(quote_text)
+        plain_chunks = [response_body]
+        if quote_body:
+            if quote_title:
+                plain_chunks.append(quote_title)
+            plain_chunks.append(quote_body)
         signature_lines = [
             "",
             "--",
-            sender_name,
-            sender_position,
-            "Zakłady Badań i Atestacji „ZETOM”",
-            "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice",
-            f"tel. {sender_phone}",
-            "biuro@zetom.eu",
-            "www.zetom.eu",
+            signature["name"],
+            signature["email"],
         ]
+        if signature["phone"]:
+            signature_lines.append(signature["phone"])
+        signature_lines.extend(
+            [
+                "Zakłady Badań i Atestacji „ZETOM”",
+                "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice",
+                "tel. 32 256 92 57",
+                "biuro@zetom.eu",
+            ]
+        )
         plain_chunks.append("\n".join(signature_lines))
         plain_body = "\n\n".join(filter(None, plain_chunks))
         send_email_with_attachment(
