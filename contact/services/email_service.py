@@ -11,16 +11,16 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import smtplib
 import ssl
 from contextlib import contextmanager
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import IO
 
 from django.conf import settings
 from django.utils import timezone
+from django.core.mail import EmailMultiAlternatives
 
 from ..models import AdminUser, ContactMessage
 
@@ -138,30 +138,21 @@ def send_email_with_attachment(
     attachment: IO[bytes] | None,
     filename: str | None,
 ) -> None:
+    email_message = EmailMultiAlternatives(
+        subject=subject,
+        body=body,
+        from_email='zetomtest@gmail.com',
+        to=[to_email],
+    )
     if html_body:
-        alternative = MIMEMultipart('alternative')
-        alternative.attach(MIMEText(body, 'plain', 'utf-8'))
-        alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
+        email_message.attach_alternative(html_body, "text/html")
 
-        if attachment and filename and filename.endswith('.pdf'):
-            msg = MIMEMultipart('mixed')
-            msg.attach(alternative)
-        else:
-            msg = alternative
-    else:
-        msg = MIMEMultipart()
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    if attachment and filename:
+        content = attachment.read()
+        mimetype, _ = mimetypes.guess_type(filename)
+        email_message.attach(filename, content, mimetype or "application/octet-stream")
 
-    msg['From'] = 'zetomtest@gmail.com'
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    if attachment and filename and filename.endswith('.pdf'):
-        pdf = MIMEApplication(attachment.read(), _subtype='pdf')
-        pdf.add_header('Content-Disposition', 'attachment', filename=filename)
-        msg.attach(pdf)
-
-    _send_message(msg)
+    _send_message(email_message.message())
 
 
 def _send_plain_email(*, to_email: str, subject: str, body: str) -> None:

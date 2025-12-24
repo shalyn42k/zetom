@@ -316,37 +316,25 @@ class EmailForm(forms.Form):
     to_email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-input"}))
     subject = forms.CharField(
         max_length=255,
-        initial="Custom message",
+        initial="Oferta cenowa - wzorcowanie przyrządu pomiarowego",
         widget=forms.TextInput(attrs={"class": "form-input"})
     )
-    main_message = forms.CharField(
+    message_text = forms.CharField(
         widget=forms.Textarea(
             attrs={
                 "rows": 6,
                 "class": "form-input",
-                "id": "email-main-message",
-                "data-email-main-message": "true",
+                "placeholder": "Dzień dobry. W załączniku umieściłem ofertę...",
             }
         )
     )
-    quote_title = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-input",
-                "id": "email-quote-title",
-                "data-email-quote-title": "true",
-            }
-        ),
-    )
-    quote_body = forms.CharField(
+    quote_text = forms.CharField(
         required=False,
         widget=forms.Textarea(
             attrs={
                 "rows": 4,
                 "class": "form-input",
-                "id": "email-quote-body",
-                "data-email-quote-body": "true",
+                "placeholder": "W dniu 28.10.2025 o 09:29...",
             }
         ),
     )
