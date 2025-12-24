@@ -1221,6 +1221,13 @@ body[data-theme='dark'] .panel-email .form-submit {
     align-items: start;
 }
 
+.email-composer-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
 .panel-email__preview {
     display: grid;
     gap: 12px;
@@ -1239,12 +1246,19 @@ body[data-theme='dark'] .panel-email .form-submit {
     font-size: 0.9rem;
 }
 
+.preview-box {
+    background: #fff;
+    padding: 40px;
+    border: 1px solid #eee;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
 .email-preview {
-    padding: 16px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.7);
+    padding: 0;
+    border-radius: 12px;
+    background: #fff;
     border: 1px solid rgba(27, 109, 52, 0.08);
-    box-shadow: 0 16px 32px rgba(20, 77, 45, 0.12);
+    box-shadow: none;
 }
 
 .email-preview__canvas {
@@ -1519,6 +1533,9 @@ body[data-theme='dark'] .panel-email .form-submit {
 
 @media (max-width: 1100px) {
     .panel-email__layout {
+        grid-template-columns: 1fr;
+    }
+    .email-composer-container {
         grid-template-columns: 1fr;
     }
 }

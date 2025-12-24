@@ -14,6 +14,7 @@ import json
 from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import EmailValidator
@@ -260,10 +261,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     )
 
     email_signature = _build_email_signature(admin_user)
-    logo_url = request.build_absolute_uri(static("img/zet1.png"))
-    mail_icon_url = request.build_absolute_uri(static("img/mail.png"))
-    phone_icon_url = request.build_absolute_uri(static("img/telef.png"))
-
     # --- readonly mode ---
     if not (can_edit_messages or can_delete_messages):
         action_form.fields["action"].disabled = True
@@ -405,9 +402,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
                 company_filter,
                 can_send_emails,
                 admin_user,
-                logo_url,
-                mail_icon_url,
-                phone_icon_url,
             )
             if response:
                 return response
@@ -488,9 +482,6 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
         "email_signature_name": email_signature["name"],
         "email_signature_email": email_signature["email"],
         "email_signature_phone": email_signature["phone"],
-        "email_logo_url": logo_url,
-        "email_mail_icon_url": mail_icon_url,
-        "email_phone_icon_url": phone_icon_url,
     }
     return render(request, "contact/admin_panel.html", context)
 
@@ -1041,9 +1032,6 @@ def _handle_email_form(
     company_filter: str | None,
     can_send_emails: bool,
     admin_user: AdminUser,
-    logo_url: str,
-    mail_icon_url: str,
-    phone_icon_url: str,
 ):
     form = EmailForm(request.POST, request.FILES or None)
     if not can_send_emails:
@@ -1055,46 +1043,42 @@ def _handle_email_form(
     if form.is_valid():
         file = request.FILES.get('attachment')
         signature = _build_email_signature(admin_user)
-        quote_body = (form.cleaned_data.get("quote_body") or "").strip()
-        quote_title = (form.cleaned_data.get("quote_title") or "").strip()
-        response_body = (form.cleaned_data.get("main_message") or "").strip()
+        message_text = (form.cleaned_data.get("message_text") or "").strip()
+        quote_text = (form.cleaned_data.get("quote_text") or "").strip()
+        image_prefix = "cid:"
         html_body = render_to_string(
-            "emails/zetom_email_theme.html",
+            "emails/zetom_theme.html",
             {
-                "response_body": response_body,
-                "quote_title": quote_title,
-                "quote_body": quote_body,
-                "signature_name": signature["name"],
-                "signature_email": signature["email"],
-                "signature_phone": signature["phone"],
-                "logo_url": logo_url,
-                "mail_icon_url": mail_icon_url,
-                "phone_icon_url": phone_icon_url,
+                "message_text": message_text,
+                "quote_text": quote_text,
+                "image_prefix": image_prefix,
             },
         )
-        plain_chunks = [response_body]
-        if quote_body:
-            if quote_title:
-                plain_chunks.append(quote_title)
-            plain_chunks.append(quote_body)
+        plain_chunks = [message_text]
+        if quote_text:
+            plain_chunks.append(quote_text)
         signature_lines = [
             "",
             "--",
-            signature["name"],
-            signature["email"],
+            "Jan Lozinszek",
+            "Specjalista ds. sprzedaży i wzorcowań",
+            "692 286 438",
+            "jan.lozinszek@zetom.eu",
+            "Zakłady Badań i Atestacji „ZETOM”",
+            "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice",
+            "www.zetom.eu",
         ]
-        if signature["phone"]:
-            signature_lines.append(signature["phone"])
-        signature_lines.extend(
-            [
-                "Zakłady Badań i Atestacji „ZETOM”",
-                "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice",
-                "tel. 32 256 92 57",
-                "biuro@zetom.eu",
-            ]
-        )
         plain_chunks.append("\n".join(signature_lines))
         plain_body = "\n\n".join(filter(None, plain_chunks))
+        inline_images = []
+        for filename in ("zet1.png", "building.png", "telef.png", "mail.png"):
+            image_path = finders.find(f"img/{filename}")
+            if not image_path:
+                raise ValidationError(f"Missing email inline image: {filename}")
+            with open(image_path, "rb") as image_file:
+                inline_images.append(
+                    {"content_id": filename, "content": image_file.read()}
+                )
         send_email_with_attachment(
             to_email=form.cleaned_data['to_email'],
             subject=form.cleaned_data['subject'],
@@ -1102,6 +1086,7 @@ def _handle_email_form(
             html_body=html_body,
             attachment=file,
             filename=file.name if file else None,
+            inline_images=inline_images,
         )
         log_action(
             AdminActivityLog.ACTION_EMAIL,
