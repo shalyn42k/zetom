@@ -1300,6 +1300,12 @@ body[data-theme='dark'] .panel-email .form-submit {
     padding: 9px 20px;
 }
 
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
 .table-wrapper {
     border: 1px solid rgba(27, 109, 52, 0.14);
     border-radius: 20px;
