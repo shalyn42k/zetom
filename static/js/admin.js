@@ -1853,6 +1853,8 @@
         const mainInput = form.querySelector('[data-email-main-message]');
         const quoteTitleInput = form.querySelector('[data-email-quote-title]');
         const quoteBodyInput = form.querySelector('[data-email-quote-body]');
+        const quoteTemplateButton = form.querySelector('[data-email-quote-template]');
+        const quoteClearButton = form.querySelector('[data-email-quote-clear]');
 
         const previewBody = document.querySelector('[data-email-preview-body]');
         const previewQuoteTitle = document.querySelector('[data-email-preview-quote-title]');
@@ -1870,6 +1872,29 @@
                 .replace(/'/g, '&#39;');
 
         const formatText = (value) => escapeHtml(value).replace(/\n/g, '<br>');
+        const quoteTemplate = `W dniu 28.10.2025 o 09:29, Jarosław Ługowyj pisze:
+
+Dzień dobry,
+
+Proszę o ofertę terminowo-cenową na n/w pozycję:
+1. Usługa wzorcowania maszyny wytrzymałościowej na rozciąganie: wytwórca DSI, NIEMCY TYP HOZ 4000/250
+
+Z poważaniem,
+
+Jarosław Ługowyj
+Specjalista ds. zaopatrzenia
+Tel. +48 32 20-71-258
+Tel kom: 602-779-103
+e-mail: zaopatrzenie@gonar.com.pl
+
+GONAR-BIS Sp.z o.o
+ul.Obroki 109, 40-833 KATOWICE
+www.gonar.com.pl
+NIP 6342620329, REGON 240529393
+Nr rejestrowy BDO: 000022830
+KRS: 0000270191
+Kapitał zakładowy: 226 244 000,00 zł
+Konto: mBANK SA PL62 1140 1078 0000 3452 3000 1001`;
 
         const updatePreview = () => {
             const mainValue = mainInput.value || '';
@@ -1893,6 +1918,23 @@
             if (!input) return;
             input.addEventListener('input', updatePreview);
         });
+
+        if (quoteTemplateButton && quoteBodyInput) {
+            quoteTemplateButton.addEventListener('click', () => {
+                if (quoteBodyInput.value.trim().length > 0) {
+                    return;
+                }
+                quoteBodyInput.value = quoteTemplate;
+                updatePreview();
+            });
+        }
+
+        if (quoteClearButton && quoteBodyInput) {
+            quoteClearButton.addEventListener('click', () => {
+                quoteBodyInput.value = '';
+                updatePreview();
+            });
+        }
 
         updatePreview();
     });
