@@ -1042,15 +1042,22 @@ def _handle_email_form(
         return form, None
     if form.is_valid():
         file = request.FILES.get('attachment')
-        signature = _build_email_signature(admin_user)
         message_text = (form.cleaned_data.get("message_text") or "").strip()
         quote_text = (form.cleaned_data.get("quote_text") or "").strip()
+        sender_name = (form.cleaned_data.get("sender_name") or "").strip()
+        sender_position = (form.cleaned_data.get("sender_position") or "").strip()
+        sender_phone = (form.cleaned_data.get("sender_phone") or "").strip()
+        sender_email = (form.cleaned_data.get("sender_email") or "").strip()
         image_prefix = "cid:"
         html_body = render_to_string(
             "emails/zetom_theme.html",
             {
                 "message_text": message_text,
                 "quote_text": quote_text,
+                "sender_name": sender_name,
+                "sender_position": sender_position,
+                "sender_phone": sender_phone,
+                "sender_email": sender_email,
                 "image_prefix": image_prefix,
             },
         )
@@ -1060,10 +1067,10 @@ def _handle_email_form(
         signature_lines = [
             "",
             "--",
-            "Jan Lozinszek",
-            "Specjalista ds. sprzedaży i wzorcowań",
-            "692 286 438",
-            "jan.lozinszek@zetom.eu",
+            sender_name,
+            sender_position,
+            sender_phone,
+            sender_email,
             "Zakłady Badań i Atestacji „ZETOM”",
             "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice",
             "www.zetom.eu",

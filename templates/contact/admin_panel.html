@@ -654,6 +654,32 @@
                     padding: 24px;
                 }
 
+                .panel-forms .signature-fields {
+                    margin-top: 16px;
+                    border: 1px solid #e2e6e3;
+                    border-radius: 10px;
+                    padding: 12px;
+                    background: #f9fbf9;
+                }
+
+                .panel-forms .signature-fields__title {
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    color: #2f3d2f;
+                }
+
+                .panel-forms .signature-fields__grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 10px 12px;
+                }
+
+                .panel-forms .signature-fields__grid .form-input {
+                    padding: 8px 10px;
+                    font-size: 13px;
+                }
+
                 .panel-forms .panel-email__preview-header {
                     margin-bottom: 16px;
                 }
@@ -706,6 +732,31 @@
                                 {{ email_form.subject }}
                                 {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
                             </div>
+                            <div class="signature-fields" data-signature-fields>
+                                <div class="signature-fields__title">{% if lang == 'pl' %}Dane do stopki{% else %}Signature details{% endif %}</div>
+                                <div class="signature-fields__grid">
+                                    <div>
+                                        <label for="{{ email_form.sender_name.id_for_label }}" class="form-label">{{ email_form.sender_name.label }}</label>
+                                        {{ email_form.sender_name }}
+                                        {% if email_form.sender_name.errors %}<div class="form-error">{{ email_form.sender_name.errors.0 }}</div>{% endif %}
+                                    </div>
+                                    <div>
+                                        <label for="{{ email_form.sender_position.id_for_label }}" class="form-label">{{ email_form.sender_position.label }}</label>
+                                        {{ email_form.sender_position }}
+                                        {% if email_form.sender_position.errors %}<div class="form-error">{{ email_form.sender_position.errors.0 }}</div>{% endif %}
+                                    </div>
+                                    <div>
+                                        <label for="{{ email_form.sender_phone.id_for_label }}" class="form-label">{{ email_form.sender_phone.label }}</label>
+                                        {{ email_form.sender_phone }}
+                                        {% if email_form.sender_phone.errors %}<div class="form-error">{{ email_form.sender_phone.errors.0 }}</div>{% endif %}
+                                    </div>
+                                    <div>
+                                        <label for="{{ email_form.sender_email.id_for_label }}" class="form-label">{{ email_form.sender_email.label }}</label>
+                                        {{ email_form.sender_email }}
+                                        {% if email_form.sender_email.errors %}<div class="form-error">{{ email_form.sender_email.errors.0 }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
                             <div class="panel-email__body">
                                 <label for="{{ email_form.message_text.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</label>
                                 {{ email_form.message_text }}
@@ -747,6 +798,10 @@
                     const messageField = form.querySelector('[name="message_text"]');
                     const quoteField = form.querySelector('[name="quote_text"]');
                     const preview = document.getElementById('live-preview-content');
+                    const signatureNameField = form.querySelector('[name="sender_name"]');
+                    const signaturePositionField = form.querySelector('[name="sender_position"]');
+                    const signaturePhoneField = form.querySelector('[name="sender_phone"]');
+                    const signatureEmailField = form.querySelector('[name="sender_email"]');
 
                     const escapeHtml = (value) => {
                         const div = document.createElement('div');
@@ -759,6 +814,10 @@
                     const updatePreview = () => {
                         const message = messageField ? normalizeText(messageField.value) : '';
                         const quote = quoteField ? normalizeText(quoteField.value) : '';
+                        const signatureName = signatureNameField ? normalizeText(signatureNameField.value) : '';
+                        const signaturePosition = signaturePositionField ? normalizeText(signaturePositionField.value) : '';
+                        const signaturePhone = signaturePhoneField ? normalizeText(signaturePhoneField.value) : '';
+                        const signatureEmail = signatureEmailField ? normalizeText(signatureEmailField.value) : '';
                         const quoteBlock = quote.trim()
                             ? `
                                 <div style="background:#f3f3f3;padding:16px 18px;margin-top:20px;border-left:4px solid #3aa657;">
@@ -773,21 +832,21 @@
                                 <hr style="border:none;border-top:2px solid #3aa657;margin:20px 0;">
                                 <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
                                     <div>
-                                        <strong>Jan Lozinszek</strong><br>
-                                        <span>Specjalista ds. sprzedaży i wzorcowań</span>
+                                        <strong>${signatureName || ''}</strong><br>
+                                        <span>${signaturePosition || ''}</span>
                                         <div style="margin:12px 0 16px;">
                                             <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;">
                                                 <tr>
                                                     <td style="padding:0 8px 6px 0;">
                                                         <img src="/static/img/telef.png" alt="" width="16" style="display:block;">
                                                     </td>
-                                                    <td style="padding:0 0 6px;">692 286 438</td>
+                                                    <td style="padding:0 0 6px;">${signaturePhone || ''}</td>
                                                 </tr>
                                                 <tr>
                                                     <td style="padding:0 8px 6px 0;">
                                                         <img src="/static/img/mail.png" alt="" width="16" style="display:block;">
                                                     </td>
-                                                    <td style="padding:0 0 6px;">jan.lozinszek@zetom.eu</td>
+                                                    <td style="padding:0 0 6px;">${signatureEmail || ''}</td>
                                                 </tr>
                                                 <tr>
                                                     <td style="padding:0 8px 6px 0;">
@@ -829,6 +888,22 @@
 
                     if (quoteField) {
                         quoteField.addEventListener('input', updatePreview);
+                    }
+
+                    if (signatureNameField) {
+                        signatureNameField.addEventListener('input', updatePreview);
+                    }
+
+                    if (signaturePositionField) {
+                        signaturePositionField.addEventListener('input', updatePreview);
+                    }
+
+                    if (signaturePhoneField) {
+                        signaturePhoneField.addEventListener('input', updatePreview);
+                    }
+
+                    if (signatureEmailField) {
+                        signatureEmailField.addEventListener('input', updatePreview);
                     }
 
                     form.addEventListener('submit', (event) => {
