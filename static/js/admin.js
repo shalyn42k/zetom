@@ -1894,6 +1894,21 @@
             input.addEventListener('input', updatePreview);
         });
 
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.confirmed === 'true') {
+                return;
+            }
+
+            event.preventDefault();
+            const confirmed = window.confirm(
+                'Вы уверены, что хотите отправить это письмо? Проверьте текст в превью.'
+            );
+            if (confirmed) {
+                form.dataset.confirmed = 'true';
+                form.submit();
+            }
+        });
+
         updatePreview();
     });
 })();
