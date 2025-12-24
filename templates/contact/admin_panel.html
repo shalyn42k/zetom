@@ -635,38 +635,108 @@
                         </p>
                     </div>
                 </div>
-                <form method="post" enctype="multipart/form-data" class="panel-email__form">
-                    {% csrf_token %}
-                    <input type="hidden" name="send_email" value="1">
-                    <input type="hidden" name="sort_by" value="{{ current_sort }}">
-                    <input type="hidden" name="company" value="{{ current_company }}">
-                    {% if email_form.non_field_errors %}
-                        <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
-                    {% endif %}
-                    <div class="email-grid">
-                        <div>
-                            <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
-                            {{ email_form.to_email }}
-                            {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
+                <div class="panel-email__layout">
+                    <form method="post" enctype="multipart/form-data" class="panel-email__form" data-email-form>
+                        {% csrf_token %}
+                        <input type="hidden" name="send_email" value="1">
+                        <input type="hidden" name="sort_by" value="{{ current_sort }}">
+                        <input type="hidden" name="company" value="{{ current_company }}">
+                        {% if email_form.non_field_errors %}
+                            <div class="form-error">{{ email_form.non_field_errors.0 }}</div>
+                        {% endif %}
+                        <div class="email-grid">
+                            <div>
+                                <label for="{{ email_form.to_email.id_for_label }}" class="form-label">E-mail</label>
+                                {{ email_form.to_email }}
+                                {% if email_form.to_email.errors %}<div class="form-error">{{ email_form.to_email.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
+                                {{ email_form.subject }}
+                                {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="panel-email__body">
+                                <label for="{{ email_form.main_message.id_for_label }}" class="form-label">{% if lang == 'pl' %}Główna wiadomość{% else %}Main message{% endif %}</label>
+                                {{ email_form.main_message }}
+                                {% if email_form.main_message.errors %}<div class="form-error">{{ email_form.main_message.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ email_form.quote_title.id_for_label }}" class="form-label">{% if lang == 'pl' %}Nagłówek cytatu{% else %}Quote heading{% endif %}</label>
+                                {{ email_form.quote_title }}
+                                {% if email_form.quote_title.errors %}<div class="form-error">{{ email_form.quote_title.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="panel-email__body">
+                                <label for="{{ email_form.quote_body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść cytatu{% else %}Quoted message{% endif %}</label>
+                                {{ email_form.quote_body }}
+                                {% if email_form.quote_body.errors %}<div class="form-error">{{ email_form.quote_body.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
+                                {{ email_form.attachment }}
+                                {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
+                            </div>
                         </div>
-                        <div>
-                            <label for="{{ email_form.subject.id_for_label }}" class="form-label">{% if lang == 'pl' %}Temat{% else %}Subject{% endif %}</label>
-                            {{ email_form.subject }}
-                            {% if email_form.subject.errors %}<div class="form-error">{{ email_form.subject.errors.0 }}</div>{% endif %}
+                        <button type="submit" class="form-submit" {% if not can_send_emails %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
+                    </form>
+                    <div class="panel-email__preview">
+                        <div class="panel-email__preview-header">
+                            <h4 class="panel-email__preview-title">{% if lang == 'pl' %}Podgląd na żywo{% else %}Live preview{% endif %}</h4>
+                            <p class="panel-email__preview-subtitle">{% if lang == 'pl' %}Układ wiadomości z podpisem i cytatem.{% else %}Email layout with signature and quote block.{% endif %}</p>
                         </div>
-                        <div class="panel-email__body">
-                            <label for="{{ email_form.body.id_for_label }}" class="form-label">{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</label>
-                            {{ email_form.body }}
-                            {% if email_form.body.errors %}<div class="form-error">{{ email_form.body.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div>
-                            <label for="{{ email_form.attachment.id_for_label }}" class="form-label">{% if lang == 'pl' %}Załącznik (opcjonalnie){% else %}Attachment (optional){% endif %}</label>
-                            {{ email_form.attachment }}
-                            {% if email_form.attachment.errors %}<div class="form-error">{{ email_form.attachment.errors.0 }}</div>{% endif %}
+                        <div class="email-preview">
+                            <div class="email-preview__canvas">
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;color:#1f2d1f;">
+                                    <tr>
+                                        <td style="padding:24px 32px 16px;">
+                                            <img src="{{ email_logo_url }}" alt="ZETOM Katowice" width="140" style="display:block;height:auto;">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0 32px 24px;">
+                                            <div style="font-size:15px;line-height:1.6;color:#1f2d1f;" data-email-preview-body></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0 32px 24px;">
+                                            <div data-email-preview-quote-block style="display:none;border-left:3px solid #3aa657;padding:12px 16px;background:#f3faf5;">
+                                                <div style="font-weight:600;margin-bottom:8px;" data-email-preview-quote-title></div>
+                                                <div style="color:#2f3d2f;line-height:1.5;" data-email-preview-quote-body></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:0 32px 24px;">
+                                            <div style="height:2px;background:#3aa657;margin:8px 0 16px;"></div>
+                                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;">
+                                                <tr>
+                                                    <td style="font-size:14px;line-height:1.5;color:#1f2d1f;">
+                                                        <strong>{{ email_signature_name }}</strong><br>
+                                                        <span>{{ email_signature_email }}</span><br>
+                                                        {% if email_signature_phone %}
+                                                            <span>{{ email_signature_phone }}</span><br>
+                                                        {% endif %}
+                                                        <span>Zakłady Badań i Atestacji „ZETOM”</span><br>
+                                                        <span>ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice</span>
+                                                    </td>
+                                                    <td align="right" style="font-size:12px;line-height:1.5;color:#566a56;">
+                                                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                                                            <img src="{{ email_mail_icon_url }}" alt="" width="14" style="vertical-align:middle;">
+                                                            <span>biuro@zetom.eu</span>
+                                                        </span><br>
+                                                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                                                            <img src="{{ email_phone_icon_url }}" alt="" width="14" style="vertical-align:middle;">
+                                                            <span>32 256 92 57</span>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="form-submit" {% if not can_send_emails %}disabled{% endif %}>{% if lang == 'pl' %}Wyślij e-mail{% else %}Send email{% endif %}</button>
-                </form>
+                </div>
             </div>
         </section>
 

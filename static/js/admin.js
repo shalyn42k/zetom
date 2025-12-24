@@ -1845,4 +1845,55 @@
             });
         }
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('[data-email-form]');
+        if (!form) return;
+
+        const mainInput = form.querySelector('[data-email-main-message]');
+        const quoteTitleInput = form.querySelector('[data-email-quote-title]');
+        const quoteBodyInput = form.querySelector('[data-email-quote-body]');
+
+        const previewBody = document.querySelector('[data-email-preview-body]');
+        const previewQuoteTitle = document.querySelector('[data-email-preview-quote-title]');
+        const previewQuoteBody = document.querySelector('[data-email-preview-quote-body]');
+        const previewQuoteBlock = document.querySelector('[data-email-preview-quote-block]');
+
+        if (!mainInput || !previewBody || !previewQuoteBlock) return;
+
+        const escapeHtml = (value) =>
+            value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+        const formatText = (value) => escapeHtml(value).replace(/\n/g, '<br>');
+
+        const updatePreview = () => {
+            const mainValue = mainInput.value || '';
+            previewBody.innerHTML = formatText(mainValue);
+
+            const quoteTitleValue = quoteTitleInput ? quoteTitleInput.value : '';
+            const quoteBodyValue = quoteBodyInput ? quoteBodyInput.value : '';
+
+            if (previewQuoteTitle) {
+                previewQuoteTitle.innerHTML = formatText(quoteTitleValue);
+            }
+            if (previewQuoteBody) {
+                previewQuoteBody.innerHTML = formatText(quoteBodyValue);
+            }
+
+            const hasQuote = quoteBodyValue.trim().length > 0;
+            previewQuoteBlock.style.display = hasQuote ? 'block' : 'none';
+        };
+
+        [mainInput, quoteTitleInput, quoteBodyInput].forEach((input) => {
+            if (!input) return;
+            input.addEventListener('input', updatePreview);
+        });
+
+        updatePreview();
+    });
 })();
