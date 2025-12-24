@@ -263,35 +263,6 @@
         </form>
     </div>
 </div>
-<div class="modal" data-quote-modal aria-hidden="true">
-    <div class="modal__backdrop" data-quote-close></div>
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="quote-modal-title">
-        <button type="button" class="modal__close" data-quote-close aria-label="Zamknij wybór cytatu">×</button>
-        <h2 class="modal__title" id="quote-modal-title">Cytowanie zgłoszenia</h2>
-        <form class="modal__form" data-quote-form>
-            <label class="checkbox-pill">
-                <input type="checkbox" name="quote_datetime" checked>
-                <span>Data i Czas</span>
-            </label>
-            <label class="checkbox-pill">
-                <input type="checkbox" name="quote_sender" checked>
-                <span>Dane nadawcy</span>
-            </label>
-            <label class="checkbox-pill">
-                <input type="checkbox" name="quote_contact" checked>
-                <span>Dane kontaktowe</span>
-            </label>
-            <label class="checkbox-pill">
-                <input type="checkbox" name="quote_message" checked>
-                <span>Treść wiadomości</span>
-            </label>
-            <div class="modal__actions">
-                <button type="button" class="button button--ghost" data-quote-close>Anuluj</button>
-                <button type="button" class="button button--primary" data-quote-confirm>Przejdź do odpowiedzi</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 {% if user_level == 'level1' %}
 <div class="modal modal--user" data-user-modal aria-hidden="true">
@@ -527,21 +498,11 @@
                         <th>{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</th>
                         <th>{% if lang == 'pl' %}Treść{% else %}Message{% endif %}</th>
                         <th>{% if lang == 'pl' %}Status{% else %}Status{% endif %}</th>
-                        <th>{% if lang == 'pl' %}Odpowiedź{% else %}Reply{% endif %}</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for message_item in messages_page %}
-                        <tr class="table-row"
-                            data-request-row
-                            data-request-id="{{ message_item.id }}"
-                            data-full-name="{{ message_item.full_name|default:''|escape }}"
-                            data-email="{{ message_item.email|default:''|escape }}"
-                            data-phone="{{ message_item.phone|default:''|escape }}"
-                            data-date="{{ message_item.created_at|date:'Y-m-d H:i' }}"
-                            data-message="{{ message_item.message|default:''|escape }}"
-                            data-company="{{ message_item.company|default:''|escape }}"
-                            tabindex="0">
+                        <tr class="table-row" data-request-row data-request-id="{{ message_item.id }}" tabindex="0">
                             <td class="checkbox-cell">
                                 {% with message_id=message_item.id|stringformat:'s' %}
                                 <input type="checkbox"
@@ -577,15 +538,10 @@
                                     <span class="badge badge--info" data-status-badge>{% if lang == 'pl' %}Gotowe{% else %}Ready{% endif %}</span>
                                 {% endif %}
                             </td>
-                            <td data-cell="reply">
-                                <button type="button" class="button button--success btn-small" data-reply-button>
-                                    Odpowiedz
-                                </button>
-                            </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="11" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
+                            <td colspan="10" class="empty-state">{% if lang == 'pl' %}Brak wiadomości.{% else %}No messages yet.{% endif %}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -923,8 +879,6 @@
                         `;
                         preview.innerHTML = html;
                     };
-
-                    window.updatePreview = updatePreview;
 
                     updatePreview();
 
