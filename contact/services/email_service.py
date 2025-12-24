@@ -152,7 +152,7 @@ def send_email_with_attachment(
         msg = MIMEMultipart()
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-    msg['From'] = 'zetomtest@gmail.com'
+    msg['From'] = settings.SMTP_USER
     msg['To'] = to_email
     msg['Subject'] = subject
 
@@ -167,7 +167,7 @@ def send_email_with_attachment(
 def _send_plain_email(*, to_email: str, subject: str, body: str) -> None:
     msg = MIMEText(body, 'plain', 'utf-8')
     msg['Subject'] = subject
-    msg['From'] = 'zetomtest@gmail.com'
+    msg['From'] = settings.SMTP_USER
     msg['To'] = to_email
     _send_message(msg)
 
