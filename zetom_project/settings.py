@@ -26,6 +26,8 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
 ADMIN_PASSWORD_SECRET = os.environ.get('ADMIN_PASSWORD_SECRET', SECRET_KEY)
 DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "").strip()
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
 
 # Hosts / CSRF
 allowed_hosts_env = [
