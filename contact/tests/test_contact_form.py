@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -21,12 +22,18 @@ from contact.models import ContactMessage, Department, DEFAULT_DEPARTMENTS
 @override_settings(
     CONTACT_FORM_THROTTLE_SECONDS=60,
     COMPANY_NOTIFICATION_RECIPIENTS={'default': []},
+    RECAPTCHA_SECRET_KEY='test-secret',
+    RECAPTCHA_SITE_KEY='test-site',
     SMTP_USER='',
     ATTACH_SCAN_COMMAND='',
 )
 class ContactFormTests(TestCase):
     def setUp(self) -> None:
         cache.clear()
+        self._recaptcha_patcher = patch('contact.forms.requests.post')
+        self.mock_recaptcha_post = self._recaptcha_patcher.start()
+        self.addCleanup(self._recaptcha_patcher.stop)
+        self.mock_recaptcha_post.return_value.json.return_value = {'success': True}
 
     def _valid_payload(self) -> dict[str, str | bool]:
         return {
@@ -36,13 +43,13 @@ class ContactFormTests(TestCase):
             'company': 'Elektrotechniczne',
             'company_name': 'Acme Sp. z o.o.',
             'message': 'Hello there!',
-            'bot_check': True,
+            'g-recaptcha-response': 'test-token',
         }
 
     def test_contact_form_submission_triggers_rate_limit(self) -> None:
         url = reverse('contact:index')
         response = self.client.post(url, self._valid_payload())
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(ContactMessage.objects.count(), 1)
 
         response = self.client.post(url, self._valid_payload())
@@ -57,7 +64,7 @@ class ContactFormTests(TestCase):
 
         response = self.client.post(url, payload)
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         message = ContactMessage.objects.get()
         self.assertEqual(message.company, 'inne')
 
