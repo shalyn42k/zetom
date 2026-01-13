@@ -17,22 +17,6 @@
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <script src="{% static 'js/public.js' %}" defer></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <style>
-        .review-modal,
-        .review-modal__dialog {
-            overflow: visible;
-        }
-
-        .review-modal .g-recaptcha {
-            position: relative;
-            z-index: 1050;
-        }
-
-        .review-modal .g-recaptcha iframe {
-            z-index: 1050;
-        }
-    </style>
 </head>
 <body>
 <header class="site-header">
@@ -137,12 +121,11 @@
                   class="contact-form"
                   enctype="multipart/form-data"
                   data-contact-form
-                  data-recaptcha-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
+                  data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
                   data-submit-cooldown-seconds="{{ throttle_seconds }}"
                   data-submit-cooldown-message="{% if lang == 'pl' %}Odczekaj {seconds} s przed ponownym wysłaniem.{% else %}Please wait {seconds} s before sending again.{% endif %}"
                   data-submit-cooldown-storage="contactFormCooldownEndsAt">
                 {% csrf_token %}
-                <input type="hidden" name="g-recaptcha-response" data-recaptcha-response>
                 {% if form.non_field_errors %}
                     <div class="form-error">{{ form.non_field_errors.0 }}</div>
                 {% endif %}
@@ -252,12 +235,22 @@
         <h3 class="modal__title" id="review-modal-title">{% if lang == 'pl' %}Sprawdź i wyślij{% else %}Review and send{% endif %}</h3>
         <p class="modal__intro review-modal__intro">{% if lang == 'pl' %}Przejrzyj i w razie potrzeby popraw dane przed finalnym wysłaniem wiadomości.{% else %}Review your details and make any final edits before sending the message.{% endif %}</p>
         <div class="review-modal__fields" data-review-fields></div>
-        <div class="review-modal__recaptcha">
-            <div class="g-recaptcha"
-                 data-sitekey="{{ recaptcha_site_key }}"
-                 data-callback="onRecaptchaSuccess"
-                 data-expired-callback="onRecaptchaExpired"></div>
-            <div class="form-error" data-recaptcha-error hidden></div>
+        <div class="form-checkbox-group review-modal__checkbox">
+            <label class="form-checkbox">
+                <input type="checkbox" 
+                       name="{{ form.bot_check.name }}" 
+                       id="{{ form.bot_check.id_for_label }}" 
+                       form="contact-form" 
+                       {% if form.bot_check.value %}checked{% endif %}
+                       {% if form.bot_check.field.required %}required{% endif %}>
+                
+                <span>{% if lang == 'pl' %}Potwierdzam, że nie jestem botem{% else %}I confirm that I am not a bot{% endif %}</span>
+            </label>
+            {% if form.bot_check.errors %}
+                <div class="form-error" data-bot-error>{{ form.bot_check.errors.0 }}</div>
+            {% else %}
+                <div class="form-error" data-bot-error hidden></div>
+            {% endif %}
         </div>
         <div class="modal__actions review-modal__actions">
             <button type="button" class="button button--ghost" data-review-close>{% if lang == 'pl' %}Wróć do edycji{% else %}Back to form{% endif %}</button>
