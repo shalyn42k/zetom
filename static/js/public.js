@@ -19,12 +19,9 @@
     ready(() => {
         const form = document.querySelector('[data-contact-form]');
         if (form) {
-            const botCheckbox = document.querySelector('[data-bot-check]');
             const submitButton = document.querySelector('[data-form-submit]');
             const submitContainer = form.querySelector('[data-submit-container]');
             const submitTooltip = form.querySelector('[data-submit-tooltip]');
-            const botError = document.querySelector('[data-bot-error]');
-            const requiredMessage = form.dataset.botRequiredMessage || '';
             const cooldownStorageKey = form.dataset.submitCooldownStorage || 'contactFormCooldownEndsAt';
             const parsedCooldownSeconds = Number.parseInt(
                 form.dataset.submitCooldownSeconds || '',
@@ -328,18 +325,9 @@
                 });
             });
 
-            const showBotError = (message) => {
-                if (!botError) {
-                    return;
-                }
-                botError.textContent = message;
-                botError.hidden = !message;
-            };
-
             const updateSubmitState = () => {
-                const isChecked = botCheckbox ? botCheckbox.checked : true;
                 if (submitButton) {
-                    submitButton.disabled = !isChecked || isCooldownActive;
+                    submitButton.disabled = isCooldownActive;
                 }
                 if (reviewOpenButton) {
                     reviewOpenButton.disabled = isCooldownActive;
@@ -349,25 +337,7 @@
             updateSubmitState();
             restoreCooldownFromStorage();
 
-            if (botCheckbox) {
-                botCheckbox.addEventListener('change', () => {
-                    updateSubmitState();
-                    if (botCheckbox.checked) {
-                        showBotError('');
-                    }
-                });
-            }
-
-            form.addEventListener('submit', (event) => {
-                if (botCheckbox && !botCheckbox.checked) {
-                    event.preventDefault();
-                    updateSubmitState();
-                    if (requiredMessage) {
-                        showBotError(requiredMessage);
-                        }
-                    return;
-                }
-
+            form.addEventListener('submit', () => {
                 if (submitButton) {
                     submitButton.disabled = true;
                 }
