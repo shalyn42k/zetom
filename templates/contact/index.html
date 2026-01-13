@@ -17,6 +17,9 @@
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <script src="{% static 'js/public.js' %}" defer></script>
+    {% if recaptcha_site_key %}
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
 </head>
 <body>
 <header class="site-header">
@@ -235,6 +238,11 @@
         <h3 class="modal__title" id="review-modal-title">{% if lang == 'pl' %}Sprawdź i wyślij{% else %}Review and send{% endif %}</h3>
         <p class="modal__intro review-modal__intro">{% if lang == 'pl' %}Przejrzyj i w razie potrzeby popraw dane przed finalnym wysłaniem wiadomości.{% else %}Review your details and make any final edits before sending the message.{% endif %}</p>
         <div class="review-modal__fields" data-review-fields></div>
+        {% if recaptcha_site_key %}
+            <div class="review-modal__captcha">
+                <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="compact"></div>
+            </div>
+        {% endif %}
         <div class="form-checkbox-group review-modal__checkbox">
             <label class="form-checkbox">
                 <input type="checkbox" 
