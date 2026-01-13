@@ -12,11 +12,10 @@ import math
 import smtplib
 
 from django.conf import settings
-from django.contrib import messages
 from django.core.cache import cache
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -36,7 +35,7 @@ logger = logging.getLogger(__name__)
 def index(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = ContactForm(request.POST or None, request.FILES or None, language=lang)
-    success_message = request.session.pop('contact_success', None)
+    success_message = None
 
     throttle_seconds = getattr(settings, 'CONTACT_FORM_THROTTLE_SECONDS', 30)
     throttle_prefix = getattr(settings, 'CONTACT_FORM_RATE_LIMIT_PREFIX', 'contact_form')
@@ -134,9 +133,7 @@ def index(request: HttpRequest) -> HttpResponse:
                         'Your request has been sent. We will process it within 48 hours and contact you afterwards. '
                         f'Request number: #{message.id}. The access token was sent to your e-mail.'
                     )
-                messages.success(request, success_message)
-                request.session['contact_success'] = success_message
-                return redirect(f"{reverse('contact:index')}?lang={lang}")
+                form = ContactForm(language=lang)
 
     allowed_types = [
         content_type.strip()
@@ -148,6 +145,7 @@ def index(request: HttpRequest) -> HttpResponse:
         'form': form,
         'lang': lang,
         'success_message': success_message,
+        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
         'throttle_seconds': throttle_seconds,
         'max_attachment_size': getattr(settings, 'ATTACH_MAX_SIZE_MB', 25),
         'allowed_attachment_types': allowed_types,
