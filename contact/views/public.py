@@ -7,12 +7,9 @@
 # =====================================
 from __future__ import annotations
 
-import json
 import logging
 import math
 import smtplib
-import urllib.parse
-import urllib.request
 
 from django.conf import settings
 from django.contrib import messages
@@ -49,39 +46,6 @@ def index(request: HttpRequest) -> HttpResponse:
     cache_keys: list[str] = []
 
     if request.method == 'POST':
-        captcha_token = (request.POST.get("g-recaptcha-response") or "").strip()
-        print("reCAPTCHA token:", captcha_token)
-        captcha_response_data: dict[str, object] = {}
-        captcha_valid = False
-        if settings.RECAPTCHA_SECRET_KEY and captcha_token:
-            payload = urllib.parse.urlencode(
-                {
-                    "secret": settings.RECAPTCHA_SECRET_KEY,
-                    "response": captcha_token,
-                    "remoteip": get_client_ip(request) or "",
-                }
-            ).encode()
-            try:
-                with urllib.request.urlopen(
-                    "https://www.google.com/recaptcha/api/siteverify",
-                    data=payload,
-                    timeout=10,
-                ) as response:
-                    captcha_response_data = json.loads(response.read().decode("utf-8"))
-            except Exception as exc:
-                logger.exception("Failed to verify reCAPTCHA")
-                captcha_response_data = {"success": False, "error": str(exc)}
-        else:
-            error_reason = (
-                "missing-secret-key"
-                if not settings.RECAPTCHA_SECRET_KEY
-                else "missing-input"
-            )
-            captcha_response_data = {"success": False, "error": error_reason}
-        print("reCAPTCHA response JSON:", captcha_response_data)
-        captcha_valid = bool(captcha_response_data.get("success"))
-        print("reCAPTCHA valid:", captcha_valid)
-
         submission_timestamp = timezone.now().timestamp()
         client_identifier = get_client_ip(request) or request.session.session_key or 'anonymous'
         ip_key = build_rate_limit_key(f'{throttle_prefix}:ip', client_identifier)
@@ -115,14 +79,6 @@ def index(request: HttpRequest) -> HttpResponse:
             throttle_error = True
 
         form_valid = form.is_valid()
-        if not captcha_valid:
-            captcha_message = (
-                "Potwierdź, że nie jesteś botem."
-                if lang == "pl"
-                else "Please confirm you are not a bot."
-            )
-            form.add_error("bot_check", captcha_message)
-        form_valid = form_valid and captcha_valid
 
     if request.method == 'POST' and form_valid and not throttle_error:
         payload = {
@@ -195,6 +151,5 @@ def index(request: HttpRequest) -> HttpResponse:
         'throttle_seconds': throttle_seconds,
         'max_attachment_size': getattr(settings, 'ATTACH_MAX_SIZE_MB', 25),
         'allowed_attachment_types': allowed_types,
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
     }
     return render(request, 'contact/index.html', context)

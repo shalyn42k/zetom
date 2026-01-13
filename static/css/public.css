@@ -884,7 +884,6 @@ a:focus {
 
 .review-modal__dialog {
     width: min(720px, 100%);
-    overflow: visible;
 }
 
 .review-modal__intro {
@@ -894,17 +893,6 @@ a:focus {
 .review-modal__fields {
     display: grid;
     gap: 16px;
-}
-
-.review-modal__captcha {
-    position: relative;
-    z-index: 10000;
-    display: flex;
-    justify-content: center;
-}
-
-.review-modal__captcha .g-recaptcha > div {
-    margin: 0 auto;
 }
 
 .review-field {
