@@ -143,7 +143,16 @@ def index(request: HttpRequest) -> HttpResponse:
                 if submission_timestamp is not None:
                     for key in cache_keys:
                         cache.set(key, submission_timestamp, throttle_seconds)
-                success_message = 'Message sent successfully!'
+                if lang == 'pl':
+                    success_message = (
+                        'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy. '
+                        f'Numer zgłoszenia: #{message.id}. Token dostępu wysłano na e-mail.'
+                    )
+                else:
+                    success_message = (
+                        'Your request has been sent. We will process it within 48 hours and contact you afterwards. '
+                        f'Request number: #{message.id}. The access token was sent to your e-mail.'
+                    )
                 form = ContactForm(language=lang)
 
     allowed_types = [
