@@ -11,7 +11,6 @@ import shlex
 import subprocess
 from pathlib import Path
 
-import requests
 from django import forms
 from django.conf import settings
 from django.http import QueryDict
@@ -134,6 +133,11 @@ def _prepare_company_data(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
 
 
 class ContactForm(forms.ModelForm):
+    bot_check = forms.BooleanField(
+        required=False,
+        label="",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
+    )
 
     company = forms.ChoiceField(choices=(), required=True)
 
@@ -162,6 +166,12 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         )
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        self.fields["bot_check"].error_messages["required"] = message
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
@@ -196,36 +206,16 @@ class ContactForm(forms.ModelForm):
             ),
         }
 
-    def clean(self) -> dict:
-        cleaned_data = super().clean()
-        if self.errors:
-            return cleaned_data
-
-        message = (
-            "Potwierdź, że nie jesteś botem."
-            if self.language == "pl"
-            else "Please confirm you are not a bot."
-        )
-        secret_key = getattr(settings, "RECAPTCHA_SECRET_KEY", "")
-        token = (self.data.get("g-recaptcha-response") or "").strip()
-        if not secret_key or not token:
-            self.add_error(None, message)
-            return cleaned_data
-
-        try:
-            response = requests.post(
-                "https://www.google.com/recaptcha/api/siteverify",
-                data={"secret": secret_key, "response": token},
-                timeout=5,
+    def clean_bot_check(self) -> bool:
+        bot_check = self.cleaned_data.get("bot_check")
+        if not bot_check:
+            message = (
+                "Potwierdź, że nie jesteś botem."
+                if self.language == "pl"
+                else "Please confirm you are not a bot."
             )
-            payload = response.json()
-        except (requests.RequestException, ValueError):
-            self.add_error(None, message)
-            return cleaned_data
-
-        if not payload.get("success"):
-            self.add_error(None, message)
-        return cleaned_data
+            raise forms.ValidationError(message)
+        return bot_check
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []

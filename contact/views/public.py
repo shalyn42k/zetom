@@ -151,6 +151,5 @@ def index(request: HttpRequest) -> HttpResponse:
         'throttle_seconds': throttle_seconds,
         'max_attachment_size': getattr(settings, 'ATTACH_MAX_SIZE_MB', 25),
         'allowed_attachment_types': allowed_types,
-        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
     }
     return render(request, 'contact/index.html', context)
