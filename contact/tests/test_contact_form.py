@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import json
 
-from unittest.mock import Mock, patch
-
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -25,19 +23,12 @@ from contact.models import ContactMessage, Department, DEFAULT_DEPARTMENTS
     COMPANY_NOTIFICATION_RECIPIENTS={'default': []},
     SMTP_USER='',
     ATTACH_SCAN_COMMAND='',
-    RECAPTCHA_SECRET_KEY='test-secret',
 )
 class ContactFormTests(TestCase):
     def setUp(self) -> None:
         cache.clear()
-        patcher = patch('contact.forms.requests.post')
-        self.mock_post = patcher.start()
-        self.addCleanup(patcher.stop)
-        response = Mock()
-        response.json.return_value = {"success": True}
-        self.mock_post.return_value = response
 
-    def _valid_payload(self) -> dict[str, str]:
+    def _valid_payload(self) -> dict[str, str | bool]:
         return {
             'full_name': 'John Doe',
             'phone': '+48123123123',
@@ -45,7 +36,7 @@ class ContactFormTests(TestCase):
             'company': 'Elektrotechniczne',
             'company_name': 'Acme Sp. z o.o.',
             'message': 'Hello there!',
-            'g-recaptcha-response': 'test-token',
+            'bot_check': True,
         }
 
     def test_contact_form_submission_triggers_rate_limit(self) -> None:
