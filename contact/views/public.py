@@ -12,11 +12,11 @@ import math
 import smtplib
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -25,6 +25,7 @@ from ..forms import ContactForm
 from ..services import messages as message_service
 from ..services.email_service import (
     send_company_notification,
+    send_contact_email,
 )
 from ..utils import build_rate_limit_key, get_client_ip, get_language
 
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 def index(request: HttpRequest) -> HttpResponse:
     lang = get_language(request)
     form = ContactForm(request.POST or None, request.FILES or None, language=lang)
-    success_message = None
+    success_message = request.session.pop('contact_success', None)
 
     throttle_seconds = getattr(settings, 'CONTACT_FORM_THROTTLE_SECONDS', 30)
     throttle_prefix = getattr(settings, 'CONTACT_FORM_RATE_LIMIT_PREFIX', 'contact_form')
@@ -103,34 +104,14 @@ def index(request: HttpRequest) -> HttpResponse:
             form.add_error(None, error_text)
         else:
             try:
-                email_subject = 'Nowa wiadomość z formularza kontaktowego'
-                email_body = (
-                    'Imię i nazwisko: {full_name}\n'
-                    'Telefon: {phone}\n'
-                    'E-mail: {email}\n'
-                    'Firma: {company}\n'
-                    'Nazwa firmy: {company_name}\n'
-                    'Numer zgłoszenia: #{id}\n'
-                    'Token dostępu: {token}\n\n'
-                    'Wiadomość: {content}\n'
-                ).format(
-                    full_name=message.full_name,
-                    phone=message.phone,
-                    email=message.email,
-                    company=message.company,
-                    company_name=message.company_name or '—',
-                    id=message.id,
-                    token=access_token,
-                    content=message.message,
-                )
-                send_mail(
-                    email_subject,
-                    email_body,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [form.cleaned_data['email']],
-                )
-                notification_link = request.build_absolute_uri(reverse('contact:panel'))
-                send_company_notification(message, link=notification_link)
+                if settings.SMTP_USER:
+                    send_contact_email(
+                        form.cleaned_data['email'],
+                        message,
+                        access_token=access_token,
+                    )
+                    notification_link = request.build_absolute_uri(reverse('contact:panel'))
+                    send_company_notification(message, link=notification_link)
             except smtplib.SMTPException:
                 logger.exception('Failed to send contact form emails')
                 message.delete()
@@ -143,8 +124,19 @@ def index(request: HttpRequest) -> HttpResponse:
                 if submission_timestamp is not None:
                     for key in cache_keys:
                         cache.set(key, submission_timestamp, throttle_seconds)
-                success_message = 'Message sent successfully!'
-                form = ContactForm(language=lang)
+                if lang == 'pl':
+                    success_message = (
+                        'Wiadomość została wysłana. Zostanie przetworzona w ciągu 48 godzin, po czym się z Tobą skontaktujemy. '
+                        f'Numer zgłoszenia: #{message.id}. Token dostępu wysłano na e-mail.'
+                    )
+                else:
+                    success_message = (
+                        'Your request has been sent. We will process it within 48 hours and contact you afterwards. '
+                        f'Request number: #{message.id}. The access token was sent to your e-mail.'
+                    )
+                messages.success(request, success_message)
+                request.session['contact_success'] = success_message
+                return redirect(f"{reverse('contact:index')}?lang={lang}")
 
     allowed_types = [
         content_type.strip()
@@ -156,7 +148,6 @@ def index(request: HttpRequest) -> HttpResponse:
         'form': form,
         'lang': lang,
         'success_message': success_message,
-        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
         'throttle_seconds': throttle_seconds,
         'max_attachment_size': getattr(settings, 'ATTACH_MAX_SIZE_MB', 25),
         'allowed_attachment_types': allowed_types,
