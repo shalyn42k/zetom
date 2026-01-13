@@ -310,6 +310,9 @@ COMPANY_NOTIFICATION_LINK = os.environ.get(
 )
 
 # --- Other ---
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "").strip()
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
