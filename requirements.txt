@@ -17,4 +17,3 @@ sentry-sdk>=2.0.0
 cryptography
 polib
 deep-translator
-requests
