@@ -133,6 +133,12 @@ def _prepare_company_data(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
 
 
 class ContactForm(forms.ModelForm):
+    bot_check = forms.BooleanField(
+        required=False,
+        label="",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
+    )
+
     company = forms.ChoiceField(choices=(), required=True)
 
     @staticmethod
@@ -160,6 +166,12 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         )
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        self.fields["bot_check"].error_messages["required"] = message
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
@@ -193,6 +205,17 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_bot_check(self) -> bool:
+        bot_check = self.cleaned_data.get("bot_check")
+        if not bot_check:
+            message = (
+                "Potwierdź, że nie jesteś botem."
+                if self.language == "pl"
+                else "Please confirm you are not a bot."
+            )
+            raise forms.ValidationError(message)
+        return bot_check
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []

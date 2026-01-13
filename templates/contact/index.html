@@ -17,7 +17,6 @@
     <link rel="shortcut icon" href="{% static 'img/zet1.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     <script src="{% static 'js/public.js' %}" defer></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 <header class="site-header">
@@ -122,6 +121,7 @@
                   class="contact-form"
                   enctype="multipart/form-data"
                   data-contact-form
+                  data-bot-required-message="{% if lang == 'pl' %}Potwierdź, że nie jesteś botem.{% else %}Please confirm you are not a bot.{% endif %}"
                   data-submit-cooldown-seconds="{{ throttle_seconds }}"
                   data-submit-cooldown-message="{% if lang == 'pl' %}Odczekaj {seconds} s przed ponownym wysłaniem.{% else %}Please wait {seconds} s before sending again.{% endif %}"
                   data-submit-cooldown-storage="contactFormCooldownEndsAt">
@@ -235,16 +235,23 @@
         <h3 class="modal__title" id="review-modal-title">{% if lang == 'pl' %}Sprawdź i wyślij{% else %}Review and send{% endif %}</h3>
         <p class="modal__intro review-modal__intro">{% if lang == 'pl' %}Przejrzyj i w razie potrzeby popraw dane przed finalnym wysłaniem wiadomości.{% else %}Review your details and make any final edits before sending the message.{% endif %}</p>
         <div class="review-modal__fields" data-review-fields></div>
-        <style>
-          /* Force Google reCAPTCHA badge and image popup to be on top of the modal */
-          .g-recaptcha-bubble-arrow,
-          .g-recaptcha-bubble-arrow + div,
-          iframe[name^="a-"][src*="[google.com/recaptcha](https://google.com/recaptcha)"],
-          div[style*="z-index: 2000000000"] {
-              z-index: 2147483647 !important;
-          }
-        </style>
-        <div class="g-recaptcha review-modal__recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+        <div class="form-checkbox-group review-modal__checkbox">
+            <label class="form-checkbox">
+                <input type="checkbox" 
+                       name="{{ form.bot_check.name }}" 
+                       id="{{ form.bot_check.id_for_label }}" 
+                       form="contact-form" 
+                       {% if form.bot_check.value %}checked{% endif %}
+                       {% if form.bot_check.field.required %}required{% endif %}>
+                
+                <span>{% if lang == 'pl' %}Potwierdzam, że nie jestem botem{% else %}I confirm that I am not a bot{% endif %}</span>
+            </label>
+            {% if form.bot_check.errors %}
+                <div class="form-error" data-bot-error>{{ form.bot_check.errors.0 }}</div>
+            {% else %}
+                <div class="form-error" data-bot-error hidden></div>
+            {% endif %}
+        </div>
         <div class="modal__actions review-modal__actions">
             <button type="button" class="button button--ghost" data-review-close>{% if lang == 'pl' %}Wróć do edycji{% else %}Back to form{% endif %}</button>
             <button type="submit" class="button button--primary" data-form-submit form="contact-form">{% if lang == 'pl' %}Wyślij wiadomość{% else %}Send message{% endif %}</button>
