@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+from unittest.mock import Mock, patch
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -23,12 +24,22 @@ from contact.models import ContactMessage, Department, DEFAULT_DEPARTMENTS
     COMPANY_NOTIFICATION_RECIPIENTS={'default': []},
     SMTP_USER='',
     ATTACH_SCAN_COMMAND='',
+    RECAPTCHA_SECRET_KEY='test-secret',
 )
 class ContactFormTests(TestCase):
     def setUp(self) -> None:
         cache.clear()
+        self.recaptcha_patcher = patch('contact.forms.requests.post')
+        self.mock_post = self.recaptcha_patcher.start()
+        mock_response = Mock()
+        mock_response.json.return_value = {"success": True}
+        mock_response.raise_for_status.return_value = None
+        self.mock_post.return_value = mock_response
 
-    def _valid_payload(self) -> dict[str, str | bool]:
+    def tearDown(self) -> None:
+        self.recaptcha_patcher.stop()
+
+    def _valid_payload(self) -> dict[str, str]:
         return {
             'full_name': 'John Doe',
             'phone': '+48123123123',
@@ -36,7 +47,7 @@ class ContactFormTests(TestCase):
             'company': 'Elektrotechniczne',
             'company_name': 'Acme Sp. z o.o.',
             'message': 'Hello there!',
-            'bot_check': True,
+            'g-recaptcha-response': 'test-token',
         }
 
     def test_contact_form_submission_triggers_rate_limit(self) -> None:

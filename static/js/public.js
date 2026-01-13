@@ -19,12 +19,12 @@
     ready(() => {
         const form = document.querySelector('[data-contact-form]');
         if (form) {
-            const botCheckbox = document.querySelector('[data-bot-check]');
             const submitButton = document.querySelector('[data-form-submit]');
             const submitContainer = form.querySelector('[data-submit-container]');
             const submitTooltip = form.querySelector('[data-submit-tooltip]');
-            const botError = document.querySelector('[data-bot-error]');
-            const requiredMessage = form.dataset.botRequiredMessage || '';
+            const recaptchaError = document.querySelector('[data-recaptcha-error]');
+            const recaptchaResponseInput = form.querySelector('[data-recaptcha-response]');
+            const requiredMessage = form.dataset.recaptchaRequiredMessage || '';
             const cooldownStorageKey = form.dataset.submitCooldownStorage || 'contactFormCooldownEndsAt';
             const parsedCooldownSeconds = Number.parseInt(
                 form.dataset.submitCooldownSeconds || '',
@@ -328,18 +328,17 @@
                 });
             });
 
-            const showBotError = (message) => {
-                if (!botError) {
+            const showRecaptchaError = (message) => {
+                if (!recaptchaError) {
                     return;
                 }
-                botError.textContent = message;
-                botError.hidden = !message;
+                recaptchaError.textContent = message;
+                recaptchaError.hidden = !message;
             };
 
             const updateSubmitState = () => {
-                const isChecked = botCheckbox ? botCheckbox.checked : true;
                 if (submitButton) {
-                    submitButton.disabled = !isChecked || isCooldownActive;
+                    submitButton.disabled = isCooldownActive;
                 }
                 if (reviewOpenButton) {
                     reviewOpenButton.disabled = isCooldownActive;
@@ -349,23 +348,26 @@
             updateSubmitState();
             restoreCooldownFromStorage();
 
-            if (botCheckbox) {
-                botCheckbox.addEventListener('change', () => {
-                    updateSubmitState();
-                    if (botCheckbox.checked) {
-                        showBotError('');
-                    }
-                });
-            }
+            window.onRecaptchaSuccess = () => {
+                showRecaptchaError('');
+            };
+
+            window.onRecaptchaExpired = () => {
+                showRecaptchaError(requiredMessage);
+            };
 
             form.addEventListener('submit', (event) => {
-                if (botCheckbox && !botCheckbox.checked) {
-                    event.preventDefault();
-                    updateSubmitState();
-                    if (requiredMessage) {
-                        showBotError(requiredMessage);
+                if (window.grecaptcha && recaptchaResponseInput) {
+                    const token = window.grecaptcha.getResponse();
+                    recaptchaResponseInput.value = token;
+                    if (!token) {
+                        event.preventDefault();
+                        updateSubmitState();
+                        if (requiredMessage) {
+                            showRecaptchaError(requiredMessage);
                         }
-                    return;
+                        return;
+                    }
                 }
 
                 if (submitButton) {

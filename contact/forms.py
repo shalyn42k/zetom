@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import shlex
 import subprocess
+
+import requests
 from pathlib import Path
 
 from django import forms
@@ -133,12 +135,6 @@ def _prepare_company_data(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
 
 
 class ContactForm(forms.ModelForm):
-    bot_check = forms.BooleanField(
-        required=False,
-        label="",
-        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
-    )
-
     company = forms.ChoiceField(choices=(), required=True)
 
     @staticmethod
@@ -166,12 +162,6 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         )
-        message = (
-            "Potwierdź, że nie jesteś botem."
-            if self.language == "pl"
-            else "Please confirm you are not a bot."
-        )
-        self.fields["bot_check"].error_messages["required"] = message
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
@@ -206,16 +196,43 @@ class ContactForm(forms.ModelForm):
             ),
         }
 
-    def clean_bot_check(self) -> bool:
-        bot_check = self.cleaned_data.get("bot_check")
-        if not bot_check:
-            message = (
-                "Potwierdź, że nie jesteś botem."
-                if self.language == "pl"
-                else "Please confirm you are not a bot."
-            )
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+        self._validate_recaptcha()
+        return cleaned_data
+
+    def _validate_recaptcha(self) -> None:
+        secret = getattr(settings, "RECAPTCHA_SECRET_KEY", "")
+        if not secret:
+            raise forms.ValidationError("reCAPTCHA is not configured.")
+
+        token = (self.data.get("g-recaptcha-response") or "").strip()
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        if not token:
             raise forms.ValidationError(message)
-        return bot_check
+
+        try:
+            response = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={
+                    "secret": secret,
+                    "response": token,
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            payload = response.json()
+        except requests.RequestException as exc:
+            print("reCAPTCHA verification request failed:", exc)
+            raise forms.ValidationError(message) from exc
+
+        print("reCAPTCHA verification response:", payload)
+        if not payload.get("success"):
+            raise forms.ValidationError(message)
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
