@@ -274,6 +274,9 @@ SMTP_PORT = EMAIL_PORT
 SMTP_USER = EMAIL_HOST_USER
 SMTP_PASS = EMAIL_HOST_PASSWORD
 
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '').strip()
+
 def _load_company_notification_recipients() -> dict[str, list[str]]:
     raw_value = os.getenv('COMPANY_NOTIFICATION_RECIPIENTS', '').strip()
     if not raw_value:
