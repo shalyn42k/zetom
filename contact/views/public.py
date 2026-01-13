@@ -13,6 +13,7 @@ import smtplib
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.mail import send_mail
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -24,7 +25,6 @@ from ..forms import ContactForm
 from ..services import messages as message_service
 from ..services.email_service import (
     send_company_notification,
-    send_contact_email,
 )
 from ..utils import build_rate_limit_key, get_client_ip, get_language
 
@@ -103,14 +103,34 @@ def index(request: HttpRequest) -> HttpResponse:
             form.add_error(None, error_text)
         else:
             try:
-                if settings.SMTP_USER:
-                    send_contact_email(
-                        form.cleaned_data['email'],
-                        message,
-                        access_token=access_token,
-                    )
-                    notification_link = request.build_absolute_uri(reverse('contact:panel'))
-                    send_company_notification(message, link=notification_link)
+                email_subject = 'Nowa wiadomość z formularza kontaktowego'
+                email_body = (
+                    'Imię i nazwisko: {full_name}\n'
+                    'Telefon: {phone}\n'
+                    'E-mail: {email}\n'
+                    'Firma: {company}\n'
+                    'Nazwa firmy: {company_name}\n'
+                    'Numer zgłoszenia: #{id}\n'
+                    'Token dostępu: {token}\n\n'
+                    'Wiadomość: {content}\n'
+                ).format(
+                    full_name=message.full_name,
+                    phone=message.phone,
+                    email=message.email,
+                    company=message.company,
+                    company_name=message.company_name or '—',
+                    id=message.id,
+                    token=access_token,
+                    content=message.message,
+                )
+                send_mail(
+                    email_subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [form.cleaned_data['email']],
+                )
+                notification_link = request.build_absolute_uri(reverse('contact:panel'))
+                send_company_notification(message, link=notification_link)
             except smtplib.SMTPException:
                 logger.exception('Failed to send contact form emails')
                 message.delete()
