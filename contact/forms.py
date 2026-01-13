@@ -11,6 +11,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
+import requests
 from django import forms
 from django.conf import settings
 from django.http import QueryDict
@@ -133,12 +134,6 @@ def _prepare_company_data(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
 
 
 class ContactForm(forms.ModelForm):
-    bot_check = forms.BooleanField(
-        required=False,
-        label="",
-        widget=forms.CheckboxInput(attrs={"class": "form-checkbox-input", "data-bot-check": "true"}),
-    )
-
     company = forms.ChoiceField(choices=(), required=True)
 
     @staticmethod
@@ -166,12 +161,6 @@ class ContactForm(forms.ModelForm):
                 }
             ),
         )
-        message = (
-            "Potwierdź, że nie jesteś botem."
-            if self.language == "pl"
-            else "Please confirm you are not a bot."
-        )
-        self.fields["bot_check"].error_messages["required"] = message
         self.fields["attachments"].widget.attrs.update({"class": "form-input"})
 
     class Meta:
@@ -206,16 +195,44 @@ class ContactForm(forms.ModelForm):
             ),
         }
 
-    def clean_bot_check(self) -> bool:
-        bot_check = self.cleaned_data.get("bot_check")
-        if not bot_check:
-            message = (
-                "Potwierdź, że nie jesteś botem."
-                if self.language == "pl"
-                else "Please confirm you are not a bot."
-            )
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+        recaptcha_token = (self.data.get("g-recaptcha-response") or "").strip()
+        message = (
+            "Potwierdź, że nie jesteś botem."
+            if self.language == "pl"
+            else "Please confirm you are not a bot."
+        )
+        if not recaptcha_token:
             raise forms.ValidationError(message)
-        return bot_check
+
+        secret_key = getattr(settings, "RECAPTCHA_SECRET_KEY", "").strip()
+        if not secret_key:
+            raise forms.ValidationError(
+                "reCAPTCHA is not configured. Please try again later."
+                if self.language != "pl"
+                else "reCAPTCHA nie jest skonfigurowana. Spróbuj ponownie później."
+            )
+
+        try:
+            response = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret_key, "response": recaptcha_token},
+                timeout=5,
+            )
+            response.raise_for_status()
+            payload = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            raise forms.ValidationError(
+                "Unable to verify reCAPTCHA. Please try again."
+                if self.language != "pl"
+                else "Nie udało się zweryfikować reCAPTCHA. Spróbuj ponownie."
+            ) from exc
+
+        if not payload.get("success"):
+            raise forms.ValidationError(message)
+
+        return cleaned_data
 
     def clean_attachments(self) -> list:
         files = self.cleaned_data.get("attachments") or []
