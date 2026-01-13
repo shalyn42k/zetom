@@ -249,6 +249,22 @@
     </div>
 </div>
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<style>
+    .review-modal__dialog {
+        overflow: visible;
+    }
+
+    .review-modal .g-recaptcha,
+    .review-modal .g-recaptcha > div,
+    .review-modal .g-recaptcha iframe,
+    .review-modal .grecaptcha-badge,
+    .review-modal .grecaptcha-badge iframe,
+    .review-modal .rc-imageselect,
+    .review-modal .rc-imageselect iframe {
+        position: relative;
+        z-index: 2000000000;
+    }
+</style>
 
 {% if success_message %}
 <div class="modal" data-success-modal aria-hidden="true">
