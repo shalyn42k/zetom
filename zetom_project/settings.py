@@ -332,6 +332,8 @@ ATTACH_ALLOWED_EXTENSIONS = [
     if ext.strip()
 ]
 ATTACH_SCAN_COMMAND = os.getenv('ATTACH_SCAN_COMMAND', '').strip()
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '').strip()
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '').strip()
 
 SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
 SENTRY_TRACES_SAMPLE_RATE = float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.0'))
