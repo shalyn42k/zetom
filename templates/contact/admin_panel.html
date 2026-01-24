@@ -246,28 +246,15 @@
                         <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
                         <ul class="client-log" data-request-client-log data-empty="{% if lang == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
                     </section>
-                    <section class="request-modal__access">
-                        <h3>{% if lang == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
-                        <p class="request-modal__token">
-                            <strong>{% if lang == 'pl' %}Hash tokenu:{% else %}Token hash:{% endif %}</strong>
-                            <span data-request-token-hash>—</span>
-                        </p>
-                        <p class="request-modal__access-status">
-                            <strong>{% if lang == 'pl' %}Dostęp aktywny:{% else %}Access enabled:{% endif %}</strong>
-                            <span data-request-access-enabled>—</span>
-                        </p>
+                    <section class="request-modal__history">
+                        <p class="request-modal__history-placeholder">Loading history...</p>
+                        <ul class="client-log" data-client-history></ul>
                     </section>
                 </div>
                 <div class="user-modal__tab-panel is-hidden" data-tab-content="responses">
-                    <div class="request-modal__grid">
-                        <label class="request-modal__field request-modal__field--full">
-                            <span class="form-label">{% if lang == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
-                            <textarea name="final_changes" rows="4" class="form-input"></textarea>
-                        </label>
-                        <label class="request-modal__field request-modal__field--full">
-                            <span class="form-label">{% if lang == 'pl' %}Odpowiedź dla klienta{% else %}Client response{% endif %}</span>
-                            <textarea name="final_response" rows="4" class="form-input"></textarea>
-                        </label>
+                    <div class="request-modal__responses">
+                        <a href="#" class="button button--outline">Go to Forms</a>
+                        <p class="request-modal__responses-placeholder">No forms sent yet.</p>
                     </div>
                 </div>
             </div>
