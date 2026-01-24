@@ -17,7 +17,7 @@ from django.db import transaction
 from django.db.models import Case, IntegerField, QuerySet, When
 
 from ..departments import normalize_department_code
-from ..models import ContactAttachment, ContactMessage
+from ..models import ContactAttachment, ContactMessage, Department
 
 
 def add_message(
@@ -32,12 +32,14 @@ def add_message(
 ) -> tuple[ContactMessage, str]:
     company = normalize_department_code(company)
     files: list[UploadedFile] = list(attachments or [])
+    department = Department.objects.filter(code=company).first()
     with transaction.atomic():
         contact_message = ContactMessage.objects.create(
             full_name=full_name,
             phone=phone,
             email=email,
             company=company,
+            department=department,
             company_name=company_name,
             message=message,
         )

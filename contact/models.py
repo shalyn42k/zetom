@@ -50,6 +50,12 @@ class ContactMessage(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
     company = models.CharField(max_length=50, db_index=True)
+    department = models.ForeignKey(
+        "Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     company_name = models.CharField(max_length=150, blank=True)
     message = models.TextField()
     final_changes = models.TextField(blank=True)

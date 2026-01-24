@@ -74,11 +74,16 @@ class ContactFormTests(TestCase):
         self.assertEqual(ContactMessage.objects.count(), 0)
 
     def test_index_includes_active_request_context(self) -> None:
+        department, _ = Department.objects.get_or_create(
+            code='Elektrotechniczne',
+            defaults={'name_pl': 'Elektrotechniczne', 'name_en': 'Electrotechnical'},
+        )
         message = ContactMessage.objects.create(
             full_name='Jane Doe',
             phone='+48123456789',
             email='jane@example.com',
             company='Elektrotechniczne',
+            department=department,
             company_name='Example Sp. z o.o.',
             message='Need assistance',
         )
@@ -95,11 +100,16 @@ class ContactFormTests(TestCase):
         self.assertEqual(payload['full_name'], 'Jane Doe')
 
     def test_index_skips_deleted_or_expired_requests(self) -> None:
+        department, _ = Department.objects.get_or_create(
+            code='Elektrotechniczne',
+            defaults={'name_pl': 'Elektrotechniczne', 'name_en': 'Electrotechnical'},
+        )
         message = ContactMessage.objects.create(
             full_name='Old Entry',
             phone='+48111222333',
             email='old@example.com',
             company='Elektrotechniczne',
+            department=department,
             company_name='Old Co',
             message='Archived',
             is_deleted=True,
