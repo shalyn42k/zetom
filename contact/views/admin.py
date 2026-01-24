@@ -72,7 +72,6 @@ def _serialise_admin_message(message: ContactMessage, language: str) -> dict:
         'phone': message.phone,
         'email': message.email,
         'company': message.company,
-        'department': message.department.code if message.department else '',
         'company_name': message.company_name,
         'company_label': company_labels.get(message.company, message.company),
         'message': message.message,

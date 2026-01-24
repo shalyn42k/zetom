@@ -545,18 +545,24 @@ class MessageUpdateForm(forms.ModelForm):
         fields = [
             "full_name",
             "phone",
+            "email",
             "company",
             "company_name",
             "message",
             "status",
+            "final_changes",
+            "final_response",
         ]
         widgets = {
             "full_name": forms.TextInput(attrs={"class": "form-input"}),
             "phone": forms.TextInput(attrs={"class": "form-input"}),
+            "email": forms.EmailInput(attrs={"class": "form-input"}),
             "company": forms.Select(attrs={"class": "form-input"}),
             "company_name": forms.TextInput(attrs={"class": "form-input"}),
             "message": forms.Textarea(attrs={"rows": 6, "class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-input"}),
+            "final_changes": forms.Textarea(attrs={"rows": 4, "class": "form-input"}),
+            "final_response": forms.Textarea(attrs={"rows": 4, "class": "form-input"}),
         }
 
     def __init__(self, *args, **kwargs):
