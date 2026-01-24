@@ -43,7 +43,6 @@ from ..models import (
     Department,
     build_permissions_override,
     default_permissions_for_level,
-    resolve_permission_profile,
     _generate_access_token,
 )
 from ..services import messages as message_service
@@ -111,7 +110,7 @@ def _get_admin_user(request: HttpRequest) -> AdminUser | None:
 def _permission_profile(admin_user: AdminUser | None) -> dict[str, object]:
     if not admin_user:
         return {"mode": "inherit", "permissions": default_permissions_for_level(AdminUser.LEVEL_TESTER)}
-    return resolve_permission_profile(admin_user.level_of_access, admin_user.permissions_override)
+    return admin_user.permission_profile()
 
 
 def _build_email_signature(admin_user: AdminUser) -> dict[str, str]:
@@ -167,11 +166,10 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
     user_level = admin_user.level_of_access
     permission_profile = _permission_profile(admin_user)
-    permissions = permission_profile.get("permissions", {})
-    can_edit_messages = bool(permissions.get("can_edit_messages"))
-    can_delete_messages = bool(permissions.get("can_delete_messages"))
-    can_export_messages = bool(permissions.get("can_export_messages"))
-    can_send_emails = bool(permissions.get("can_send_emails"))
+    can_edit_messages = admin_user.can_edit_messages
+    can_delete_messages = admin_user.can_delete_messages
+    can_export_messages = admin_user.can_export_messages
+    can_send_emails = admin_user.can_send_emails
     user_departments = list(admin_user.departments.values_list('code', flat=True))
     allowed_companies: set[str] | None = (
         set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
@@ -487,9 +485,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
 
 
 def _serialise_admin_user(user: AdminUser) -> dict:
-    permission_profile = resolve_permission_profile(
-        user.level_of_access, user.permissions_override
-    )
+    permission_profile = user.permission_profile()
     return {
         'user_id': user.id,
         'email': user.email,
@@ -1131,8 +1127,7 @@ def update_message(request: HttpRequest, message_id: int) -> JsonResponse:
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    permissions = _permission_profile(admin_user).get("permissions", {})
-    if not permissions.get("can_edit_messages"):
+    if not admin_user.can_edit_messages:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
@@ -1153,8 +1148,7 @@ def rollback_client_change(request: HttpRequest, message_id: int, log_id: int) -
     admin_user = _get_admin_user(request)
     if not request.session.get('logged_in') or not admin_user:
         return JsonResponse({'error': 'unauthorized'}, status=403)
-    permissions = _permission_profile(admin_user).get("permissions", {})
-    if not permissions.get("can_edit_messages"):
+    if not admin_user.can_edit_messages:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
     message = get_object_or_404(ContactMessage, pk=message_id, is_deleted=False)
