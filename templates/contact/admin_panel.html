@@ -186,18 +186,18 @@
         <form method="post" class="modal__form" data-request-form>
             {% csrf_token %}
             <div class="user-modal__tabs" role="tablist" aria-label="Request details navigation">
-                <button type="button" class="user-modal__tab is-active" data-rtab-target="info" role="tab" aria-selected="true">
+                <button type="button" class="user-modal__tab is-active" data-request-tab="info" role="tab" aria-selected="true">
                     Info
                 </button>
-                <button type="button" class="user-modal__tab" data-rtab-target="history" role="tab" aria-selected="false">
+                <button type="button" class="user-modal__tab" data-request-tab="history" role="tab" aria-selected="false">
                     History
                 </button>
-                <button type="button" class="user-modal__tab" data-rtab-target="responses" role="tab" aria-selected="false">
+                <button type="button" class="user-modal__tab" data-request-tab="responses" role="tab" aria-selected="false">
                     Responses
                 </button>
             </div>
             <div class="user-modal__tabs-content">
-                <div class="user-modal__tab-panel" data-rtab-content="info">
+                <div class="user-modal__tab-panel" data-request-panel="info">
                     <div class="request-modal__grid">
                         <label class="request-modal__field request-modal__field--full">
                             <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
@@ -219,28 +219,16 @@
                                 {% endfor %}
                             </select>
                         </label>
-                        <label class="request-modal__field">
-                            <span class="form-label">{% if lang == 'pl' %}Nazwa firmy{% else %}Company name{% endif %}</span>
-                            <input type="text" name="company_name" class="form-input">
-                        </label>
-                        <label class="request-modal__field">
-                            <span class="form-label">{% if lang == 'pl' %}Status{% else %}Status{% endif %}</span>
-                            <select name="status" class="form-input" required>
-                                {% for option in status_options %}
-                                    <option value="{{ option.value }}">{{ option.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </label>
                         <label class="request-modal__field request-modal__field--full">
                             <span class="form-label">{% if lang == 'pl' %}Treść wiadomości{% else %}Message{% endif %}</span>
                             <textarea name="message" rows="6" class="form-input" required></textarea>
                         </label>
                     </div>
                 </div>
-                <div class="user-modal__tab-panel is-hidden" data-rtab-content="history">
-                    <div class="empty-state">No history yet</div>
+                <div class="user-modal__tab-panel is-hidden" data-request-panel="history">
+                    <p class="empty-state">No history yet</p>
                 </div>
-                <div class="user-modal__tab-panel is-hidden" data-rtab-content="responses">
+                <div class="user-modal__tab-panel is-hidden" data-request-panel="responses">
                     <div class="empty-state">
                         <button type="button" class="button button--primary">New form</button>
                     </div>
