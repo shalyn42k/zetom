@@ -456,6 +456,8 @@
         const attachmentsEmptyMessage = attachmentsList ? attachmentsList.dataset.empty || '' : '';
         const clientLogList = $('[data-request-client-log]', requestModal);
         const clientLogEmptyMessage = clientLogList ? clientLogList.dataset.empty || '' : '';
+        const tokenHashElement = $('[data-request-token-hash]', requestModal);
+        const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
         const closeElements = $$('[data-request-close]', requestModal);
         const statusMap = parseJsonData(requestModal.dataset.statusMap, {});
@@ -515,7 +517,6 @@
                 requestModal.classList.add('is-visible');
                 requestModal.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('has-modal');
-                activateRequestTab('info');
             } else {
                 requestModal.classList.remove('is-visible');
                 requestModal.setAttribute('aria-hidden', 'true');
@@ -533,6 +534,7 @@
                     feedbackBox.hidden = true;
                     feedbackBox.textContent = '';
                 }
+                activateRequestTab('info');
             }
         };
 
@@ -713,6 +715,20 @@
             });
         };
 
+        const setAccessInfo = (data) => {
+            if (tokenHashElement) {
+                tokenHashElement.textContent = data.access_token_hash || '—';
+            }
+            if (accessEnabledElement) {
+                const enabled = Boolean(data.access_enabled);
+                if (language === 'pl') {
+                    accessEnabledElement.textContent = enabled ? 'Tak' : 'Nie';
+                } else {
+                    accessEnabledElement.textContent = enabled ? 'Yes' : 'No';
+                }
+            }
+        };
+
         const populateForm = (data) => {
             if (!form) {
                 return;
@@ -730,6 +746,7 @@
                 }
             });
             renderAttachments(data.attachments || []);
+            setAccessInfo(data);
             if (data.client_logs) {
                 renderClientLog(data.client_logs);
             }
