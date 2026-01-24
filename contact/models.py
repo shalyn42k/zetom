@@ -164,6 +164,33 @@ class AdminUser(models.Model):
     def check_password(self, raw: str) -> bool:
         return check_password(raw, self.password_hash)
 
+    def permission_profile(self) -> dict[str, object]:
+        return resolve_permission_profile(self.level_of_access, self.permissions_override)
+
+    def permissions(self) -> dict[str, bool]:
+        profile = self.permission_profile()
+        permissions = profile.get("permissions", {})
+        return {key: bool(permissions.get(key)) for key in PERMISSION_KEYS}
+
+    def has_permission(self, key: str) -> bool:
+        return bool(self.permissions().get(key))
+
+    @property
+    def can_edit_messages(self) -> bool:
+        return self.has_permission("can_edit_messages")
+
+    @property
+    def can_delete_messages(self) -> bool:
+        return self.has_permission("can_delete_messages")
+
+    @property
+    def can_export_messages(self) -> bool:
+        return self.has_permission("can_export_messages")
+
+    @property
+    def can_send_emails(self) -> bool:
+        return self.has_permission("can_send_emails")
+
     def save(self, *args, **kwargs) -> None:
         if self.password_hash:
             try:
