@@ -1083,8 +1083,6 @@
                 language === 'pl' ? 'Usuwanie i kosz' : 'Delete & trash',
             can_export_messages: language === 'pl' ? 'Eksport' : 'Export',
             can_send_emails: language === 'pl' ? 'Wysyłanie e-maili' : 'Send emails',
-            can_view_all_messages:
-                language === 'pl' ? 'Podgląd wszystkich zgłoszeń' : 'View all messages',
         };
 
         const getRolePermissions = (level) => ({
