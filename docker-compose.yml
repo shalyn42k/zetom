@@ -40,8 +40,6 @@ services:
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
       # Строка подключения: postgres://ПОЛЬЗОВАТЕЛЬ:ПАРОЛЬ@ХОСТ:ПОРТ/БАЗА
       DATABASE_URL: postgres://zetom_user:zetom_password@db:5432/zetom
-      # Запрещаем откат к sqlite
-      DJANGO_ALLOW_SQLITE_FALLBACK: "false"
     volumes:
       - ./:/app
 

@@ -26,7 +26,7 @@ Zetom — небольшое Django‑приложение с контактно
 - SMTP‑уведомления (опционально);
 - PDF‑отчёты;
 - мультиязычный интерфейс (`?lang=en` / `?lang=pl`);
-- перенос данных из SQLite в PostgreSQL.
+- PostgreSQL‑хранилище сообщений.
 
 ## Состав проекта
 
@@ -45,10 +45,8 @@ Zetom — небольшое Django‑приложение с контактно
 ## Переменные окружения (кратко)
 
 - `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`;
-- `DATABASE_URL` **или** `POSTGRES_*`;
+- `DATABASE_URL`;
 - `SMTP_*` для отправки писем;
-- `LEGACY_SQLITE_PATH` для переноса данных;
-- `DJANGO_ALLOW_SQLITE_FALLBACK` — только для локальной отладки.
 
 ## Запуск локально (без Docker)
 
@@ -103,31 +101,6 @@ python manage.py migrate sessions
 
 После выполнения команды таблица появится в выбранной базе данных (значение `DATABASES['default']`, обычно PostgreSQL),
 и ошибки `no such table: django_session` больше не будет.
-
-## Перенос данных из SQLite в PostgreSQL
-
-1. Настройте подключение к PostgreSQL через `DATABASE_URL` или `POSTGRES_*` в `.env`.
-   База должна быть пустой (новая или очищенная).
-2. Укажите путь к старой базе SQLite через `LEGACY_SQLITE_PATH` (например, `LEGACY_SQLITE_PATH=/app/db.sqlite3`).
-3. Выполните миграции для новой базы:
-   ```bash
-   python manage.py migrate
-   ```
-4. Запустите перенос данных:
-   ```bash
-   python manage.py migrate_sqlite_to_postgres --force-flush
-   ```
-   Флаг `--force-flush` очищает данные в целевой базе перед импортом (используйте только если база новая и данных нет).
-   Команда валидирует, что основная БД — PostgreSQL, и скопирует все строки, восстанавливая последовательности.
-5. Перенесите каталог `media/`, если в SQLite базе есть связанные загрузки файлов.
-6. Проверьте систему:
-   ```bash
-   python manage.py check
-   python manage.py test
-   ```
-
-Для локальной отладки без PostgreSQL можно временно включить `DJANGO_ALLOW_SQLITE_FALLBACK=true`,
-но миграцию данных выполняйте только в PostgreSQL.
 
 ## Тесты и проверки
 
