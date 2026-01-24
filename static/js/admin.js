@@ -449,7 +449,7 @@
         const rows = $$('[data-request-row]');
         const form = $('[data-request-form]', requestModal);
         const titleElement = $('[data-request-title]', requestModal);
-        const createdElement = $('[data-request-created]', requestModal);
+        const emailElement = $('[data-request-email]', requestModal);
         const errorBox = $('[data-request-errors]', requestModal);
         const feedbackBox = $('[data-request-feedback]', requestModal);
         const attachmentsList = $('[data-request-attachments]', requestModal);
@@ -727,14 +727,13 @@
             }
         };
 
-        const setHeader = (id, createdAt) => {
+        const setHeader = (id, email) => {
             if (titleElement) {
                 const prefix = language === 'pl' ? 'Zgłoszenie #' : 'Request #';
                 titleElement.textContent = `${prefix}${id}`;
             }
-            if (createdElement) {
-                const label = language === 'pl' ? 'Utworzone:' : 'Created:';
-                createdElement.textContent = createdAt ? `${label} ${createdAt}` : '';
+            if (emailElement) {
+                emailElement.textContent = email || '';
             }
         };
 
@@ -778,7 +777,7 @@
                     currentRow = row;
                     currentId = data.id;
                     populateForm(data);
-                    setHeader(data.id, data.created_at);
+                    setHeader(data.id, data.email);
                     toggleModal(true);
                     focusFirstField();
                 })
@@ -822,7 +821,7 @@
                 .then((data) => {
                     updateRowDisplay(data);
                     populateForm(data);
-                    setHeader(data.id, data.created_at);
+                    setHeader(data.id, data.email);
                     showError('');
                 })
                 .catch((error) => {
@@ -871,7 +870,7 @@
                 .then((data) => {
                     updateRowDisplay(data);
                     populateForm(data);
-                    setHeader(data.id, data.created_at);
+                    setHeader(data.id, data.email);
                 })
                 .catch(() => {
                     alert(updateErrorMessage || 'Unable to revert change.');
