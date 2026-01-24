@@ -8,7 +8,6 @@
 import json
 import os
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
@@ -124,59 +123,20 @@ def _bool_env(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
-def _build_postgres_url_from_components() -> str | None:
-    db_name = os.getenv('POSTGRES_DB')
-    user = os.getenv('POSTGRES_USER')
-    password = os.getenv('POSTGRES_PASSWORD')
-    host = os.getenv('POSTGRES_HOST', 'localhost')
-    port = os.getenv('POSTGRES_PORT', '5432')
-
-    if not (db_name and user and password):
-        return None
-
-    safe_user = quote_plus(user)
-    safe_password = quote_plus(password)
-    return f"postgresql://{safe_user}:{safe_password}@{host}:{port}/{db_name}"
-
-
 DATABASES: dict[str, dict] = {}
 
 conn_max_age = int(os.getenv('DB_CONN_MAX_AGE', '600'))
 ssl_require = _bool_env('DB_SSL_REQUIRE', default=not DEBUG)
 
-database_url = os.environ.get('DATABASE_URL') or _build_postgres_url_from_components()
-allow_sqlite_fallback = _bool_env('DJANGO_ALLOW_SQLITE_FALLBACK', DEBUG)
+database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    raise ImproperlyConfigured("DATABASE_URL is missing. PostgreSQL is required.")
 
-if database_url:
-    DATABASES['default'] = dj_database_url.config(
-        default=database_url,
-        conn_max_age=conn_max_age,
-        ssl_require=ssl_require,
-    )
-    engine = DATABASES['default'].get('ENGINE', '')
-    if engine.endswith('sqlite3') and not allow_sqlite_fallback:
-        raise ImproperlyConfigured(
-            "DATABASE_URL must point to PostgreSQL. Set DJANGO_ALLOW_SQLITE_FALLBACK=true "
-            "if you intentionally run with SQLite for local development."
-        )
-else:
-    sqlite_name = os.environ.get('SQLITE_NAME', BASE_DIR / 'db.sqlite3')
-    if allow_sqlite_fallback:
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': sqlite_name,
-        }
-    else:
-        raise ImproperlyConfigured(
-            "DATABASE_URL or POSTGRES_* variables must be provided to configure PostgreSQL."
-        )
-
-legacy_sqlite_path = os.environ.get('LEGACY_SQLITE_PATH')
-if legacy_sqlite_path:
-    DATABASES['legacy_sqlite'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': legacy_sqlite_path,
-    }
+DATABASES['default'] = dj_database_url.config(
+    default=database_url,
+    conn_max_age=conn_max_age,
+    ssl_require=ssl_require,
+)
 
 # --- Auth ---
 AUTH_PASSWORD_VALIDATORS = [
