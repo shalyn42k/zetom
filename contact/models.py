@@ -284,7 +284,7 @@ class AdminActivityLog(models.Model):
     message = models.ForeignKey(
         ContactMessage,
         related_name="admin_logs",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )

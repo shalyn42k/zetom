@@ -257,6 +257,15 @@ def handle_trash_action(
     request: HttpRequest,
     allowed_companies: set[str] | None = None,
 ) -> None:
+    def describe_purged_message(message: ContactMessage) -> str:
+        created_at = timezone.localtime(message.created_at).strftime('%Y-%m-%d %H:%M:%S')
+        company_name = f", company_name={message.company_name}" if message.company_name else ""
+        return (
+            "Purged message "
+            f"id={message.id}, email={message.email}, full_name={message.full_name}, "
+            f"company={message.company}{company_name}, phone={message.phone}, created_at={created_at}"
+        )
+
     action_handlers: dict[str, tuple[Callable[[Iterable[int]], None], str, str]] = {
         TrashActionForm.ACTION_RESTORE: (
             message_service.restore_messages,
@@ -296,6 +305,20 @@ def handle_trash_action(
     target_ids: Iterable[int] | None = id_list
     if action == TrashActionForm.ACTION_EMPTY and allowed_companies is None:
         target_ids = None
+    purge_entries: list[AdminActivityLog] = []
+    if action in {TrashActionForm.ACTION_DELETE, TrashActionForm.ACTION_EMPTY}:
+        if action == TrashActionForm.ACTION_EMPTY and allowed_companies is None:
+            messages_for_log = ContactMessage.objects.filter(is_deleted=True)
+        else:
+            messages_for_log = ContactMessage.objects.filter(id__in=id_list, is_deleted=True)
+        purge_entries = [
+            AdminActivityLog(
+                message=None,
+                action=AdminActivityLog.ACTION_PURGE,
+                description=describe_purged_message(message),
+            )
+            for message in messages_for_log
+        ]
     func(target_ids)
     if action == TrashActionForm.ACTION_RESTORE:
         log_bulk_action(
@@ -304,13 +327,13 @@ def handle_trash_action(
             description='Restored from trash',
         )
     elif action == TrashActionForm.ACTION_DELETE:
-        log_bulk_action(
-            AdminActivityLog.ACTION_PURGE,
-            id_list,
-            description='Permanently deleted',
-        )
+        if purge_entries:
+            AdminActivityLog.objects.bulk_create(purge_entries)
     elif action == TrashActionForm.ACTION_EMPTY:
-        log_action(AdminActivityLog.ACTION_PURGE, description='Emptied trash bin')
+        if purge_entries:
+            AdminActivityLog.objects.bulk_create(purge_entries)
+        else:
+            log_action(AdminActivityLog.ACTION_PURGE, description='Emptied trash bin')
 
     messages.success(request, message_pl if lang == 'pl' else message_en, extra_tags='admin')
 
