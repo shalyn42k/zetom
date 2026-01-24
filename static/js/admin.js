@@ -467,6 +467,8 @@
         const updateTemplate = requestModal.dataset.updateTemplate || '';
         const rollbackTemplate = requestModal.dataset.rollbackTemplate || '';
         const language = requestModal.dataset.language || 'pl';
+        const tabButtons = requestModal.querySelectorAll('[data-tab-target]');
+        const tabPanels = requestModal.querySelectorAll('[data-tab-content]');
         const fieldLabels = language === 'pl'
             ? {
                   full_name: 'Imię i nazwisko',
@@ -488,6 +490,20 @@
         let currentRow = null;
         let currentId = null;
         let isBusy = false;
+
+        const activateRequestTab = (target) => {
+            const targetName = target || 'info';
+            tabButtons.forEach((button) => {
+                const isActive = button.dataset.tabTarget === targetName;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+            tabPanels.forEach((panel) => {
+                const isActive = panel.dataset.tabContent === targetName;
+                panel.classList.toggle('is-hidden', !isActive);
+                panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            });
+        };
 
         const buildUrl = (template, id) => template.replace(/0(?!.*0)/, String(id));
         const buildRollbackUrl = (template, messageId, logId) =>
@@ -518,8 +534,17 @@
                     feedbackBox.hidden = true;
                     feedbackBox.textContent = '';
                 }
+                activateRequestTab('info');
             }
         };
+
+        tabButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                activateRequestTab(button.dataset.tabTarget);
+            });
+        });
+
+        activateRequestTab('info');
 
         const focusFirstField = () => {
             if (!form) {
