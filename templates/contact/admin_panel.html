@@ -190,13 +190,13 @@
         <form method="post" class="modal__form request-modal__form" data-request-form>
             {% csrf_token %}
             <div class="request-modal__tabs" role="tablist" aria-label="Request details navigation">
-                <button type="button" class="request-modal__tab btn-tab-active" data-target="info" role="tab" aria-selected="true">
+                <button type="button" class="request-modal__tab is-active" data-tab-target="info" role="tab" aria-selected="true">
                     Info
                 </button>
-                <button type="button" class="request-modal__tab btn-tab-inactive" data-target="history" role="tab" aria-selected="false">
+                <button type="button" class="request-modal__tab" data-tab-target="history" role="tab" aria-selected="false">
                     History
                 </button>
-                <button type="button" class="request-modal__tab btn-tab-inactive" data-target="responses" role="tab" aria-selected="false">
+                <button type="button" class="request-modal__tab" data-tab-target="responses" role="tab" aria-selected="false">
                     Responses
                 </button>
             </div>
@@ -278,41 +278,24 @@
         const tabButtons = requestModal.querySelectorAll('.request-modal__tab');
         const tabPanels = requestModal.querySelectorAll('.request-modal__tab-panel');
 
-        const hideAllPanels = () => {
-            tabPanels.forEach((panel) => {
-                panel.style.display = 'none';
-            });
-        };
-
-        const resetTabStyles = () => {
+        const setActiveTab = (target) => {
             tabButtons.forEach((button) => {
-                button.classList.remove('btn-tab-active');
-                button.classList.add('btn-tab-inactive');
-                button.setAttribute('aria-selected', 'false');
+                const isActive = button.dataset.tabTarget === target;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
-        };
-
-        const showPanel = (target) => {
-            const panel = requestModal.querySelector(`[data-tab-content="${target}"]`);
-            if (panel) {
-                panel.style.display = 'block';
-            }
+            tabPanels.forEach((panel) => {
+                panel.style.display = panel.dataset.tabContent === target ? 'block' : 'none';
+            });
         };
 
         tabButtons.forEach((button) => {
-            button.addEventListener('click', function () {
-                const target = this.dataset.target;
-                hideAllPanels();
-                showPanel(target);
-                resetTabStyles();
-                this.classList.remove('btn-tab-inactive');
-                this.classList.add('btn-tab-active');
-                this.setAttribute('aria-selected', 'true');
+            button.addEventListener('click', () => {
+                setActiveTab(button.dataset.tabTarget);
             });
         });
 
-        hideAllPanels();
-        showPanel('info');
+        setActiveTab('info');
     });
 </script>
 

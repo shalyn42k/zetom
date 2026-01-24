@@ -1906,12 +1906,14 @@ body[data-theme='dark'] .panel-email .form-submit {
     gap: 8px;
     padding: 6px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(17, 24, 39, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .request-modal__tab {
     border: none;
+    background: transparent;
+    color: #9ca3af;
     padding: 8px 16px;
     border-radius: 999px;
     font-weight: 600;
@@ -1919,15 +1921,10 @@ body[data-theme='dark'] .panel-email .form-submit {
     transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btn-tab-active {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #ffffff;
-    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.35);
-}
-
-.btn-tab-inactive {
-    background: rgba(255, 255, 255, 0.65);
-    color: #374151;
+.request-modal__tab.is-active {
+    color: #f9fafb;
+    background: rgba(34, 197, 94, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.6);
 }
 
 .request-modal__tabs-content {
