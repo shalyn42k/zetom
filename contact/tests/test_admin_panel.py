@@ -29,6 +29,7 @@ class AdminPanelTests(TestCase):
             phone='+48123123123',
             email='jane@example.com',
             company='Elektrotechniczne',
+            department=self.department,
             company_name='JD Consulting',
             message='Need help',
         )
@@ -113,6 +114,7 @@ class Level2AdminPanelTests(TestCase):
             phone='+48123123123',
             email='jane@example.com',
             company=self.department1.code,
+            department=self.department1,
             company_name='JD Consulting',
             message='Need help',
         )
@@ -121,6 +123,7 @@ class Level2AdminPanelTests(TestCase):
             phone='+48123123123',
             email='john@example.com',
             company=self.department2.code,
+            department=self.department2,
             company_name='JS Consulting',
             message='Need help too',
         )
@@ -129,6 +132,7 @@ class Level2AdminPanelTests(TestCase):
             phone='+48123123123',
             email='mark@example.com',
             company=self.department_other.code,
+            department=self.department_other,
             company_name='Other Ltd',
             message='Hidden request',
         )

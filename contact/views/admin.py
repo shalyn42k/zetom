@@ -19,6 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.validators import EmailValidator
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -113,6 +114,17 @@ def _permission_profile(admin_user: AdminUser | None) -> dict[str, object]:
     return admin_user.permission_profile()
 
 
+def get_queryset(admin_user: AdminUser | None) -> QuerySet[ContactMessage]:
+    if not admin_user:
+        return ContactMessage.objects.none()
+    if admin_user.level_of_access == AdminUser.LEVEL_ADMIN:
+        return ContactMessage.objects.all()
+    user_depts = admin_user.departments.all()
+    if not user_depts.exists():
+        return ContactMessage.objects.none()
+    return ContactMessage.objects.filter(department__in=user_depts)
+
+
 def _build_email_signature(admin_user: AdminUser) -> dict[str, str]:
     raw_name = admin_user.email.split("@")[0] if admin_user.email else ""
     display_name = raw_name.replace(".", " ").replace("_", " ").strip().title()
@@ -128,12 +140,12 @@ def _build_email_signature(admin_user: AdminUser) -> dict[str, str]:
 def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
     if not admin_user:
         return False
-    if admin_user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
-        departments = {dept.code for dept in admin_user.departments.all()}
-        if not departments:
-            return False
-        return message.company in departments
-    return True
+    if admin_user.level_of_access == AdminUser.LEVEL_ADMIN:
+        return True
+    departments = {dept.id for dept in admin_user.departments.all()}
+    if not departments:
+        return False
+    return message.department_id in departments
 
 
 def _apply_company_filter(
@@ -172,7 +184,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     can_send_emails = admin_user.can_send_emails
     user_departments = list(admin_user.departments.values_list('code', flat=True))
     allowed_companies: set[str] | None = (
-        set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
+        set(user_departments)
+        if user_level in {AdminUser.LEVEL_DEPARTMENT, AdminUser.LEVEL_TESTER}
+        else None
     )
     readonly_mode = not can_edit_messages
     lang = get_language(request)
@@ -185,7 +199,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     ]
 
     # --- read filters ---
-    if user_level == AdminUser.LEVEL_DEPARTMENT:
+    if user_level in {AdminUser.LEVEL_DEPARTMENT, AdminUser.LEVEL_TESTER}:
         filter_data = helpers.resolve_filter_data(
             request,
             lang,
@@ -206,24 +220,25 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     )
 
     # --- base querysets ---
-    if user_level == AdminUser.LEVEL_DEPARTMENT and not user_departments:
-        queryset = ContactMessage.objects.none()
-        deleted_queryset = ContactMessage.objects.none()
-    else:
-        queryset = _apply_company_filter(
-            message_service.get_messages(sort_by=sort_by),
-            company_filter=company_filter,
-            allowed_companies=allowed_companies,
-            user_level=user_level,
-            valid_companies=valid_companies,
-        )
-        deleted_queryset = _apply_company_filter(
-            message_service.get_deleted_messages(),
-            company_filter=company_filter,
-            allowed_companies=allowed_companies,
-            user_level=user_level,
-            valid_companies=valid_companies,
-        )
+    base_queryset = get_queryset(admin_user)
+    queryset = _apply_company_filter(
+        message_service.get_messages(sort_by=sort_by).filter(
+            id__in=base_queryset.values("id")
+        ),
+        company_filter=company_filter,
+        allowed_companies=allowed_companies,
+        user_level=user_level,
+        valid_companies=valid_companies,
+    )
+    deleted_queryset = _apply_company_filter(
+        message_service.get_deleted_messages().filter(
+            id__in=base_queryset.values("id")
+        ),
+        company_filter=company_filter,
+        allowed_companies=allowed_companies,
+        user_level=user_level,
+        valid_companies=valid_companies,
+    )
 
     # --- pagination ---
     paginator = Paginator(queryset, 10)
