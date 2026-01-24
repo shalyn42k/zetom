@@ -186,18 +186,18 @@
         <form method="post" class="modal__form" data-request-form>
             {% csrf_token %}
             <div class="user-modal__tabs" role="tablist" aria-label="Request details navigation">
-                <button type="button" class="user-modal__tab is-active" data-tab-target="info" role="tab" aria-selected="true">
+                <button type="button" class="user-modal__tab is-active" data-rtab-target="info" role="tab" aria-selected="true">
                     Info
                 </button>
-                <button type="button" class="user-modal__tab" data-tab-target="history" role="tab" aria-selected="false">
+                <button type="button" class="user-modal__tab" data-rtab-target="history" role="tab" aria-selected="false">
                     History
                 </button>
-                <button type="button" class="user-modal__tab" data-tab-target="responses" role="tab" aria-selected="false">
+                <button type="button" class="user-modal__tab" data-rtab-target="responses" role="tab" aria-selected="false">
                     Responses
                 </button>
             </div>
             <div class="user-modal__tabs-content">
-                <div class="user-modal__tab-panel" data-tab-content="info">
+                <div class="user-modal__tab-panel" data-rtab-content="info">
                     <div class="request-modal__grid">
                         <label class="request-modal__field request-modal__field--full">
                             <span class="form-label">{% if lang == 'pl' %}Imię i nazwisko{% else %}Full name{% endif %}</span>
@@ -237,37 +237,12 @@
                         </label>
                     </div>
                 </div>
-                <div class="user-modal__tab-panel is-hidden" data-tab-content="history">
-                    <section class="request-modal__attachments">
-                        <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
-                        <ul class="attachment-list" data-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
-                    </section>
-                    <section class="request-modal__client-log">
-                        <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
-                        <ul class="client-log" data-request-client-log data-empty="{% if lang == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
-                    </section>
-                    <section class="request-modal__access">
-                        <h3>{% if lang == 'pl' %}Dostęp klienta{% else %}Customer access{% endif %}</h3>
-                        <p class="request-modal__token">
-                            <strong>{% if lang == 'pl' %}Hash tokenu:{% else %}Token hash:{% endif %}</strong>
-                            <span data-request-token-hash>—</span>
-                        </p>
-                        <p class="request-modal__access-status">
-                            <strong>{% if lang == 'pl' %}Dostęp aktywny:{% else %}Access enabled:{% endif %}</strong>
-                            <span data-request-access-enabled>—</span>
-                        </p>
-                    </section>
+                <div class="user-modal__tab-panel is-hidden" data-rtab-content="history">
+                    <div class="empty-state">No history yet</div>
                 </div>
-                <div class="user-modal__tab-panel is-hidden" data-tab-content="responses">
-                    <div class="request-modal__grid">
-                        <label class="request-modal__field request-modal__field--full">
-                            <span class="form-label">{% if lang == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
-                            <textarea name="final_changes" rows="4" class="form-input"></textarea>
-                        </label>
-                        <label class="request-modal__field request-modal__field--full">
-                            <span class="form-label">{% if lang == 'pl' %}Odpowiedź dla klienta{% else %}Client response{% endif %}</span>
-                            <textarea name="final_response" rows="4" class="form-input"></textarea>
-                        </label>
+                <div class="user-modal__tab-panel is-hidden" data-rtab-content="responses">
+                    <div class="empty-state">
+                        <button type="button" class="button button--primary">New form</button>
                     </div>
                 </div>
             </div>
