@@ -14,7 +14,7 @@ import secrets
 
 from datetime import timedelta
 from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 from django.db import models
 from django.utils import timezone
 
@@ -163,6 +163,14 @@ class AdminUser(models.Model):
 
     def check_password(self, raw: str) -> bool:
         return check_password(raw, self.password_hash)
+
+    def save(self, *args, **kwargs) -> None:
+        if self.password_hash:
+            try:
+                identify_hasher(self.password_hash)
+            except ValueError:
+                self.password_hash = make_password(self.password_hash)
+        super().save(*args, **kwargs)
 
 
 PERMISSION_KEYS: tuple[str, ...] = (
