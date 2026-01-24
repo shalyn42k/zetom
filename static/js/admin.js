@@ -458,6 +458,9 @@
         const clientLogEmptyMessage = clientLogList ? clientLogList.dataset.empty || '' : '';
         const tokenHashElement = $('[data-request-token-hash]', requestModal);
         const accessEnabledElement = $('[data-request-access-enabled]', requestModal);
+        const historyEmptyState = $('[data-request-history-empty]', requestModal);
+        const responsesEmptyState = $('[data-request-responses-empty]', requestModal);
+        const focusResponseButton = $('[data-focus-response]', requestModal);
         const backdrop = requestModal.querySelector('.modal__backdrop');
         const closeElements = $$('[data-request-close]', requestModal);
         const statusMap = parseJsonData(requestModal.dataset.statusMap, {});
@@ -543,6 +546,15 @@
                 activateRequestTab(button.dataset.tabTarget);
             });
         });
+
+        if (focusResponseButton) {
+            focusResponseButton.addEventListener('click', () => {
+                const responseField = form ? form.elements.namedItem('final_response') : null;
+                if (responseField instanceof HTMLTextAreaElement) {
+                    responseField.focus();
+                }
+            });
+        }
 
         activateRequestTab('info');
 
@@ -749,6 +761,14 @@
             setAccessInfo(data);
             if (data.client_logs) {
                 renderClientLog(data.client_logs);
+            }
+            if (historyEmptyState) {
+                const hasHistory = Boolean((data.attachments && data.attachments.length) || (data.client_logs && data.client_logs.length));
+                historyEmptyState.hidden = hasHistory;
+            }
+            if (responsesEmptyState) {
+                const hasResponses = Boolean((data.final_changes && data.final_changes.trim()) || (data.final_response && data.final_response.trim()));
+                responsesEmptyState.hidden = hasResponses;
             }
         };
 

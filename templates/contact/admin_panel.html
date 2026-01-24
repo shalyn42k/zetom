@@ -236,12 +236,24 @@
                             <textarea name="message" rows="6" class="form-input" required></textarea>
                         </label>
                     </div>
-                </div>
-                <div class="user-modal__tab-panel is-hidden" data-tab-content="history">
                     <section class="request-modal__attachments">
                         <h3>{% if lang == 'pl' %}Załączniki{% else %}Attachments{% endif %}</h3>
                         <ul class="attachment-list" data-request-attachments data-empty="{% if lang == 'pl' %}Brak załączników.{% else %}No attachments yet.{% endif %}"></ul>
                     </section>
+                </div>
+                <div class="user-modal__tab-panel is-hidden" data-tab-content="history">
+                    <div class="request-modal__empty" data-request-history-empty>
+                        <button type="button" class="button button--ghost button--compact" disabled>
+                            {% if lang == 'pl' %}Brak historii{% else %}No history yet{% endif %}
+                        </button>
+                        <p class="request-modal__empty-text">
+                            {% if lang == 'pl' %}
+                                Historia zmian i logi klienta pojawią się tutaj, gdy klient dokona edycji.
+                            {% else %}
+                                Client changes and access logs will appear here once the customer updates the request.
+                            {% endif %}
+                        </p>
+                    </div>
                     <section class="request-modal__client-log">
                         <h3>{% if lang == 'pl' %}Zmiany klienta{% else %}Client changes{% endif %}</h3>
                         <ul class="client-log" data-request-client-log data-empty="{% if lang == 'pl' %}Brak zmian od klienta.{% else %}No client changes recorded yet.{% endif %}"></ul>
@@ -259,6 +271,18 @@
                     </section>
                 </div>
                 <div class="user-modal__tab-panel is-hidden" data-tab-content="responses">
+                    <div class="request-modal__empty" data-request-responses-empty>
+                        <button type="button" class="button button--ghost button--compact" data-focus-response>
+                            {% if lang == 'pl' %}Brak odpowiedzi{% else %}No responses yet{% endif %}
+                        </button>
+                        <p class="request-modal__empty-text">
+                            {% if lang == 'pl' %}
+                                Uzupełnij finalne zmiany i odpowiedź, aby przygotować wiadomość do klienta.
+                            {% else %}
+                                Fill in the final changes and response to prepare a message for the customer.
+                            {% endif %}
+                        </p>
+                    </div>
                     <div class="request-modal__grid">
                         <label class="request-modal__field request-modal__field--full">
                             <span class="form-label">{% if lang == 'pl' %}Finalne zmiany{% else %}Final changes{% endif %}</span>
