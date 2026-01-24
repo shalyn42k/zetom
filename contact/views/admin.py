@@ -128,6 +128,8 @@ def _build_email_signature(admin_user: AdminUser) -> dict[str, str]:
 def _can_access_message(admin_user: AdminUser | None, message: ContactMessage) -> bool:
     if not admin_user:
         return False
+    if not admin_user.can_view_all_messages:
+        return message.assigned_to_id == admin_user.id
     if admin_user.level_of_access == AdminUser.LEVEL_DEPARTMENT:
         departments = {dept.code for dept in admin_user.departments.all()}
         if not departments:
@@ -170,6 +172,7 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
     can_delete_messages = admin_user.can_delete_messages
     can_export_messages = admin_user.can_export_messages
     can_send_emails = admin_user.can_send_emails
+    can_view_all_messages = admin_user.can_view_all_messages
     user_departments = list(admin_user.departments.values_list('code', flat=True))
     allowed_companies: set[str] | None = (
         set(user_departments) if user_level == AdminUser.LEVEL_DEPARTMENT else None
@@ -224,6 +227,9 @@ def admin_panel(request: HttpRequest) -> HttpResponse:
             user_level=user_level,
             valid_companies=valid_companies,
         )
+        if not can_view_all_messages:
+            queryset = queryset.filter(assigned_to=admin_user)
+            deleted_queryset = deleted_queryset.filter(assigned_to=admin_user)
 
     # --- pagination ---
     paginator = Paginator(queryset, 10)
