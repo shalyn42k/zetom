@@ -467,8 +467,8 @@
         const updateTemplate = requestModal.dataset.updateTemplate || '';
         const rollbackTemplate = requestModal.dataset.rollbackTemplate || '';
         const language = requestModal.dataset.language || 'pl';
-        const tabButtons = requestModal.querySelectorAll('[data-request-tab]');
-        const tabPanels = requestModal.querySelectorAll('[data-request-panel]');
+        const tabButtons = requestModal.querySelectorAll('[data-rtab-target]');
+        const tabPanels = requestModal.querySelectorAll('[data-rtab-content]');
         const fieldLabels = language === 'pl'
             ? {
                   full_name: 'Imię i nazwisko',
@@ -494,12 +494,12 @@
         const activateRequestTab = (target) => {
             const targetName = target || 'info';
             tabButtons.forEach((button) => {
-                const isActive = button.dataset.requestTab === targetName;
+                const isActive = button.dataset.rtabTarget === targetName;
                 button.classList.toggle('is-active', isActive);
                 button.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
             tabPanels.forEach((panel) => {
-                const isActive = panel.dataset.requestPanel === targetName;
+                const isActive = panel.dataset.rtabContent === targetName;
                 panel.classList.toggle('is-hidden', !isActive);
                 panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
             });
@@ -541,7 +541,7 @@
 
         tabButtons.forEach((button) => {
             button.addEventListener('click', () => {
-                activateRequestTab(button.dataset.requestTab);
+                activateRequestTab(button.dataset.rtabTarget);
             });
         });
 
