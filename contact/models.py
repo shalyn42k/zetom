@@ -61,13 +61,6 @@ class ContactMessage(models.Model):
     access_token_hash = models.CharField(max_length=128, blank=True)
     access_enabled = models.BooleanField(default=True)
     access_token_expires_at = models.DateTimeField(null=True, blank=True)
-    assigned_to = models.ForeignKey(
-        "AdminUser",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_messages",
-    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -198,10 +191,6 @@ class AdminUser(models.Model):
     def can_send_emails(self) -> bool:
         return self.has_permission("can_send_emails")
 
-    @property
-    def can_view_all_messages(self) -> bool:
-        return self.has_permission("can_view_all_messages")
-
     def save(self, *args, **kwargs) -> None:
         if self.password_hash:
             try:
@@ -216,7 +205,6 @@ PERMISSION_KEYS: tuple[str, ...] = (
     "can_delete_messages",
     "can_export_messages",
     "can_send_emails",
-    "can_view_all_messages",
 )
 
 
@@ -226,21 +214,18 @@ ROLE_PERMISSION_PROFILES: dict[str, dict[str, bool]] = {
         "can_delete_messages": True,
         "can_export_messages": True,
         "can_send_emails": True,
-        "can_view_all_messages": True,
     },
     AdminUser.LEVEL_DEPARTMENT: {
         "can_edit_messages": True,
         "can_delete_messages": True,
         "can_export_messages": True,
         "can_send_emails": True,
-        "can_view_all_messages": True,
     },
     AdminUser.LEVEL_TESTER: {
         "can_edit_messages": False,
         "can_delete_messages": False,
         "can_export_messages": False,
         "can_send_emails": False,
-        "can_view_all_messages": False,
     },
 }
 
