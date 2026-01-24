@@ -1843,16 +1843,12 @@ body[data-theme='dark'] .panel-email .form-submit {
 .request-modal__grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .request-modal__field {
     display: grid;
     gap: 8px;
-}
-
-.request-modal__field--full {
-    grid-column: 1 / -1;
 }
 
 .request-modal__field .form-input,
@@ -1862,8 +1858,8 @@ body[data-theme='dark'] .panel-email .form-submit {
     width: 100%;
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: #111827;
+    border: 1px solid var(--input-border);
+    background: var(--input-background);
     font: inherit;
     color: inherit;
 }
@@ -1872,80 +1868,8 @@ body[data-theme='dark'] .panel-email .form-submit {
 .request-modal__field select:focus,
 .request-modal__field textarea:focus {
     outline: none;
-    border-color: rgba(34, 197, 94, 0.8);
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-}
-
-.modal[data-request-modal] .modal__dialog {
-    background: #1f2937;
-    border-color: rgba(34, 197, 94, 0.2);
-    color: #f9fafb;
-}
-
-.modal[data-request-modal] .modal__title {
-    color: #f9fafb;
-}
-
-.modal[data-request-modal] .modal__subtitle {
-    color: #9ca3af;
-}
-
-.modal[data-request-modal] .modal__close {
-    background: rgba(34, 197, 94, 0.18);
-    color: #f9fafb;
-}
-
-.request-modal__header {
-    display: grid;
-    gap: 6px;
-}
-
-.request-modal__tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 6px;
-    border-radius: 999px;
-    background: rgba(17, 24, 39, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.request-modal__tab {
-    border: none;
-    background: transparent;
-    color: #9ca3af;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.request-modal__tab.is-active {
-    color: #f9fafb;
-    background: rgba(34, 197, 94, 0.2);
-    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.6);
-}
-
-.request-modal__tabs-content {
-    display: grid;
-    gap: 16px;
-}
-
-.request-modal__responses {
-    display: grid;
-    gap: 12px;
-}
-
-.request-modal__responses-button {
-    justify-self: flex-start;
-    border-color: rgba(34, 197, 94, 0.6);
-    color: #f9fafb;
-}
-
-.request-modal__responses-empty {
-    color: #9ca3af;
-    margin: 0;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(47, 168, 79, 0.16);
 }
 
 .request-modal__client-log {
