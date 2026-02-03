@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # === БАЗА ДАННЫХ (PostgreSQL) ===
   db:
@@ -10,7 +8,7 @@ services:
       # Твои реальные настройки
       POSTGRES_USER: zetom_user
       POSTGRES_DB: zetom
-      POSTGRES_PASSWORD: zetom_password  # Пароль задаем здесь (можно поменять)
+      POSTGRES_PASSWORD: AJNJDN14187LKKA983140JAJ5 # Пароль задаем здесь (можно поменять)
     volumes:
       # 1. СЮДА кладем твой файл init.sql, чтобы данные появились сами
       - ./db_setup/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -37,9 +35,10 @@ services:
     environment:
       # Настройки Django
       DJANGO_DEBUG: "true"
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
+      DJANGO_ALLOWED_HOSTS: "*"
+      CSRF_TRUSTED_ORIGINS: "https://shalyn42k.pl"
       # Строка подключения: postgres://ПОЛЬЗОВАТЕЛЬ:ПАРОЛЬ@ХОСТ:ПОРТ/БАЗА
-      DATABASE_URL: postgres://zetom_user:zetom_password@db:5432/zetom
+      DATABASE_URL: postgres://zetom_user:AJNJDN14187LKKA983140JAJ5@db:5432/zetom
     volumes:
       - ./:/app
 

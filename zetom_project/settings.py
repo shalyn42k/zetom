@@ -14,51 +14,53 @@ from django.core.exceptions import ImproperlyConfigured
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SESSION_COOKIE_AGE = max(1800, int(os.getenv('SESSION_COOKIE_AGE', '3600')))
-SESSION_SAVE_EVERY_REQUEST = False  # Не обновлять expiration на каждый запрос.
-SESSION_COOKIE_SECURE = True  # Только HTTPS.
-SESSION_COOKIE_HTTPONLY = True  # Защита от JS-доступа.
-SESSION_COOKIE_SAMESITE = 'Strict'  # Защита от CSRF в cross-site.
 
-# --- Core ---
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-insecure-key-change-me')
+# --- CORE SETTINGS ---
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '0m-v^++5c(oy9)$fwgbn8-h7)(iw0deztbgb64p-2ux)j*0%l9')
 ADMIN_PASSWORD_SECRET = os.environ.get('ADMIN_PASSWORD_SECRET', SECRET_KEY)
+
+# Читаем DEBUG. В проде должно быть False!
 DJANGO_DEBUG = os.getenv("DJANGO_DEBUG", "true").strip().lower()
 DEBUG = DJANGO_DEBUG in ("1", "true", "yes", "on")
 
-# Hosts / CSRF
-allowed_hosts_env = [
-    h.strip()
-    for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-    if h.strip() and not h.strip().startswith("${")
-]
+# --- PROXY / CLOUDFLARE SETTINGS (КРИТИЧНО ВАЖНО!) ---
+# Это чинит CSRF и проблему HTTP vs HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
-# Render автоматически задаёт домен в переменной RENDER_EXTERNAL_HOSTNAME.
-# Добавим его в списки хостов/происхождений, чтобы избежать ошибок 400.
-render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+# --- HOSTS & CSRF ---
+# 1. Allowed Hosts
+allowed_hosts_raw = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_raw.split(",") if h.strip()]
 
-ALLOWED_HOSTS = allowed_hosts_env
+# Render.com fix (если вдруг используешь)
+render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_hostname:
     ALLOWED_HOSTS.append(render_hostname)
-ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
 
-# Для Django 4+ лучше указывать со схемой: https://example.com
-csrf_trusted = [
-    o.strip()
-    for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
-    if o.strip() and not o.strip().startswith("${")
-]
-if render_hostname:
-    csrf_origin = f"https://{render_hostname}"
-    if csrf_origin not in csrf_trusted:
-        csrf_trusted.append(csrf_origin)
+# 2. CSRF Trusted Origins
+# Сюда прилетят твои https://shalyn42k.pl из docker-compose
+csrf_raw = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8888")
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_raw.split(",") if o.strip()]
 
-CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(csrf_trusted))
+# --- SESSIONS & COOKIES ---
+SESSION_COOKIE_AGE = max(1800, int(os.getenv('SESSION_COOKIE_AGE', '3600')))
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_HTTPONLY = True
 
-# --- Cache ---
+# Включаем Secure куки только если мы не в локальной разработке
+# (Или если мы за Cloudflare, который дает HTTPS)
+SESSION_COOKIE_SECURE = not DEBUG or os.getenv("SESSION_COOKIE_SECURE") == "True"
+CSRF_COOKIE_SECURE = not DEBUG or os.getenv("CSRF_COOKIE_SECURE") == "True"
+
+# --- CACHE ---
+# (Оставь свой код кэша ниже, он нормальный)
 default_cache_backend = os.getenv(
     'DJANGO_CACHE_BACKEND', 'django.core.cache.backends.filebased.FileBasedCache'
 )
+
 default_cache_location = os.getenv('DJANGO_CACHE_LOCATION', str(BASE_DIR / 'cache'))
 
 CACHES = {
